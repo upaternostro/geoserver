@@ -1,10 +1,11 @@
 package it.phoops.geoserver.ols.web;
 
-import org.apache.wicket.markup.html.form.Form;
+import it.phoops.geoserver.ols.OLSInfo;
+
 import org.apache.wicket.markup.html.basic.Label;
+import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.model.IModel;
 import org.geoserver.web.services.BaseServiceAdminPage;
-import org.geoserver.wms.WMSInfo;
 
 
 /**
@@ -12,7 +13,7 @@ import org.geoserver.wms.WMSInfo;
  * @author aCasini
  *
  */
-public class OLSAdminPage extends BaseServiceAdminPage<WMSInfo> {
+public class OLSAdminPage extends BaseServiceAdminPage<OLSInfo> {
 
 	@Override
 	protected void build(IModel info, Form form) {
@@ -21,15 +22,15 @@ public class OLSAdminPage extends BaseServiceAdminPage<WMSInfo> {
 	}
 
 	@Override
-	protected Class<WMSInfo> getServiceClass() {
+	protected Class<OLSInfo> getServiceClass() {
 		// TODO Da sostituire con OLSInfo
-		return WMSInfo.class;
+		return OLSInfo.class;
 	}
 
 	@Override
 	protected String getServiceName() {
 		// TODO Da sostituire con OLS
-		return "WMS";
+		return "OLS";
 	}
 
 }
