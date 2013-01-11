@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Copyright (c) 2012 TOPP - www.openplans.org. All rights reserved. This 
+	code is licensed under the GPL 2.0 license, available at the root application 
+	directory. -->
+<!DOCTYPE beans PUBLIC "-//SPRING//DTD BEAN//EN" "http://www.springframework.org/dtd/spring-beans.dtd">
+
+<beans>
+	<bean id="olsServicePage" class="org.geoserver.web.services.ServiceMenuPageInfo">
+		<property name="id" value="ols" />
+		<property name="titleKey" value="ols.title" />
+		<property name="descriptionKey" value="ols.description" />
+		<property name="componentClass" value="it.phoops.geoserver.ols.web.OLSAdminPage" />
+		<property name="icon" value="server_map.png" />
+		<property name="category" ref="servicesCategory" />
+		<property name="serviceClass" value="it.phoops.geoserver.ols.OLSInfo" />
+	</bean>
+</beans>
