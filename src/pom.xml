@@ -1429,6 +1429,7 @@
   <module>web</module>
   <module>community</module>
   <module>extension</module>
+  <module>ols</module>
  </modules>
 
  <properties>

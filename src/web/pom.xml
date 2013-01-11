@@ -44,6 +44,7 @@
     <module>wcs</module>
     <module>gwc</module>
     <module>security</module>
+    <module>ols</module>
   </modules>
 
 </project>
