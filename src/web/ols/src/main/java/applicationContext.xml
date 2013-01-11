@@ -12,6 +12,6 @@
 		<property name="componentClass" value="it.phoops.geoserver.ols.web.OLSAdminPage" />
 		<property name="icon" value="server_map.png" />
 		<property name="category" ref="servicesCategory" />
-		<property name="serviceClass" value="org.geoserver.wms.WMSInfo" />
+		<property name="serviceClass" value="it.phoops.geoserver.ols.OLSInfo" />
 	</bean>
 </beans>
