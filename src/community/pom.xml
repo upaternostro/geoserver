@@ -130,6 +130,8 @@
         <module>feature-aggregate</module>
         <module>script</module>
         <module>xslt</module>
+        <module>ols</module>
+        <module>ols_web</module>
       </modules>
     </profile>
     <profile>
@@ -223,6 +225,16 @@
       </activation> 
       <modules>
         <module>wcs2_0</module>
+      </modules>
+    </profile>
+    <profile>
+      <id>ols</id>
+      <activation>
+        <property><name>ols</name></property>
+      </activation> 
+      <modules>
+        <module>ols</module>
+        <module>ols_web</module>
       </modules>
     </profile>
   </profiles>
