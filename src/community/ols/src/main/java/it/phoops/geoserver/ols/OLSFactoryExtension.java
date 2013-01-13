@@ -4,18 +4,18 @@ import org.geoserver.config.ServiceFactoryExtension;
 
 /**
  * The Factory Extension for the @OLSInfoImpl
+ * 
  * @author aCasini
- *
+ * 
  */
-public class OLSFactoryExtension extends ServiceFactoryExtension<OLSInfo>{
-	
-	public OLSFactoryExtension() {
-		super(OLSInfo.class);
-	}
+public class OLSFactoryExtension extends ServiceFactoryExtension<OLSInfo> {
+    public OLSFactoryExtension() {
+        super(OLSInfo.class);
+    }
 
-	@Override
-	public <T> T create(Class<T> clazz) {
-		return (T) new OLSInfoImpl();
-	}
-
+    @Override
+    @SuppressWarnings("unchecked")
+    public <T> T create(Class<T> clazz) {
+        return (T) new OLSInfoImpl();
+    }
 }
