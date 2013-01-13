@@ -16,7 +16,7 @@
 	<groupId>org.geoserver.web</groupId>
 	<artifactId>web-ols</artifactId>
 	<packaging>jar</packaging>
-	<name>OLS UI Module</name>
+	<name>Open Location Services UI Module</name>
 
 	<dependencies>
 		<!-- Da sostituire con ols -->
