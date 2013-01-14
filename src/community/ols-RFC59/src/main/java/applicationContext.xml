@@ -6,6 +6,6 @@
 
 <beans>
 	<bean id="rfc59ServiceProvider" class="it.phoops.geoserver.ols.geocoding.rfc59.RFC59ServiceProvider">
-	   <property name="description" value="OLS.serviceProvider.geocoding.rfc59.description" />
+	   <property name="descriptionKey" value="OLS.serviceProvider.geocoding.rfc59.description" />
 	</bean>
 </beans>
