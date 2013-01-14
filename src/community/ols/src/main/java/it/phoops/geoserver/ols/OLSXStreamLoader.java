@@ -6,9 +6,6 @@ import org.geoserver.config.GeoServer;
 import org.geoserver.config.util.XStreamPersister;
 import org.geoserver.config.util.XStreamServiceLoader;
 import org.geoserver.platform.GeoServerResourceLoader;
-import org.geoserver.wcs.WCSInfo;
-import org.geoserver.wcs.WCSInfoImpl;
-import org.geotools.util.Version;
 
 /**
  * Loads and persist the {@link OLSInfo} object to and from xstream persistence.

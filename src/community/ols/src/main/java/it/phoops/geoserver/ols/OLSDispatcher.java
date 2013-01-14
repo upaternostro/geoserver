@@ -50,7 +50,7 @@ public class OLSDispatcher extends AbstractController {
                 
                 if ((Boolean)xPathExpr.evaluate(domRequest, XPathConstants.BOOLEAN)) {
                     OLSHandler          handler = handlers.get(path);
-                    Document            domResponse = handler.processRequest(domRequest);
+                    Document            domResponse = handler.processRequest(getApplicationContext(), domRequest);
                     TransformerFactory  transFactory = TransformerFactory.newInstance();
                     Transformer         transformer = transFactory.newTransformer();
                     

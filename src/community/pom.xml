@@ -131,6 +131,7 @@
         <module>script</module>
         <module>xslt</module>
         <module>ols</module>
+        <module>ols-RFC59</module>
         <module>ols_web</module>
       </modules>
     </profile>
@@ -234,6 +235,7 @@
       </activation> 
       <modules>
         <module>ols</module>
+        <module>ols-RFC59</module>
         <module>ols_web</module>
       </modules>
     </profile>

@@ -13,37 +13,38 @@
 	</parent>
 
 	<groupId>org.geoserver</groupId>
-	<artifactId>ols</artifactId>
+	<artifactId>ols-RFC59</artifactId>
 	<packaging>jar</packaging>
-	<name>Open Location Services Service Module</name>
+	<name>Open Location Services RFC59 service provider</name>
 
 	<dependencies>
 		<dependency>
 			<groupId>org.geoserver</groupId>
-			<artifactId>main</artifactId>
+			<artifactId>ols</artifactId>
+			<version>${project.version}</version>
 		</dependency>
-		<dependency>
-			<groupId>org.geoserver</groupId>
-			<artifactId>main</artifactId>
-			<classifier>tests</classifier>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>com.mockrunner</groupId>
-			<artifactId>mockrunner</artifactId>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.easymock</groupId>
-			<artifactId>easymock</artifactId>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.easymock</groupId>
-			<artifactId>easymockclassextension</artifactId>
-			<version>2.3</version>
-			<scope>test</scope>
-		</dependency>
+        <dependency>
+            <groupId>org.geoserver</groupId>
+            <artifactId>main</artifactId>
+            <classifier>tests</classifier>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.mockrunner</groupId>
+            <artifactId>mockrunner</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.easymock</groupId>
+            <artifactId>easymock</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.easymock</groupId>
+            <artifactId>easymockclassextension</artifactId>
+            <version>2.3</version>
+            <scope>test</scope>
+        </dependency>
 		<dependency>
 			<groupId>xmlunit</groupId>
 			<artifactId>xmlunit</artifactId>
