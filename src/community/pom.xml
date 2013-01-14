@@ -229,6 +229,12 @@
       </modules>
     </profile>
     <profile>
+      <id>w3ds</id>
+      <modules>
+        <module>w3ds</module>
+      </modules>
+    </profile>
+    <profile>
       <id>ols</id>
       <activation>
         <property><name>ols</name></property>
