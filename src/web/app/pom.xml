@@ -889,7 +889,12 @@
       <artifactId>ols</artifactId>
       <version>${project.version}</version>
     </dependency>
-        <dependency>
+    <dependency>
+      <groupId>org.geoserver</groupId>
+      <artifactId>ols-RFC59</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
       <groupId>org.geoserver.web</groupId>
       <artifactId>web-ols</artifactId>
       <version>${project.version}</version>
