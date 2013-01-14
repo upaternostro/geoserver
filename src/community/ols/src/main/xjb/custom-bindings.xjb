@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bindings xmlns="http://java.sun.com/xml/ns/jaxb" xmlns:xs="http://www.w3.org/2001/XMLSchema"
+	version="2.0">
+
+	<bindings schemaLocation="../xsd/gml4xls.xsd"
+		node="/xs:schema/xs:complexType[@name='AngleType']">
+		<class name="GML4XLSAngleType" />
+	</bindings>
+
+    <bindings schemaLocation="../xsd/ADT.xsd"
+        node="/xs:schema/xs:element[@name='_Position']">
+        <class name="AbstractPosition" />
+    </bindings>
+
+    <bindings schemaLocation="../xsd/ADT.xsd"
+        node="/xs:schema/xs:element[@name='_POI']">
+        <class name="AbstractPOI" />
+    </bindings>
+
+    <bindings schemaLocation="../xsd/ADT.xsd"
+        node="/xs:schema/xs:element[@name='_RouteSummary']">
+        <class name="AbstractRouteSummary" />
+    </bindings>
+
+    <bindings schemaLocation="../xsd/ADT.xsd"
+        node="/xs:schema/xs:element[@name='_NextSegment']">
+        <class name="AbstractNextSegment" />
+    </bindings>
+
+    <bindings schemaLocation="../xsd/DirectoryService.xsd"
+        node="/xs:schema/xs:element[@name='_POIProperty']">
+        <class name="AbstractPOIProperty" />
+    </bindings>
+
+</bindings>
