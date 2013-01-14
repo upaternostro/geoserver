@@ -6,7 +6,7 @@ public class RFC59ServiceProvider implements GeocodingServiceProvider {
     private String descriptionKey;
     
     @Override
-    public String getDescription() {
+    public String getDescriptionKey() {
         return descriptionKey;
     }
 
