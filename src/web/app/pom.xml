@@ -879,6 +879,16 @@
       </dependencies>
     </profile>
     <profile>
+      <id>w3ds</id>
+      <dependencies>
+        <dependency>
+          <groupId>org.geoserver.community</groupId>
+          <artifactId>w3ds</artifactId>
+          <version>${project.version}</version>
+        </dependency>
+      </dependencies>
+    </profile>
+    <profile>
       <id>ols</id>
       <activation>
         <property><name>ols</name></property>
