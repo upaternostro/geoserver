@@ -84,7 +84,7 @@
 				</executions>
 				<configuration>
 					<packageName>net.opengis.www.xls</packageName>
-					<arguments>-extension src/main/xsd/simpleBinding.schemalet</arguments>
+					<arguments>-extension ${project.basedir}/src/main/xsd/simpleBinding.schemalet</arguments>
 				</configuration>
 			</plugin>
 			<plugin>

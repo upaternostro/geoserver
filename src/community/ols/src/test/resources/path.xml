@@ -1,1 +1,5 @@
-<GeocodeRequest xmlns="http://www.opengis.net/xls" />
+<GeocodeRequest xmlns="http://www.opengis.net/xls">
+	<Address countryCode="IT">
+		<freeFormAddress>via roma, firenze</freeFormAddress>
+	</Address>
+</GeocodeRequest>
