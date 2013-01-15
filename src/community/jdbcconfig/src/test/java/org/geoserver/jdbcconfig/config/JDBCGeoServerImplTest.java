@@ -4,24 +4,27 @@
  */
 package org.geoserver.jdbcconfig.config;
 
+import static org.junit.Assert.assertNotNull;
+
 import org.geoserver.catalog.impl.CatalogImpl;
 import org.geoserver.config.GeoServerFacade;
 import org.geoserver.config.GeoServerImplTest;
+import org.geoserver.config.ServiceInfo;
 import org.geoserver.config.impl.GeoServerImpl;
+import org.geoserver.jdbcconfig.JDBCConfigTestSupport;
 import org.geoserver.jdbcconfig.catalog.JDBCCatalogFacade;
 import org.geoserver.jdbcconfig.internal.ConfigDatabase;
-import org.geoserver.jdbcconfig.internal.JdbcConfigTestSupport;
 import org.junit.After;
 
 public class JDBCGeoServerImplTest extends GeoServerImplTest {
 
     private GeoServerFacade facade;
 
-    private JdbcConfigTestSupport testSupport;
+    private JDBCConfigTestSupport testSupport;
 
     @Override
     public void setUp() throws Exception {
-        testSupport = new JdbcConfigTestSupport();
+        testSupport = new JDBCConfigTestSupport();
         testSupport.setUp();
 
         ConfigDatabase configDb = testSupport.getDatabase();
@@ -46,4 +49,13 @@ public class JDBCGeoServerImplTest extends GeoServerImplTest {
         return gs;
     }
 
+    @Override
+    public void testAddService() throws Exception {
+        super.testAddService();
+
+        //ensure s.getGeoServer() != null
+        ServiceInfo s = geoServer.getServiceByName( "foo", ServiceInfo.class );
+        assertNotNull(s.getGeoServer());
+    }
+    
 }
