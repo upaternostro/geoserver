@@ -316,7 +316,7 @@ public class RFC59ServiceProvider implements GeocodingServiceProvider {
                     streetAddress = of.createStreetAddress();
                     street = of.createStreet();
                     
-                    if (datiNormalizzazioneInd.getCivico() != null && !datiNormalizzazioneInd.getCivico().equals("")) {
+                    if (datiNormalizzazioneInd.getCivico() != null && !datiNormalizzazioneInd.getCivico().equals("") && !datiNormalizzazioneInd.getCivico().equals("0")) {
                         street.setValue(datiNormalizzazioneInd.getDug() + " " + datiNormalizzazioneInd.getToponimo() + ", " + datiNormalizzazioneInd.getCivico());
                     } else {
                         street.setValue(datiNormalizzazioneInd.getDug() + " " + datiNormalizzazioneInd.getToponimo());
