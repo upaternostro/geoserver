@@ -466,4 +466,11 @@ public class RFC59ServiceProvider implements GeocodingServiceProvider {
 
         return retval;
     }
+
+	@Override
+	public String getServiceType() {
+		return null;
+	}
+    
+    
 }

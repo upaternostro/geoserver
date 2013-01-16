@@ -1,8 +1,9 @@
 package it.phoops.geoserver.ols.web.component;
 
-import it.phoops.geoserver.ols.OLSServiceProvider;
+import it.phoops.geoserver.ols.OLSServiceProviderGUI;
 import it.phoops.geoserver.ols.geocoding.GeocodingServiceProvider;
 import it.phoops.geoserver.ols.util.ApplicationContextUtil;
+import it.phoops.geoserver.ols.web.OLSAdminPage.OLSGUIService;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -29,7 +30,7 @@ public class ServiceDropDownChoice extends DropDownChoice{
 	private String urlRFC59;
 	private String timeoutRFC59;
 
-	public ServiceDropDownChoice(String id, PropertyModel<String> model, List<String> displayData, Form form) {
+	public ServiceDropDownChoice(String id, PropertyModel<String> model, List<OLSGUIService> displayData, Form form) {
 			super(id,model,displayData);
 			this.form = form;
 	}
@@ -64,7 +65,7 @@ public class ServiceDropDownChoice extends DropDownChoice{
 		ApplicationContextUtil appContextUtil = ApplicationContextUtil.getIstance();
     	ApplicationContext appContext = appContextUtil.getAppContext();
     	//Choose the correct beans
-   		Map<String,OLSServiceProvider>    beans = appContext.getBeansOfType(OLSServiceProvider.class);
+   		Map<String,OLSServiceProviderGUI>    beans = appContext.getBeansOfType(OLSServiceProviderGUI.class);
     	
     	GeocodingServiceProvider                provider = null;
         
