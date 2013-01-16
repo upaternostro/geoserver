@@ -51,7 +51,11 @@ public class JDBCConfigPropertiesFactoryBean extends PropertiesFactoryBean {
     @Override
     protected Properties createProperties() throws IOException {
         JDBCConfigProperties config = loadConfig();
-        if (config.isImport()) {
+        if (!config.isEnabled()) {
+            LOGGER.info("jdbcconfig is disabled");
+            return config;
+        }
+        if (config.isInitDb()) {
             //copy over script files
             copyScriptsToDataDir();
         }
@@ -93,6 +97,7 @@ public class JDBCConfigPropertiesFactoryBean extends PropertiesFactoryBean {
         saveConfig(config, "Default GeoServer JDBC config driver and connection pool options." + 
             " Edit as appropriate.");
         copySampleConfigsToDataDir();
+
         return config;
     }
 

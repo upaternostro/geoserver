@@ -74,9 +74,9 @@ public class GeocodingHandler implements OLSHandler {
             domResponse = domBuilder.newDocument();
             marshaller.marshal(output, domResponse);
         } catch (JAXBException e) {
-            throw new OLSException("JAXB error", e);
+            throw new OLSException("JAXB error: " + e.getLocalizedMessage(), e);
         } catch (ParserConfigurationException e) {
-            throw new OLSException("JAXP error", e);
+            throw new OLSException("JAXP error: " + e.getLocalizedMessage(), e);
         }
         
         return domResponse;
