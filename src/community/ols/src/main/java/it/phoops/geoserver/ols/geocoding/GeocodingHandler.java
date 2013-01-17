@@ -2,8 +2,8 @@ package it.phoops.geoserver.ols.geocoding;
 
 import it.phoops.geoserver.ols.OLSException;
 import it.phoops.geoserver.ols.OLSHandler;
-
-import java.util.Map;
+import it.phoops.geoserver.ols.OLSService;
+import it.phoops.geoserver.ols.OLSServiceProvider;
 
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBElement;
@@ -17,22 +17,13 @@ import javax.xml.parsers.ParserConfigurationException;
 import net.opengis.www.xls.GeocodeRequestType;
 import net.opengis.www.xls.GeocodeResponseType;
 
-import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
 
 public class GeocodingHandler implements OLSHandler {
+    private GeocodingServiceProvider    provider;
 
     @Override
-    public Document processRequest(ApplicationContext applicationContext, Document request) throws OLSException {
-        Map<String,GeocodingServiceProvider>    beans = applicationContext.getBeansOfType(GeocodingServiceProvider.class);
-        GeocodingServiceProvider                provider = null;
-        
-        for (String beanName : beans.keySet()) {
-            provider = beans.get(beanName);
-            
-            System.out.println(beanName + ": " + provider);
-        }
-        
+    public Document processRequest(Document request) throws OLSException {
         JAXBContext             jaxbContext = null;
         GeocodeRequestType      input = null;
         
@@ -69,4 +60,13 @@ public class GeocodingHandler implements OLSHandler {
         return domResponse;
     }
 
+    @Override
+    public OLSService getService() {
+        return OLSService.GEOCODING;
+    }
+
+    @Override
+    public void setServiceProvider(OLSServiceProvider provider) {
+        this.provider = (GeocodingServiceProvider)provider;
+    }
 }

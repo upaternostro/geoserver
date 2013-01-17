@@ -33,7 +33,7 @@
     <bean id="reverseGeocodingHandler" class="it.phoops.geoserver.ols.geocoding.ReverseGeocodingHandler">
     </bean>
 
-	   <bean id="routingHandler" class="it.phoops.geoserver.ols.routing.RoutingHandler">
+    <bean id="routingHandler" class="it.phoops.geoserver.ols.routing.RoutingHandler">
     </bean>
 
     	<bean id="olsDispatcher" class="it.phoops.geoserver.ols.OLSDispatcher">
