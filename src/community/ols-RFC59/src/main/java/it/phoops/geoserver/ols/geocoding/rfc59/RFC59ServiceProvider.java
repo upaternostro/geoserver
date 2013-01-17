@@ -119,9 +119,13 @@ public class RFC59ServiceProvider implements GeocodingServiceProvider {
         }
     };
     
+    public static final DataSource DATA_SOURCE = DataSource.REGIONE_TOSCANA;
+    public static final String COUNTRY_CODE = "IT";
+
     // Properties names
     public static final String  PN_ENDPOINT_ADDRESS = "OLS.serviceProvider.geocoding.rfc59.service.endpointAddress";
     public static final String  PN_GEOCODING_ALGORITHM = "OLS.serviceProvider.geocoding.rfc59.algorithm";
+    public static final String  PN_TIMEOUT = "OLS.serviceProvider.geocoding.rfc59.service.timeout";
     
     private String      descriptionKey;
     private Properties  properties = new Properties();;
@@ -149,6 +153,14 @@ public class RFC59ServiceProvider implements GeocodingServiceProvider {
 
     public void setAlgorithm(String algorithm) {
         properties.setProperty(PN_GEOCODING_ALGORITHM, algorithm);
+    }
+
+    public String getTimeout() {
+        return properties.getProperty(PN_TIMEOUT);
+    }
+
+    public void setTimeout(String timeout) {
+        properties.setProperty(PN_TIMEOUT, timeout);
     }
 
     @Override
@@ -183,7 +195,7 @@ public class RFC59ServiceProvider implements GeocodingServiceProvider {
 
         for (AddressType address : input.getAddresses()) {
             // We manage only requests regarding Italy (moreover, Tuscany...)
-            if (!"IT".equalsIgnoreCase(address.getCountryCode())) {
+            if (!COUNTRY_CODE.equalsIgnoreCase(address.getCountryCode())) {
                 throw new OLSException("Unsupported country code: " + address.getCountryCode());
             }
             
@@ -277,7 +289,7 @@ public class RFC59ServiceProvider implements GeocodingServiceProvider {
                 try {
                     binding = (MusumeSoapBindingStub) new MusumeServiceLocator().getMusume(new URL(getEndpointAddress()));
                     // Time out after a minute
-                    binding.setTimeout(60000);
+                    binding.setTimeout(Integer.valueOf(getTimeout()));
                 } catch (ServiceException e) {
                     throw new OLSException("JAX-RPC error: " + e.getLocalizedMessage(), e);
                 } catch (MalformedURLException e) {
@@ -289,7 +301,7 @@ public class RFC59ServiceProvider implements GeocodingServiceProvider {
                 // Call RFC59 web service
                 rispostaNormalizzata = binding.richiesta(Algorithm.valueOf(getAlgorithm()).toString(),
                         street.getValue() + (buildingNumber == null ? "" : ", " + buildingNumber), municipality, countrySecondarySubdivision,
-                        address.getPostalCode(), DataSource.REGIONE_TOSCANA.toString());
+                        address.getPostalCode(), DATA_SOURCE.toString());
 
                 listItem = of.createGeocodeResponseList();
                 listItem.setNumberOfGeocodedAddresses(BigInteger.ZERO);
@@ -320,7 +332,7 @@ public class RFC59ServiceProvider implements GeocodingServiceProvider {
                     returnAddress = of.createAddressType();
                     datiNormalizzazioneInd = indirizzoRiconosciuto.getDatiNormalizzazioneInd();
                     
-                    returnAddress.setCountryCode("IT");
+                    returnAddress.setCountryCode(COUNTRY_CODE);
                     places = returnAddress.getPlaces();
                     
                     Place place = of.createPlace();
@@ -399,7 +411,7 @@ public class RFC59ServiceProvider implements GeocodingServiceProvider {
                         geocodedAddress.setPoint(point);
                         returnAddress = of.createAddressType();
                         
-                        returnAddress.setCountryCode("IT");
+                        returnAddress.setCountryCode(COUNTRY_CODE);
                         
                         streetAddress = of.createStreetAddress();
                         street = of.createStreet();
@@ -445,7 +457,7 @@ public class RFC59ServiceProvider implements GeocodingServiceProvider {
                     geocodedAddress.setPoint(point);
                     returnAddress = of.createAddressType();
                     
-                    returnAddress.setCountryCode("IT");
+                    returnAddress.setCountryCode(COUNTRY_CODE);
                     places = returnAddress.getPlaces();
                     
                     place = of.createPlace();
