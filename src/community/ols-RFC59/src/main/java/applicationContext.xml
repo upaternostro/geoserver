@@ -7,5 +7,7 @@
 <beans>
 	<bean id="rfc59ServiceProvider" class="it.phoops.geoserver.ols.geocoding.rfc59.RFC59ServiceProvider">
 	   <property name="descriptionKey" value="OLS.serviceProvider.geocoding.rfc59.description" />
-	</bean>
+       <property name="endpointAddress" value="http://webtrial.regione.toscana.it/normaws/Musume12345678.jws?wsdl" />
+       <property name="algorithm" value="1" />
+    </bean>
 </beans>

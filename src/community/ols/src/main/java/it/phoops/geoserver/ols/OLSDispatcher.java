@@ -57,7 +57,7 @@ public class OLSDispatcher extends AbstractController {
             domFactory.setSchema(olsSchema);
             
             DocumentBuilder             domBuilder = domFactory.newDocumentBuilder();
-            OLSDispatcherErrorHandler   errorHandler = new OLSDispatcherErrorHandler();
+            OLSDispatcherSAXErrorHandler   errorHandler = new OLSDispatcherSAXErrorHandler();
             
             domBuilder.setErrorHandler(errorHandler);
             
@@ -72,7 +72,11 @@ public class OLSDispatcher extends AbstractController {
                     
                     if ((Boolean)xPathExpr.evaluate(domRequest, XPathConstants.BOOLEAN)) {
                         OLSHandler          handler = handlers.get(path);
-                        Document            domResponse = handler.processRequest(getApplicationContext(), domRequest);
+                        
+                        // Set configured service provider for this service handler
+                        handler.setServiceProvider(OLS.get().getServiceProvider(handler.getService()));
+                        
+                        Document            domResponse = handler.processRequest(domRequest);
                         TransformerFactory  transFactory = TransformerFactory.newInstance();
                         Transformer         transformer = transFactory.newTransformer();
                         
@@ -97,7 +101,7 @@ public class OLSDispatcher extends AbstractController {
         return null;
     }
     
-    class OLSDispatcherErrorHandler implements ErrorHandler {
+    class OLSDispatcherSAXErrorHandler implements ErrorHandler {
         private boolean                 error = false;
         private List<SAXParseException> exceptions = new ArrayList<SAXParseException>();
 
