@@ -25,6 +25,11 @@
 			<version>2.1</version>
 		</dependency>
 		<dependency>
+			<groupId>xml-resolver</groupId>
+			<artifactId>xml-resolver</artifactId>
+			<version>1.2</version>
+		</dependency>
+		<dependency>
 			<groupId>org.geoserver</groupId>
 			<artifactId>main</artifactId>
 			<classifier>tests</classifier>
@@ -84,7 +89,10 @@
 				</executions>
 				<configuration>
 					<packageName>net.opengis.www.xls</packageName>
-					<arguments>-extension ${project.basedir}/src/main/xsd/simpleBinding.schemalet</arguments>
+					<schemaDirectory>${project.basedir}/src/main/resources/xsd/OLS</schemaDirectory>
+                    <catalog>${project.basedir}/src/main/resources/xsd/catalog.xml</catalog>
+                    <extension>true</extension>
+					<arguments>${project.basedir}/src/main/schemalet/simpleBinding.schemalet</arguments>
 				</configuration>
 			</plugin>
 			<plugin>
