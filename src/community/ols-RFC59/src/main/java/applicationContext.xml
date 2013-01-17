@@ -9,5 +9,6 @@
 	   <property name="descriptionKey" value="OLS.serviceProvider.geocoding.rfc59.description" />
        <property name="endpointAddress" value="http://webtrial.regione.toscana.it/normaws/Musume12345678.jws?wsdl" />
        <property name="algorithm" value="1" />
-    </bean>
+       <property name="timeout" value="60000" />
+       </bean>
 </beans>
