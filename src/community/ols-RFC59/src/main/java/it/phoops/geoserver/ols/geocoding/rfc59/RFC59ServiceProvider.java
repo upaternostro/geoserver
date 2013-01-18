@@ -46,6 +46,7 @@ import org.apache.wicket.model.ResourceModel;
 
 public class RFC59ServiceProvider implements GeocodingServiceProvider {
     // FIXME: to be removed!!!
+    // The selected service provider must be set via Configuration GUI
     public RFC59ServiceProvider() {
         OLS.get().getServiceInfo().setServiceProvider(OLSService.GEOCODING, this);
     }
