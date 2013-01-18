@@ -1,6 +1,6 @@
-package it.phoops.geoserver.ols.geocoding.component;
+package it.phoops.geoserver.ols.geocoding.rfc59.component;
 
-import it.phoops.geoserver.ols.geocoding.component.RFC59Tab.OLSAlgorithmType;
+import it.phoops.geoserver.ols.geocoding.rfc59.component.RFC59Tab.OLSAlgorithmType;
 
 import java.util.List;
 
