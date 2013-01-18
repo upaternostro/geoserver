@@ -10,9 +10,9 @@
 	</parent>
 
 	<groupId>org.geoserver</groupId>
-	<artifactId>ols-RFC59</artifactId>
+	<artifactId>ols-SOLR</artifactId>
 	<packaging>jar</packaging>
-	<name>Open Location Services RFC59 service provider</name>
+	<name>Open Location Services SOLR service provider</name>
 
 	<dependencies>
 		<dependency>
@@ -24,11 +24,6 @@
 			<groupId>org.geoserver.web</groupId>
 			<artifactId>web-ols</artifactId>
 			<version>${project.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>axis</groupId>
-			<artifactId>axis</artifactId>
-			<version>1.4</version>
 		</dependency>
 		<dependency>
 			<groupId>org.geoserver</groupId>
@@ -66,28 +61,6 @@
 			</testResource>
 		</testResources>
 		<plugins>
-			<plugin>
-				<groupId>org.codehaus.mojo</groupId>
-				<artifactId>axistools-maven-plugin</artifactId>
-				<version>1.4</version>
-				<configuration>
-					<urls>
-						<url>http://webtrial.regione.toscana.it/normaws/Musume.jws?wsdl</url>
-					</urls>
-					<packageSpace>it.toscana.regione.normaws</packageSpace>
-					<testCases>false</testCases>
-					<serverSide>false</serverSide>
-					<subPackageByFileName>false</subPackageByFileName>
-				</configuration>
-				<executions>
-					<execution>
-						<goals>
-							<goal>wsdl2java</goal>
-						</goals>
-					</execution>
-				</executions>
-			</plugin>
-
 			<plugin>
 				<groupId>org.codehaus.mojo</groupId>
 				<artifactId>cobertura-maven-plugin</artifactId>
