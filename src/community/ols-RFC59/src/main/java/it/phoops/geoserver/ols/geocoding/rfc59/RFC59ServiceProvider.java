@@ -4,7 +4,7 @@ import it.phoops.geoserver.ols.OLS;
 import it.phoops.geoserver.ols.OLSException;
 import it.phoops.geoserver.ols.OLSService;
 import it.phoops.geoserver.ols.geocoding.GeocodingServiceProvider;
-import it.phoops.geoserver.ols.geocoding.component.RFC59Tab;
+import it.phoops.geoserver.ols.geocoding.rfc59.component.RFC59Tab;
 import it.toscana.regione.normaws.AmbiguitaIndItem;
 import it.toscana.regione.normaws.DatiGeoreferenziazioneInd;
 import it.toscana.regione.normaws.DatiNormalizzazioneInd;
@@ -18,9 +18,7 @@ import java.math.BigInteger;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.rmi.RemoteException;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Properties;
 
 import javax.xml.bind.JAXBElement;
@@ -51,78 +49,6 @@ public class RFC59ServiceProvider implements GeocodingServiceProvider {
     public RFC59ServiceProvider() {
         OLS.get().getServiceInfo().setServiceProvider(OLSService.GEOCODING, this);
     }
-    
-    public enum Algorithm {
-        TERM_QUERIES("1"),
-        FUZZY_QUERIES("2"),
-        RADIX("3");
-
-        private String code;
-
-        Algorithm(String code) {
-            this.code = code;
-        }
-
-        @Override
-        public String toString() {
-            return code;
-        }
-    };
-
-    public enum DataSource {
-        REGIONE_TOSCANA("1"),
-        OTHER("2");
-
-        private String code;
-
-        DataSource(String code) {
-            this.code = code;
-        }
-
-        @Override
-        public String toString() {
-            return code;
-        }
-    };
-    
-    public enum ResponseType {
-        GEOCODING_OK("0"),
-        UNKNOWN_ADDRESS("1"),
-        UNKNOWN_MUNICIPALITY("2"),
-        INPUT_PARAMETER_ERROR("3"),
-        AMBIGUOUS_MUNICIPALITY("6"),
-        AMBIGUOUS_ADDRESS("7"),
-        MUNICIPALITY_DATA_ONLY("8"),
-        DATA_ACCESS_ERROR("9");
-        
-        private String code;
-        static private Map<String,ResponseType> responseTypes = null;
-
-        ResponseType(String code) {
-            this.code = code;
-        }
-
-        @Override
-        public String toString() {
-            return code;
-        }
-        
-        public static ResponseType decode(String code) {
-            if (responseTypes == null) {
-                synchronized(ResponseType.class) {
-                    if (responseTypes == null) {
-                        responseTypes = new HashMap<String,ResponseType>();
-                        
-                        for (ResponseType pivot : ResponseType.values()) {
-                            responseTypes.put(pivot.toString(), pivot);
-                        }
-                    }
-                }
-            }
-            
-            return responseTypes.get(code);
-        }
-    };
     
     public static final DataSource DATA_SOURCE = DataSource.REGIONE_TOSCANA;
     public static final String COUNTRY_CODE = "IT";
@@ -181,7 +107,7 @@ public class RFC59ServiceProvider implements GeocodingServiceProvider {
         StreetAddress                                           streetAddress;
         List<Street>                                            streets;
         Street                                                  street;
-        JAXBElement<? extends AbstractStreetLocatorType>       streetLocator;
+        JAXBElement<? extends AbstractStreetLocatorType>        streetLocator;
         BuildingLocatorType                                     buildingLocator;
         String                                                  buildingNumber;
         String                                                  municipality;
@@ -304,7 +230,7 @@ public class RFC59ServiceProvider implements GeocodingServiceProvider {
 
             try {
                 // Call RFC59 web service
-                rispostaNormalizzata = binding.richiesta(Algorithm.valueOf(getAlgorithm()).toString(),
+                rispostaNormalizzata = binding.richiesta(Algorithm.get(getAlgorithm()).toString(),
                         street.getValue() + (buildingNumber == null ? "" : ", " + buildingNumber), municipality, countrySecondarySubdivision,
                         address.getPostalCode(), DATA_SOURCE.toString());
 
@@ -312,7 +238,7 @@ public class RFC59ServiceProvider implements GeocodingServiceProvider {
                 listItem.setNumberOfGeocodedAddresses(BigInteger.ZERO);
                 geocodedAddresses = listItem.getGeocodedAddresses();
                 
-                switch (ResponseType.decode(rispostaNormalizzata.getTipoRispostaNorm())) {
+                switch (ResponseType.get(rispostaNormalizzata.getTipoRispostaNorm())) {
                 case GEOCODING_OK:
                     listItem.setNumberOfGeocodedAddresses(BigInteger.ONE);
                     indirizzoRiconosciuto = rispostaNormalizzata.getIndirizzoRiconosciuto();
