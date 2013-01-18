@@ -87,7 +87,6 @@ public class ServiceDropDownChoice extends DropDownChoice<OLSGUIService>{
             	ITab tab = provider.getTab();
             	provider.setPropertiesTab(tab);
             	tabsOLS.add(tab);
-            	provider.getProperties();
 //            }else if(provider.getServiceType() == selectedService){
 //            	//Add the tab SOLR
 //            	tabsOLS.add(new AbstractTab(new Model<String>("SOLR")) {
