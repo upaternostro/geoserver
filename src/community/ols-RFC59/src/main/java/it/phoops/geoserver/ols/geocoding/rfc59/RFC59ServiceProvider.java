@@ -4,6 +4,7 @@ import it.phoops.geoserver.ols.OLS;
 import it.phoops.geoserver.ols.OLSException;
 import it.phoops.geoserver.ols.OLSService;
 import it.phoops.geoserver.ols.geocoding.GeocodingServiceProvider;
+import it.phoops.geoserver.ols.geocoding.component.RFC59Tab;
 import it.toscana.regione.normaws.AmbiguitaIndItem;
 import it.toscana.regione.normaws.DatiGeoreferenziazioneInd;
 import it.toscana.regione.normaws.DatiNormalizzazioneInd;
@@ -40,6 +41,10 @@ import net.opengis.www.xls.PointType;
 import net.opengis.www.xls.Pos;
 import net.opengis.www.xls.Street;
 import net.opengis.www.xls.StreetAddress;
+
+import org.apache.wicket.extensions.markup.html.tabs.ITab;
+import org.apache.wicket.model.IModel;
+import org.apache.wicket.model.ResourceModel;
 
 public class RFC59ServiceProvider implements GeocodingServiceProvider {
     // FIXME: to be removed!!!
@@ -176,7 +181,7 @@ public class RFC59ServiceProvider implements GeocodingServiceProvider {
         StreetAddress                                           streetAddress;
         List<Street>                                            streets;
         Street                                                  street;
-        JAXBElement<? extends AbstractStreetLocatorType>        streetLocator;
+        JAXBElement<? extends AbstractStreetLocatorType>       streetLocator;
         BuildingLocatorType                                     buildingLocator;
         String                                                  buildingNumber;
         String                                                  municipality;
@@ -513,12 +518,26 @@ public class RFC59ServiceProvider implements GeocodingServiceProvider {
     }
 
     @Override
-    public String getServiceType() {
-        return null;
+    public OLSService getServiceType() {
+        return OLSService.GEOCODING;
     }
 
     @Override
     public Properties getProperties() {
         return properties;
     }
+
+	@Override
+	public ITab getTab() {
+		IModel<String> title = new ResourceModel("RFC59	", "RFC59");
+		return new RFC59Tab(title);
+	}
+
+	@Override
+	public Boolean setPropertiesTab(ITab rfc59Tab) {
+		((RFC59Tab)rfc59Tab).setUrlRFC59(this.getEndpointAddress());
+		return null;
+	}
+	
+	
 }
