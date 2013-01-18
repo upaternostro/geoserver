@@ -16,11 +16,14 @@ import org.apache.wicket.extensions.markup.html.tabs.ITab;
 import org.apache.wicket.extensions.markup.html.tabs.TabbedPanel;
 import org.apache.wicket.markup.html.form.ChoiceRenderer;
 import org.apache.wicket.markup.html.form.Form;
+import org.apache.wicket.markup.html.form.SubmitLink;
 import org.apache.wicket.markup.html.form.TextField;
 import org.apache.wicket.markup.html.panel.Panel;
+import org.apache.wicket.model.CompoundPropertyModel;
 import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.Model;
 import org.apache.wicket.model.PropertyModel;
+import org.apache.wicket.model.StringResourceModel;
 import org.geoserver.web.services.BaseServiceAdminPage;
 
 /**
@@ -99,7 +102,11 @@ public class OLSAdminPage extends BaseServiceAdminPage<OLSInfo> {
         SERVICES.add(new OLSGUIService(OLSService.ROUTING_NAVIGATION, "OLSGUIService.routingNavigation", this));
         
 //        ChoiceRenderer cRenderer = new ChoiceRenderer("descriptionKey", "code");
+        
         ServiceDropDownChoice listServices = new ServiceDropDownChoice("service", new PropertyModel<OLSGUIService>(this, "selectedService"), SERVICES,form);
+        
+        
+        
 		form.add(listServices);
 
 		if(listServices.getSelectedService() == null){
@@ -110,6 +117,21 @@ public class OLSAdminPage extends BaseServiceAdminPage<OLSInfo> {
 			tabPanelOLS.setVisible(false);
 			form.add(tabPanelOLS);
 		}
+		
+//		 form.remove("citeCompliant");
+//		 SubmitLink submit = new SubmitLink("submit",new StringResourceModel( "save", (Component)null, null) ) {
+//			@Override
+//			public void onSubmit() {
+//				try {
+//					System.out.println("Fatta la COMMIT");
+//				} catch (Exception e) {
+//					error(e);
+//				}
+//			}
+//		 };
+//		 
+//		 form.add(submit);
+	       
 		
     }
 

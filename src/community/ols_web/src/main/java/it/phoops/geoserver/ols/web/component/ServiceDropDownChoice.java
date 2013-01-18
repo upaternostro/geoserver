@@ -109,7 +109,10 @@ public class ServiceDropDownChoice extends DropDownChoice<OLSGUIService>{
 //    		tabPanel.setVisible(Boolean.TRUE);
 //    	}
         form.add(new TabbedPanel("tabList", tabsOLS));	
+        
 	}
+	
+	
 	
     /**
      * SOLR tabPanel
