@@ -24,6 +24,7 @@ import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.Model;
 import org.apache.wicket.model.PropertyModel;
 import org.apache.wicket.model.StringResourceModel;
+import org.apache.wicket.validation.validator.MinimumValidator;
 import org.geoserver.web.services.BaseServiceAdminPage;
 
 /**
@@ -105,9 +106,9 @@ public class OLSAdminPage extends BaseServiceAdminPage<OLSInfo> {
         
         ServiceDropDownChoice listServices = new ServiceDropDownChoice("service", new PropertyModel<OLSGUIService>(this, "selectedService"), SERVICES,form);
         
-        
-        
 		form.add(listServices);
+		TextField prova = new TextField("prova");
+		form.add(prova);
 
 		if(listServices.getSelectedService() == null){
 			if(tabsOLS == null){
@@ -131,7 +132,6 @@ public class OLSAdminPage extends BaseServiceAdminPage<OLSInfo> {
 //		 };
 //		 
 //		 form.add(submit);
-	       
 		
     }
 
