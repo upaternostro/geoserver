@@ -14,7 +14,7 @@ import org.geoserver.config.impl.ServiceInfoImpl;
  */
 public class OLSInfoImpl extends ServiceInfoImpl implements OLSInfo {
     private Map<OLSService,OLSServiceProvider>  servicesProviders = new HashMap<OLSService,OLSServiceProvider>();
-
+    
     @Override
     public OLSServiceProvider getServiceProvider(OLSService service) {
         return servicesProviders.get(service);
@@ -22,6 +22,8 @@ public class OLSInfoImpl extends ServiceInfoImpl implements OLSInfo {
 
     @Override
     public void setServiceProvider(OLSService service, OLSServiceProvider provider) {
+    	if(servicesProviders == null)
+			servicesProviders = new HashMap<OLSService,OLSServiceProvider>();
         servicesProviders.put(service, provider);
     }
 }

@@ -1,6 +1,7 @@
 package it.phoops.geoserver.ols.web;
 
 import it.phoops.geoserver.ols.OLSInfo;
+import it.phoops.geoserver.ols.OLSService;
 import it.phoops.geoserver.ols.web.component.ServiceDropDownChoice;
 
 import java.io.Serializable;
@@ -13,6 +14,7 @@ import org.apache.wicket.Localizer;
 import org.apache.wicket.extensions.markup.html.tabs.AbstractTab;
 import org.apache.wicket.extensions.markup.html.tabs.ITab;
 import org.apache.wicket.extensions.markup.html.tabs.TabbedPanel;
+import org.apache.wicket.markup.html.form.ChoiceRenderer;
 import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.markup.html.form.TextField;
 import org.apache.wicket.markup.html.panel.Panel;
@@ -28,6 +30,7 @@ import org.geoserver.web.services.BaseServiceAdminPage;
  */
 public class OLSAdminPage extends BaseServiceAdminPage<OLSInfo> {
 	public class OLSGUIService implements Serializable {
+		private OLSService service;
 		private String	code;
 		private String descriptionKey;
 		private Component component;
@@ -35,11 +38,20 @@ public class OLSAdminPage extends BaseServiceAdminPage<OLSInfo> {
 		public OLSGUIService() {
 		}
 		
-		public OLSGUIService(String code, String descriptionKey, Component component) {
+		public OLSGUIService(OLSService service, String descriptionKey, Component component) {
 			super();
-			this.code = code;
+			this.service = service;
+			this.code = service.toString();
 			this.descriptionKey = descriptionKey;
 			this.component = component;
+		}
+		
+		public OLSService getService() {
+			return service;
+		}
+
+		public void setService(OLSService service) {
+			this.service = service;
 		}
 
 		public String getCode() {
@@ -76,64 +88,29 @@ public class OLSAdminPage extends BaseServiceAdminPage<OLSInfo> {
 	private List<ITab> 				tabsOLS = null;
 	private List<OLSGUIService>		SERVICES = null;
 	private TabbedPanel				tabPanelOLS = null;
-	private String 					selectedService = null;
-	
-	private String 					urlRFC59;
-	private String 					timeoutRFC59;
+	private OLSGUIService			selectedService = null;
 	
     @Override
     protected void build(IModel info, Form form) {
         
         SERVICES = new ArrayList<OLSGUIService>();
-        SERVICES.add(new OLSGUIService("1", "OLSGUIService.geocoding", this));
-        SERVICES.add(new OLSGUIService("2", "OLSGUIService.reverseGeocoding", this));
-        SERVICES.add(new OLSGUIService("3", "OLSGUIService.routingNavigation", this));
+        SERVICES.add(new OLSGUIService(OLSService.GEOCODING, "OLSGUIService.geocoding", this));
+        SERVICES.add(new OLSGUIService(OLSService.REVERSE_GEOCODING, "OLSGUIService.reverseGeocoding", this));
+        SERVICES.add(new OLSGUIService(OLSService.ROUTING_NAVIGATION, "OLSGUIService.routingNavigation", this));
         
-        ServiceDropDownChoice listServices = new ServiceDropDownChoice("service", new PropertyModel<String>(this, "selectedService"), SERVICES, form);
+//        ChoiceRenderer cRenderer = new ChoiceRenderer("descriptionKey", "code");
+        ServiceDropDownChoice listServices = new ServiceDropDownChoice("service", new PropertyModel<OLSGUIService>(this, "selectedService"), SERVICES,form);
 		form.add(listServices);
 
 		if(listServices.getSelectedService() == null){
-			//Do nothing - non visualizzare il tab panel
 			if(tabsOLS == null){
 				tabsOLS = new ArrayList<ITab>();
 			}
 			tabPanelOLS = new TabbedPanel("tabList", tabsOLS);
 			tabPanelOLS.setVisible(false);
 			form.add(tabPanelOLS);
-		}else{
-		
-	    	tabsOLS = new ArrayList<ITab>();
-	        //Add the tab RFC59
-	    	
-	    	tabsOLS.add(new AbstractTab(new Model<String>("RFC59")) {
-				
-				@Override
-				public Panel getPanel(String panelId) {
-					return new RFCP59Panel(panelId);
-				}
-			});
-	        
-	    	//Add the tab SOLR
-	    	tabsOLS.add(new AbstractTab(new Model<String>("SOLR")) {
-				
-				@Override
-				public Panel getPanel(String panelId) {
-					return new SOLRPanel(panelId);
-				}
-			});
-	    	
-	    	//Add the tab OTP
-	    	tabsOLS.add(new AbstractTab(new Model<String>("OTP")) {
-				
-				@Override
-				public Panel getPanel(String panelId) {
-					return new OTPPanel(panelId);
-				}
-			});
-	    	
-	    	form.remove(tabPanelOLS);
-	        form.add(new TabbedPanel("tabList", tabsOLS));
 		}
+		
     }
 
     @Override
@@ -145,88 +122,12 @@ public class OLSAdminPage extends BaseServiceAdminPage<OLSInfo> {
     protected String getServiceName() {
         return "OLS";
     }
-    
-    /**
-     * RFC59 tabPanel
-     *
-     */
-    private static class RFCP59Panel extends Panel{
-    	private String urlRFC59;
-    	private String timeoutRFC59;
-    	
-    	public RFCP59Panel(String id){
-    		super(id);
-    		add(new TextField("urlRFC59",new PropertyModel(this,"urlRFC59")));
-    		add(new TextField("timeoutRFC59",new PropertyModel(this,"timeoutRFC59")));
-    	}
 
-		public String getUrlRFC59() {
-			return urlRFC59;
-		}
-
-		public void setUrlRFC59(String urlRFC59) {
-			this.urlRFC59 = urlRFC59;
-		}
-
-		public String getTimeoutRFC59() {
-			return timeoutRFC59;
-		}
-
-		public void setTimeoutRFC59(String timeoutRFC59) {
-			this.timeoutRFC59 = timeoutRFC59;
-		}
-    	
-    };
-    
-    /**
-     * SOLR tabPanel
-     *
-     */
-    private static class SOLRPanel extends Panel{
-    	public SOLRPanel(String id){
-    		super(id);
-    	}
-    };
-    
-    /**
-     * OTP tabPanel
-     *
-     */
-    private static class OTPPanel extends Panel{
-    	public OTPPanel(String id){
-    		super(id);
-    	}
-    }
-
-	public String getUrlRFC59() {
-		return urlRFC59;
-	}
-
-	public void setUrlRFC59(String urlRFC59) {
-		this.urlRFC59 = urlRFC59;
-	}
-
-	public String getTimeoutRFC59() {
-		return timeoutRFC59;
-	}
-
-	public void setTimeoutRFC59(String timeoutRFC59) {
-		this.timeoutRFC59 = timeoutRFC59;
-	}
-
-	public TabbedPanel getTabPanelOLS() {
-		return tabPanelOLS;
-	}
-
-	public void setTabPanelOLS(TabbedPanel tabPanelOLS) {
-		this.tabPanelOLS = tabPanelOLS;
-	}
-
-	public String getSelectedService() {
+	public OLSGUIService getSelectedService() {
 		return selectedService;
 	}
 
-	public void setSelectedService(String selectedService) {
+	public void setSelectedService(OLSGUIService selectedService) {
 		this.selectedService = selectedService;
 	}
 	
