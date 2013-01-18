@@ -1,7 +1,7 @@
-package it.phoops.geoserver.ols.geocoding.component;
+package it.phoops.geoserver.ols.geocoding.rfc59.component;
 
 
-import it.phoops.geoserver.ols.geocoding.rfc59.RFC59ServiceProvider.Algorithm;
+import it.phoops.geoserver.ols.geocoding.rfc59.Algorithm;
 
 import java.io.Serializable;
 import java.util.ArrayList;
