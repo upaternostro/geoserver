@@ -905,6 +905,21 @@
       <version>${project.version}</version>
     </dependency>
     <dependency>
+      <groupId>org.geoserver</groupId>
+      <artifactId>ols-SOLR</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.geoserver</groupId>
+      <artifactId>ols-pgRouting</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.geoserver</groupId>
+      <artifactId>ols-OTP</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
       <groupId>org.geoserver.web</groupId>
       <artifactId>web-ols</artifactId>
       <version>${project.version}</version>
