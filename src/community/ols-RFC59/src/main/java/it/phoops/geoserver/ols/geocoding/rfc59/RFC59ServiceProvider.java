@@ -534,9 +534,9 @@ public class RFC59ServiceProvider implements GeocodingServiceProvider {
 	}
 
 	@Override
-	public Boolean setPropertiesTab(ITab rfc59Tab) {
+	public void setPropertiesTab(ITab rfc59Tab) {
 		((RFC59Tab)rfc59Tab).setUrlRFC59(this.getEndpointAddress());
-		return null;
+		((RFC59Tab)rfc59Tab).setTimeoutRFC59(this.getTimeout());
 	}
 	
 	

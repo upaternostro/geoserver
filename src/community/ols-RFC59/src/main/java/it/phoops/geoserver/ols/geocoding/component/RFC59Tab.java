@@ -94,7 +94,9 @@ public class RFC59Tab extends AbstractTab{
 		instancePanel.setUrlRFC59(urlRFC59);
 		instancePanel.setTimeoutRFC59(timeoutRFC59);
 		instancePanel.setAlgorithmList(this.algorithmList);
+		instancePanel.setTimeoutRFC59(this.timeoutRFC59);
 		instancePanel.add(new AlgorithmDropDownChoise("algorithm", new PropertyModel<OLSAlgorithmType>(this, "selectedAlgorithm"), algorithmList));
+		this.setSelectedAlgorithm(new OLSAlgorithmType(Algorithm.FUZZY_QUERIES, "OLSAlgorithmType.fuzzy"));
 		
 		return instancePanel;
 	}
