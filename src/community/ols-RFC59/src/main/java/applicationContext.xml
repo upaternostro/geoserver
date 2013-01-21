@@ -10,5 +10,5 @@
        <property name="endpointAddress" value="http://webtrial.regione.toscana.it/normaws/Musume.jws?wsdl" />
        <property name="algorithm" value="1" />
        <property name="timeout" value="60000" />
-       </bean>
+    </bean>
 </beans>

@@ -102,13 +102,10 @@ public class OLSAdminPage extends BaseServiceAdminPage<OLSInfo> {
         SERVICES.add(new OLSGUIService(OLSService.REVERSE_GEOCODING, "OLSGUIService.reverseGeocoding", this));
         SERVICES.add(new OLSGUIService(OLSService.ROUTING_NAVIGATION, "OLSGUIService.routingNavigation", this));
         
-//        ChoiceRenderer cRenderer = new ChoiceRenderer("descriptionKey", "code");
         
         ServiceDropDownChoice listServices = new ServiceDropDownChoice("service", new PropertyModel<OLSGUIService>(this, "selectedService"), SERVICES,form);
         
 		form.add(listServices);
-		TextField prova = new TextField("prova");
-		form.add(prova);
 
 		if(listServices.getSelectedService() == null){
 			if(tabsOLS == null){
@@ -118,20 +115,6 @@ public class OLSAdminPage extends BaseServiceAdminPage<OLSInfo> {
 			tabPanelOLS.setVisible(false);
 			form.add(tabPanelOLS);
 		}
-		
-//		 form.remove("citeCompliant");
-//		 SubmitLink submit = new SubmitLink("submit",new StringResourceModel( "save", (Component)null, null) ) {
-//			@Override
-//			public void onSubmit() {
-//				try {
-//					System.out.println("Fatta la COMMIT");
-//				} catch (Exception e) {
-//					error(e);
-//				}
-//			}
-//		 };
-//		 
-//		 form.add(submit);
 		
     }
 

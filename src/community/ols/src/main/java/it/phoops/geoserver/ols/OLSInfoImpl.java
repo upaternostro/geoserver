@@ -14,12 +14,12 @@ import org.geoserver.config.impl.ServiceInfoImpl;
  */
 public class OLSInfoImpl extends ServiceInfoImpl implements OLSInfo {
     private Map<OLSService,OLSServiceProvider>  servicesProviders = new HashMap<OLSService,OLSServiceProvider>();
-    String prova = "prova";
-    String service = "";
     
     @Override
     public OLSServiceProvider getServiceProvider(OLSService service) {
-        return servicesProviders.get(service);
+    	if(servicesProviders == null)
+			servicesProviders = new HashMap<OLSService,OLSServiceProvider>();
+    	return servicesProviders.get(service);
     }
 
     @Override
@@ -28,25 +28,4 @@ public class OLSInfoImpl extends ServiceInfoImpl implements OLSInfo {
 			servicesProviders = new HashMap<OLSService,OLSServiceProvider>();
         servicesProviders.put(service, provider);
     }
-
-	@Override
-	public String getProva() {
-		return this.prova;
-	}
-
-	@Override
-	public void setProva(String prova) {
-		this.prova = prova;
-	}
-	
-	@Override
-	public String getService() {
-		return this.service;
-	}
-
-	@Override
-	public void setService(String service) {
-		this.service = service;
-	}
-    
 }

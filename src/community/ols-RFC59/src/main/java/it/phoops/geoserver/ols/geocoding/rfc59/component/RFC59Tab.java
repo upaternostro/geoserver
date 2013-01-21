@@ -15,6 +15,11 @@ import org.apache.wicket.markup.html.form.TextField;
 import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.PropertyModel;
+import org.geoserver.config.ConfigurationListener;
+import org.geoserver.config.GeoServerInfo;
+import org.geoserver.config.LoggingInfo;
+import org.geoserver.config.ServiceInfo;
+import org.geoserver.config.SettingsInfo;
 
 public class RFC59Tab extends AbstractTab{
 
@@ -23,6 +28,7 @@ public class RFC59Tab extends AbstractTab{
 	private RFC59Panel 							instancePanel;
 	private List<OLSAlgorithmType>				algorithmList = null;
 	private OLSAlgorithmType 					selectedAlgorithm;
+	private RFC59Tab							instanceTabRFC59 = null;
 	
 	public class OLSAlgorithmType implements Serializable {
 		private Algorithm 			algorithm;
@@ -139,6 +145,8 @@ public class RFC59Tab extends AbstractTab{
     }
 
 	public String getUrlRFC59() {
+		if(instancePanel != null)
+			return instancePanel.getUrlRFC59();
 		return urlRFC59;
 	}
 
@@ -150,6 +158,8 @@ public class RFC59Tab extends AbstractTab{
 	}
 
 	public String getTimeoutRFC59() {
+		if(instancePanel != null)
+			return instancePanel.getTimeoutRFC59();
 		return timeoutRFC59;
 	}
 
@@ -166,7 +176,5 @@ public class RFC59Tab extends AbstractTab{
 
 	public void setSelectedAlgorithm(OLSAlgorithmType selectedAlgorithm) {
 		this.selectedAlgorithm = selectedAlgorithm;
-	};
-    
-
+	}
 }

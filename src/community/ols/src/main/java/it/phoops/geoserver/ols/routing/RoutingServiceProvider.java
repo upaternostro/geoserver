@@ -1,7 +1,7 @@
 package it.phoops.geoserver.ols.routing;
 
-import it.phoops.geoserver.ols.OLSServiceProviderGUI;
+import it.phoops.geoserver.ols.OLSServiceProvider;
 
-public interface RoutingServiceProvider extends OLSServiceProviderGUI {
+public interface RoutingServiceProvider extends OLSServiceProvider {
 
 }
