@@ -1,10 +1,9 @@
 package it.phoops.geoserver.ols.web.component;
 
 import it.phoops.geoserver.ols.OLS;
+import it.phoops.geoserver.ols.OLSAbstractServiceProvider;
 import it.phoops.geoserver.ols.OLSInfo;
 import it.phoops.geoserver.ols.OLSService;
-import it.phoops.geoserver.ols.OLSServiceProvider;
-import it.phoops.geoserver.ols.OLSServiceProviderGUI;
 import it.phoops.geoserver.ols.util.ApplicationContextUtil;
 import it.phoops.geoserver.ols.web.OLSAdminPage.OLSGUIService;
 
@@ -14,7 +13,6 @@ import java.util.Map;
 
 import org.apache.wicket.extensions.markup.html.tabs.ITab;
 import org.apache.wicket.extensions.markup.html.tabs.TabbedPanel;
-import org.apache.wicket.markup.html.form.ChoiceRenderer;
 import org.apache.wicket.markup.html.form.DropDownChoice;
 import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.markup.html.panel.Panel;
@@ -70,12 +68,18 @@ public class ServiceDropDownChoice extends DropDownChoice<OLSGUIService>{
     	OLS ols = OLS.get();
     	GeoServer gs = ols.getGeoServer();
     	OLSInfo	olsInfo = gs.getService(OLSInfo.class);
-    	OLSServiceProvider	activeProvider = olsInfo.getServiceProvider(selectedService);
+    	OLSAbstractServiceProvider	activeProvider = (OLSAbstractServiceProvider)olsInfo.getServiceProvider(selectedService);
+    	
+    	for (Object listener : gs.getListeners().toArray()) {
+    	    if (listener instanceof OLSAbstractServiceProvider) {
+    	        gs.removeListener((OLSAbstractServiceProvider)listener);
+    	    }
+    	}
     	
     	//Choose the correct beans
-   		Map<String,OLSServiceProviderGUI>    beans = appContext.getBeansOfType(OLSServiceProviderGUI.class);
+   		Map<String,OLSAbstractServiceProvider>    beans = appContext.getBeansOfType(OLSAbstractServiceProvider.class);
     	
-   		OLSServiceProviderGUI                provider = null;
+   		OLSAbstractServiceProvider                provider = null;
         
    		List<ITab> tabsOLS = new ArrayList<ITab>();
    		
@@ -86,12 +90,14 @@ public class ServiceDropDownChoice extends DropDownChoice<OLSGUIService>{
             System.out.println("Service Type : " + provider.getServiceType());
             if(provider.getServiceType() == selectedService){
             	if (activeProvider != null) {
-            		if (activeProvider instanceof OLSServiceProviderGUI && provider.getClass().equals(activeProvider.getClass())) {
-            			provider = (OLSServiceProviderGUI)activeProvider;
+            		if (activeProvider instanceof OLSAbstractServiceProvider && provider.getClass().equals(activeProvider.getClass())) {
+            			provider = (OLSAbstractServiceProvider)activeProvider;
+                                gs.addListener(provider);
             		}
             	} else {
             		olsInfo.setServiceProvider(selectedService, provider);
             		activeProvider = provider;
+                        gs.addListener(provider);
             	}
             	ITab tab = provider.getTab();
             	provider.setPropertiesTab(tab);
