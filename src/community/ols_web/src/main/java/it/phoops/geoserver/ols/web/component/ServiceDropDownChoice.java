@@ -1,6 +1,9 @@
 package it.phoops.geoserver.ols.web.component;
 
+import it.phoops.geoserver.ols.OLS;
+import it.phoops.geoserver.ols.OLSInfo;
 import it.phoops.geoserver.ols.OLSService;
+import it.phoops.geoserver.ols.OLSServiceProvider;
 import it.phoops.geoserver.ols.OLSServiceProviderGUI;
 import it.phoops.geoserver.ols.util.ApplicationContextUtil;
 import it.phoops.geoserver.ols.web.OLSAdminPage.OLSGUIService;
@@ -9,15 +12,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.wicket.extensions.markup.html.tabs.AbstractTab;
 import org.apache.wicket.extensions.markup.html.tabs.ITab;
 import org.apache.wicket.extensions.markup.html.tabs.TabbedPanel;
 import org.apache.wicket.markup.html.form.ChoiceRenderer;
 import org.apache.wicket.markup.html.form.DropDownChoice;
 import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.markup.html.panel.Panel;
-import org.apache.wicket.model.Model;
 import org.apache.wicket.model.PropertyModel;
+import org.geoserver.config.GeoServer;
 import org.springframework.context.ApplicationContext;
 
 /**
@@ -36,12 +38,6 @@ public class ServiceDropDownChoice extends DropDownChoice<OLSGUIService>{
 			this.form = form;
 			this.displayData = displayData;
 	}
-	
-	public ServiceDropDownChoice(String id, PropertyModel<OLSGUIService> model, List<OLSGUIService> displayData, ChoiceRenderer cRenderer,Form form) {
-		super(id,model,displayData, cRenderer);
-		this.form = form;
-		this.displayData = displayData;
-}
 	
 	@Override
 	protected void onSelectionChanged(OLSGUIService newSelection) {
@@ -71,6 +67,11 @@ public class ServiceDropDownChoice extends DropDownChoice<OLSGUIService>{
     	
     	OLSService selectedService = getSelectedService().getService();
     	
+    	OLS ols = OLS.get();
+    	GeoServer gs = ols.getGeoServer();
+    	OLSInfo	olsInfo = gs.getService(OLSInfo.class);
+    	OLSServiceProvider	activeProvider = olsInfo.getServiceProvider(selectedService);
+    	
     	//Choose the correct beans
    		Map<String,OLSServiceProviderGUI>    beans = appContext.getBeansOfType(OLSServiceProviderGUI.class);
     	
@@ -84,31 +85,23 @@ public class ServiceDropDownChoice extends DropDownChoice<OLSGUIService>{
             System.out.println(beanName + ": " + provider);
             System.out.println("Service Type : " + provider.getServiceType());
             if(provider.getServiceType() == selectedService){
+            	if (activeProvider != null) {
+            		if (activeProvider instanceof OLSServiceProviderGUI && provider.getClass().equals(activeProvider.getClass())) {
+            			provider = (OLSServiceProviderGUI)activeProvider;
+            		}
+            	} else {
+            		olsInfo.setServiceProvider(selectedService, provider);
+            		activeProvider = provider;
+            	}
             	ITab tab = provider.getTab();
             	provider.setPropertiesTab(tab);
             	tabsOLS.add(tab);
-//            }else if(provider.getServiceType() == selectedService){
-//            	//Add the tab SOLR
-//            	tabsOLS.add(new AbstractTab(new Model<String>("SOLR")) {
-//        			
-//        			@Override
-//        			public Panel getPanel(String panelId) {
-//        				return new SOLRPanel(panelId);
-//        			}
-//        		});
             }
         }
     	
     	
     	form.remove("tabList");
-//    	TabbedPanel tabPanel = new TabbedPanel("tabList", tabsOLS);
-//    	if(tabsOLS.size() == 0){
-//    		tabPanel.setVisible(Boolean.FALSE);
-//    	}else{
-//    		tabPanel.setVisible(Boolean.TRUE);
-//    	}
         form.add(new TabbedPanel("tabList", tabsOLS));	
-        
 	}
 	
 	
@@ -148,14 +141,4 @@ public class ServiceDropDownChoice extends DropDownChoice<OLSGUIService>{
 	public void setTimeoutRFC59(String timeoutRFC59) {
 		this.timeoutRFC59 = timeoutRFC59;
 	}
-	
-//	private String findKeyServiceSelected(String serviceSelected){
-//		for (OLSGUIService element : this.getChoices()) {
-//			if(element.toString().equalsIgnoreCase(serviceSelected)){
-//				return element.getCode();
-//			}
-//		}
-//		return null;
-//	}
-
 }

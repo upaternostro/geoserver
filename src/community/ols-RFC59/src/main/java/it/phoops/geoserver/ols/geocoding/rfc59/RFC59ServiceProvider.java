@@ -2,9 +2,12 @@ package it.phoops.geoserver.ols.geocoding.rfc59;
 
 import it.phoops.geoserver.ols.OLS;
 import it.phoops.geoserver.ols.OLSException;
+import it.phoops.geoserver.ols.OLSInfo;
 import it.phoops.geoserver.ols.OLSService;
+import it.phoops.geoserver.ols.OLSServiceProvider;
 import it.phoops.geoserver.ols.geocoding.GeocodingServiceProvider;
 import it.phoops.geoserver.ols.geocoding.rfc59.component.RFC59Tab;
+import it.phoops.geoserver.ols.geocoding.rfc59.component.RFC59TabFactory;
 import it.toscana.regione.normaws.AmbiguitaIndItem;
 import it.toscana.regione.normaws.DatiGeoreferenziazioneInd;
 import it.toscana.regione.normaws.DatiNormalizzazioneInd;
@@ -14,6 +17,8 @@ import it.toscana.regione.normaws.MusumeServiceLocator;
 import it.toscana.regione.normaws.MusumeSoapBindingStub;
 import it.toscana.regione.normaws.RispostaNormalizzataType;
 
+import java.io.File;
+import java.io.IOException;
 import java.math.BigInteger;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -43,12 +48,23 @@ import net.opengis.www.xls.StreetAddress;
 import org.apache.wicket.extensions.markup.html.tabs.ITab;
 import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.ResourceModel;
+import org.geoserver.catalog.WorkspaceInfo;
+import org.geoserver.config.ConfigurationListener;
+import org.geoserver.config.GeoServer;
+import org.geoserver.config.GeoServerInfo;
+import org.geoserver.config.LoggingInfo;
+import org.geoserver.config.ServiceInfo;
+import org.geoserver.config.SettingsInfo;
+import org.geoserver.config.util.XStreamServiceLoader;
+import org.geoserver.platform.GeoServerExtensions;
 
-public class RFC59ServiceProvider implements GeocodingServiceProvider {
+public class RFC59ServiceProvider implements GeocodingServiceProvider, ConfigurationListener {
     // FIXME: to be removed!!!
     // The selected service provider must be set via Configuration GUI
     public RFC59ServiceProvider() {
-        OLS.get().getServiceInfo().setServiceProvider(OLSService.GEOCODING, this);
+//        OLS.get().getServiceInfo().setServiceProvider(OLSService.GEOCODING, this);
+        OLS ols = OLS.get();
+        ols.getGeoServer().addListener(this);
     }
     
     public static final DataSource DATA_SOURCE = DataSource.REGIONE_TOSCANA;
@@ -457,13 +473,93 @@ public class RFC59ServiceProvider implements GeocodingServiceProvider {
 	@Override
 	public ITab getTab() {
 		IModel<String> title = new ResourceModel("RFC59	", "RFC59");
-		return new RFC59Tab(title);
+		return RFC59TabFactory.getRFC59TabFactory().getRFC59Tab(title);
 	}
 
 	@Override
 	public void setPropertiesTab(ITab rfc59Tab) {
 		((RFC59Tab)rfc59Tab).setUrlRFC59(this.getEndpointAddress());
 		((RFC59Tab)rfc59Tab).setTimeoutRFC59(this.getTimeout());
+	}
+
+	@Override
+	public void handleGlobalChange(GeoServerInfo global,
+			List<String> propertyNames, List<Object> oldValues,
+			List<Object> newValues) {
+	}
+
+	@Override
+	public void handlePostGlobalChange(GeoServerInfo global) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void handleSettingsAdded(SettingsInfo settings) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void handleSettingsModified(SettingsInfo settings,
+			List<String> propertyNames, List<Object> oldValues,
+			List<Object> newValues) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void handleSettingsPostModified(SettingsInfo settings) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void handleSettingsRemoved(SettingsInfo settings) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void handleLoggingChange(LoggingInfo logging,
+			List<String> propertyNames, List<Object> oldValues,
+			List<Object> newValues) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void handlePostLoggingChange(LoggingInfo logging) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void handleServiceChange(ServiceInfo service,
+			List<String> propertyNames, List<Object> oldValues,
+			List<Object> newValues) {
+		String timeout = ((RFC59Tab)getTab()).getTimeoutRFC59();
+		String url = ((RFC59Tab)getTab()).getUrlRFC59();
+		
+		setEndpointAddress(url);
+		setTimeout(timeout);
+	}
+
+	@Override
+	public void handlePostServiceChange(ServiceInfo service) {
+		
+	}
+
+	@Override
+	public void handleServiceRemove(ServiceInfo service) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void reloaded() {
+		// TODO Auto-generated method stub
+		
 	}
 	
 	
