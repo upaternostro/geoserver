@@ -101,7 +101,7 @@ public class RFC59Tab extends AbstractTab{
 		instancePanel.setTimeoutRFC59(timeoutRFC59);
 		instancePanel.setAlgorithmList(this.algorithmList);
 		instancePanel.add(new AlgorithmDropDownChoise("algorithm", new PropertyModel<OLSAlgorithmType>(this, "selectedAlgorithm"), algorithmList));
-		this.setSelectedAlgorithm(new OLSAlgorithmType(Algorithm.FUZZY_QUERIES, "OLSAlgorithmType.fuzzy"));
+		this.setSelectedAlgorithm(selectedAlgorithm);
 		
 		return instancePanel;
 	}
@@ -109,6 +109,7 @@ public class RFC59Tab extends AbstractTab{
 	private static class RFC59Panel extends Panel{
     	private String 							urlRFC59;
     	private String 							timeoutRFC59;
+    	private OLSAlgorithmType				selectedAlgorithm;
     	private List<OLSAlgorithmType>			algorithmList = null;
     	
     	
@@ -141,7 +142,14 @@ public class RFC59Tab extends AbstractTab{
 		public void setAlgorithmList(List<OLSAlgorithmType> algorithmList) {
 			this.algorithmList = algorithmList;
 		}
-    	
+
+		public OLSAlgorithmType getSelectedAlgorithm() {
+			return selectedAlgorithm;
+		}
+
+		public void setSelectedAlgorithm(OLSAlgorithmType selectedAlgorithm) {
+			this.selectedAlgorithm = selectedAlgorithm;
+		}
     }
 
 	public String getUrlRFC59() {
@@ -171,10 +179,16 @@ public class RFC59Tab extends AbstractTab{
 	}
 
 	public OLSAlgorithmType getSelectedAlgorithm() {
+		if(instancePanel != null){
+			return instancePanel.getSelectedAlgorithm();
+		}
 		return selectedAlgorithm;
 	}
 
 	public void setSelectedAlgorithm(OLSAlgorithmType selectedAlgorithm) {
+		if(instancePanel != null){
+			instancePanel.setSelectedAlgorithm(selectedAlgorithm);
+		}
 		this.selectedAlgorithm = selectedAlgorithm;
 	}
 }
