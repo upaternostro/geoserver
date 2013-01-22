@@ -480,6 +480,8 @@ public class RFC59ServiceProvider implements GeocodingServiceProvider, Configura
 	public void setPropertiesTab(ITab rfc59Tab) {
 		((RFC59Tab)rfc59Tab).setUrlRFC59(this.getEndpointAddress());
 		((RFC59Tab)rfc59Tab).setTimeoutRFC59(this.getTimeout());
+		String algorithmString = this.getAlgorithm();
+//		((RFC59Tab)rfc59Tab).setSelectedAlgorithm();
 	}
 
 	@Override
@@ -540,9 +542,11 @@ public class RFC59ServiceProvider implements GeocodingServiceProvider, Configura
 			List<Object> newValues) {
 		String timeout = ((RFC59Tab)getTab()).getTimeoutRFC59();
 		String url = ((RFC59Tab)getTab()).getUrlRFC59();
+		String algorithm = ((RFC59Tab)getTab()).getSelectedAlgorithm().getCode();
 		
 		setEndpointAddress(url);
 		setTimeout(timeout);
+		setAlgorithm(algorithm);
 	}
 
 	@Override
