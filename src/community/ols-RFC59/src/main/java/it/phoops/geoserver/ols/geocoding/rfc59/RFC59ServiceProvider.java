@@ -56,7 +56,12 @@ public class RFC59ServiceProvider extends OLSAbstractServiceProvider implements 
     public static final String  PN_TIMEOUT = "OLS.serviceProvider.geocoding.rfc59.service.timeout";
     
     private String      descriptionKey;
-    private Properties  properties = new Properties();;
+    private Properties  properties = new Properties();
+    
+    public RFC59ServiceProvider() {
+        super();
+        System.out.println("----- INIT Service Provide RFC59");
+    }
 
     @Override
     public String getDescriptionKey() {
