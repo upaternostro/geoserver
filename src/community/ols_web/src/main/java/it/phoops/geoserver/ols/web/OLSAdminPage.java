@@ -105,16 +105,16 @@ public class OLSAdminPage extends BaseServiceAdminPage<OLSInfo> {
         
         ServiceDropDownChoice listServices = new ServiceDropDownChoice("service", new PropertyModel<OLSGUIService>(this, "selectedService"), SERVICES,form);
         
-		form.add(listServices);
+	form.add(listServices);
 
-		if(listServices.getSelectedService() == null){
-			if(tabsOLS == null){
-				tabsOLS = new ArrayList<ITab>();
-			}
-			tabPanelOLS = new TabbedPanel("tabList", tabsOLS);
-			tabPanelOLS.setVisible(false);
-			form.add(tabPanelOLS);
-		}
+	if(listServices.getSelectedService() == null){
+	    if(tabsOLS == null){
+		tabsOLS = new ArrayList<ITab>();
+	    }
+	    tabPanelOLS = new TabbedPanel("tabList", tabsOLS);
+	    tabPanelOLS.setVisible(false);
+	    form.add(tabPanelOLS);
+	}
 		
     }
 

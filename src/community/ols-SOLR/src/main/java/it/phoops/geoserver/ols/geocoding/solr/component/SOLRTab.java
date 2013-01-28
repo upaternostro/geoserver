@@ -12,15 +12,19 @@ public class SOLRTab extends AbstractTab{
 	
 	
 	public String getUrlSOLR() {
-		return urlSOLR;
+	    if(instancePanel != null)
+	        return instancePanel.getUrlSOLR();
+	    return urlSOLR;
 	}
 
 	public void setUrlSOLR(String urlSOLR) {
-		this.urlSOLR = urlSOLR;
+	    if(instancePanel != null)
+	        instancePanel.setUrlSOLR(urlSOLR);
+	    this.urlSOLR = urlSOLR;
 	}
 	
 	public SOLR9Panel getInstancePanel() {
-		return instancePanel;
+	    return instancePanel;
 	}
 
 	public void setInstancePanel(SOLR9Panel instancePanel) {
@@ -29,32 +33,29 @@ public class SOLRTab extends AbstractTab{
 
 	@Override
 	public Panel getPanel(String panelId) {
-		instancePanel = new SOLR9Panel(panelId);
-		return instancePanel;
+	    instancePanel = new SOLR9Panel(panelId);
+	    instancePanel.setUrlSOLR(urlSOLR);
+	    return instancePanel;
 	}
 
 	public SOLRTab(IModel<String> title) {
-		super(title);
-//		algorithmList = new ArrayList<OLSAlgorithmType>();
-//		algorithmList.add(new OLSAlgorithmType(Algorithm.FUZZY_QUERIES, "OLSAlgorithmType.fuzzy"));
-//		algorithmList.add(new OLSAlgorithmType(Algorithm.RADIX, "OLSAlgorithmType.radix"));
-//		algorithmList.add(new OLSAlgorithmType(Algorithm.TERM_QUERIES, "OLSAlgorithmType.term"));
+	    super(title);
 	}
 	
 	private static class SOLR9Panel extends Panel{
-		private String 							urlSOLR;
+	    private String 	urlSOLR;
 		
-		public SOLR9Panel(String id){
-    		super(id);
-    		add(new TextField("urlSOLR",new PropertyModel(this,"urlSOLR")));
-    	}
+	    public SOLR9Panel(String id){
+	        super(id);
+	        add(new TextField("urlSOLR",new PropertyModel(this,"urlSOLR")));
+    	    }
 
-		public String getUrlSOLR() {
-			return urlSOLR;
-		}
+	    public String getUrlSOLR() {
+	        return urlSOLR;
+	    }
 
-		public void setUrlSOLR(String urlSOLR) {
-			this.urlSOLR = urlSOLR;
-		}
+	    public void setUrlSOLR(String urlSOLR) {
+	        this.urlSOLR = urlSOLR;
+	    }
 	}
 }

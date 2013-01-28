@@ -57,11 +57,6 @@ public class RFC59ServiceProvider extends OLSAbstractServiceProvider implements 
     
     private String      descriptionKey;
     private Properties  properties = new Properties();
-    
-    public RFC59ServiceProvider() {
-        super();
-        System.out.println("----- INIT Service Provide RFC59");
-    }
 
     @Override
     public String getDescriptionKey() {
