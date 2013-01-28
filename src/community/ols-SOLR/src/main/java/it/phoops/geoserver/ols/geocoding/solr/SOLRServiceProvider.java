@@ -26,11 +26,6 @@ public class SOLRServiceProvider extends OLSAbstractServiceProvider implements G
 	
 	private String      descriptionKey;
 	private Properties  properties = new Properties();
-    
-        public SOLRServiceProvider() {
-            super();
-            System.out.println("----- INIT SOLR Service Provider");
-        }
 
         @Override
         public String getDescriptionKey() {

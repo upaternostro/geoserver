@@ -26,62 +26,62 @@ import org.springframework.context.ApplicationContext;
  */
 public class ServiceDropDownChoice extends DropDownChoice<OLSGUIService>{
 	private OLSGUIService			selectedService = null;
-	private Form					form;
-	private String 					urlRFC59;
-	private String 					timeoutRFC59;
+	private Form				form;
+	private String 				urlRFC59;
+	private String 				timeoutRFC59;
 	private List<OLSGUIService>		displayData;
 
 	public ServiceDropDownChoice(String id, PropertyModel<OLSGUIService> model, List<OLSGUIService> displayData, Form form) {
-			super(id,model,displayData);
-			this.form = form;
-			this.displayData = displayData;
+	    super(id,model,displayData);
+	    this.form = form;
+	    this.displayData = displayData;
 	}
 	
 	@Override
 	protected void onSelectionChanged(OLSGUIService newSelection) {
-		System.out.println("onSelectionChanged: "+ newSelection);
-		super.onSelectionChanged(newSelection);
-		setSelectedService(newSelection);
-		showPanelOLS(form);
+	    System.out.println("onSelectionChanged: "+ newSelection);
+	    super.onSelectionChanged(newSelection);
+	    setSelectedService(newSelection);
+	    showPanelOLS(form);
 	}
 
 	@Override
 	protected boolean wantOnSelectionChangedNotifications() {
-		return true;
+	    return true;
 	}
 
 	public OLSGUIService getSelectedService() {
-		return selectedService;
+	    return selectedService;
 	}
 
 
 	public void setSelectedService(OLSGUIService selectedService) {
-		this.selectedService = selectedService;
+	    this.selectedService = selectedService;
 	}
 	
 	private void showPanelOLS(Form form){
-		ApplicationContextUtil appContextUtil = ApplicationContextUtil.getIstance();
-    	ApplicationContext appContext = appContextUtil.getAppContext();
+	    ApplicationContextUtil appContextUtil = ApplicationContextUtil.getIstance();
+    	    ApplicationContext appContext = appContextUtil.getAppContext();
     	
-    	OLSService selectedService = getSelectedService().getService();
+    	    OLSService selectedService = getSelectedService().getService();
     	
-    	OLS ols = OLS.get();
-    	GeoServer gs = ols.getGeoServer();
-    	OLSInfo	olsInfo = gs.getService(OLSInfo.class);
-    	OLSAbstractServiceProvider	activeProvider = (OLSAbstractServiceProvider)olsInfo.getServiceProvider(selectedService);
+    	    OLS ols = OLS.get();
+    	    GeoServer gs = ols.getGeoServer();
+    	    OLSInfo	olsInfo = gs.getService(OLSInfo.class);
+    	    OLSAbstractServiceProvider	activeProvider = (OLSAbstractServiceProvider)olsInfo.getServiceProvider(selectedService);
     	
-    	for (Object listener : gs.getListeners().toArray()) {
-    	    if (listener instanceof OLSAbstractServiceProvider) {
-    	        gs.removeListener((OLSAbstractServiceProvider)listener);
+    	    for (Object listener : gs.getListeners().toArray()) {
+    	        if (listener instanceof OLSAbstractServiceProvider) {
+    	            gs.removeListener((OLSAbstractServiceProvider)listener);
+    	        }
     	    }
-    	}
     	
     	//Choose the correct beans
-   		Map<String,OLSAbstractServiceProvider>    beans = appContext.getBeansOfType(OLSAbstractServiceProvider.class);
+    	    Map<String,OLSAbstractServiceProvider>    beans = appContext.getBeansOfType(OLSAbstractServiceProvider.class);
     	
-   		OLSAbstractServiceProvider                provider = null;
+    	    OLSAbstractServiceProvider                provider = null;
         
-   		List<ITab> tabsOLS = new ArrayList<ITab>();
+    	    List<ITab> tabsOLS = new ArrayList<ITab>();
    		
         for (String beanName : beans.keySet()) {
         	provider = beans.get(beanName);
@@ -93,6 +93,8 @@ public class ServiceDropDownChoice extends DropDownChoice<OLSGUIService>{
             		if (activeProvider instanceof OLSAbstractServiceProvider && provider.getClass().equals(activeProvider.getClass())) {
             			provider = (OLSAbstractServiceProvider)activeProvider;
                                 gs.addListener(provider);
+            		}else{
+            		    gs.addListener(provider);
             		}
             	} else {
             		olsInfo.setServiceProvider(selectedService, provider);
