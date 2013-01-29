@@ -4,7 +4,8 @@
 <beans>
 	<!-- Service Provider SOLR -->
 	<bean id="solrServiceProvider" class="it.phoops.geoserver.ols.geocoding.solr.SOLRServiceProvider">
+	   <property name="active" value="false" />
 	   <property name="descriptionKey" value="OLS.serviceProvider.geocoding.solr.description" />
-       <property name="endpointAddress" value="http://webtrial.regione.toscana.it/normaws/Musume.jws?wsdl" />
+       <property name="endpointAddress" value="http://lucene.apache.org/solr/" />
     </bean>
 </beans>

@@ -11,9 +11,11 @@ import java.util.List;
 import org.apache.wicket.Application;
 import org.apache.wicket.Component;
 import org.apache.wicket.Localizer;
+import org.apache.wicket.extensions.ajax.markup.html.tabs.AjaxTabbedPanel;
 import org.apache.wicket.extensions.markup.html.tabs.AbstractTab;
 import org.apache.wicket.extensions.markup.html.tabs.ITab;
 import org.apache.wicket.extensions.markup.html.tabs.TabbedPanel;
+import org.apache.wicket.markup.html.WebMarkupContainer;
 import org.apache.wicket.markup.html.form.ChoiceRenderer;
 import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.markup.html.form.SubmitLink;
@@ -89,9 +91,9 @@ public class OLSAdminPage extends BaseServiceAdminPage<OLSInfo> {
 		}
 	}
 	
-	private List<ITab> 				tabsOLS = null;
+	private List<ITab> 			tabsOLS = null;
 	private List<OLSGUIService>		SERVICES = null;
-	private TabbedPanel				tabPanelOLS = null;
+	private TabbedPanel			tabPanelOLS = null;
 	private OLSGUIService			selectedService = null;
 	
     @Override
@@ -111,7 +113,8 @@ public class OLSAdminPage extends BaseServiceAdminPage<OLSInfo> {
 	    if(tabsOLS == null){
 		tabsOLS = new ArrayList<ITab>();
 	    }
-	    tabPanelOLS = new TabbedPanel("tabList", tabsOLS);
+	    tabPanelOLS = new AjaxTabbedPanel("tabList", tabsOLS);
+//	    tabPanelOLS = new TabbedPanel("tabList", tabsOLS);
 	    tabPanelOLS.setVisible(false);
 	    form.add(tabPanelOLS);
 	}
