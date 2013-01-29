@@ -3,7 +3,9 @@ package it.phoops.geoserver.ols.web.component;
 import it.phoops.geoserver.ols.OLS;
 import it.phoops.geoserver.ols.OLSAbstractServiceProvider;
 import it.phoops.geoserver.ols.OLSInfo;
+import it.phoops.geoserver.ols.OLSInfoImpl;
 import it.phoops.geoserver.ols.OLSService;
+import it.phoops.geoserver.ols.OLSServiceProvider;
 import it.phoops.geoserver.ols.util.ApplicationContextUtil;
 import it.phoops.geoserver.ols.web.OLSAdminPage.OLSGUIService;
 
@@ -59,6 +61,17 @@ public class ServiceDropDownChoice extends DropDownChoice<OLSGUIService>{
 	    this.selectedService = selectedService;
 	}
 	
+	private OLSServiceProvider findServiceProvider(OLSInfo olsInfo, OLSService service) {
+	        OLSServiceProvider serviceFound = null;
+	        for (OLSServiceProvider serviceProvider : olsInfo.getServiceProvider()) {
+	           if(serviceProvider.getServiceType() == service){
+	               serviceFound = serviceProvider;
+	               break;
+	           }
+	        }
+	        return serviceFound;
+	}
+	
 	private void showPanelOLS(Form form){
 	    ApplicationContextUtil appContextUtil = ApplicationContextUtil.getIstance();
     	    ApplicationContext appContext = appContextUtil.getAppContext();
@@ -67,8 +80,10 @@ public class ServiceDropDownChoice extends DropDownChoice<OLSGUIService>{
     	
     	    OLS ols = OLS.get();
     	    GeoServer gs = ols.getGeoServer();
-    	    OLSInfo	olsInfo = gs.getService(OLSInfo.class);
-    	    OLSAbstractServiceProvider	activeProvider = (OLSAbstractServiceProvider)olsInfo.getServiceProvider(selectedService);
+    	    OLSInfo olsInfo = gs.getService(OLSInfo.class);
+    	    
+    	    //Ricerca del service Provider selezionato
+    	    OLSAbstractServiceProvider	activeProvider = (OLSAbstractServiceProvider)findServiceProvider(olsInfo, selectedService);
     	
     	    for (Object listener : gs.getListeners().toArray()) {
     	        if (listener instanceof OLSAbstractServiceProvider) {
@@ -83,11 +98,9 @@ public class ServiceDropDownChoice extends DropDownChoice<OLSGUIService>{
         
     	    List<ITab> tabsOLS = new ArrayList<ITab>();
    		
-        for (String beanName : beans.keySet()) {
-        	provider = beans.get(beanName);
+    	 for (String beanName : beans.keySet()) {
+            provider = beans.get(beanName);
         	
-            System.out.println(beanName + ": " + provider);
-            System.out.println("Service Type : " + provider.getServiceType());
             if(provider.getServiceType() == selectedService){
             	if (activeProvider != null) {
             		if (activeProvider instanceof OLSAbstractServiceProvider && provider.getClass().equals(activeProvider.getClass())) {
@@ -95,11 +108,20 @@ public class ServiceDropDownChoice extends DropDownChoice<OLSGUIService>{
                                 gs.addListener(provider);
             		}else{
             		    gs.addListener(provider);
+            		    olsInfo.addServiceProvide(provider);
+//            		    olsInfo.setServiceProvider(provider);
             		}
-            	} else {
-            		olsInfo.setServiceProvider(selectedService, provider);
-            		activeProvider = provider;
-                        gs.addListener(provider);
+            	} else if(Boolean.parseBoolean(provider.getProperties().getProperty("PN_ACTIVE_SERVICE"))){
+            	    //Servizio Attivo
+            	    activeProvider = provider;
+            	    olsInfo.addServiceProvide(provider);
+//            	    olsInfo.setServiceProvider(provider);
+            	    gs.addListener(provider);
+            	}else{
+            	    //Servizio non attivo
+            	olsInfo.addServiceProvide(provider);
+//            	    olsInfo.setServiceProvider(provider);
+            	    gs.addListener(provider);
             	}
             	ITab tab = provider.getTab();
             	provider.setPropertiesTab(tab);
@@ -112,17 +134,10 @@ public class ServiceDropDownChoice extends DropDownChoice<OLSGUIService>{
         form.add(new TabbedPanel("tabList", tabsOLS));	
 	}
 	
+	private void handlerProvider(){
+	    
+	}
 	
-	
-    /**
-     * SOLR tabPanel
-     *
-     */
-    private static class SOLRPanel extends Panel{
-    	public SOLRPanel(String id){
-    		super(id);
-    	}
-    };
     
     /**
      * OTP tabPanel

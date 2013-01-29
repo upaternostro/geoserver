@@ -54,6 +54,7 @@ public class RFC59ServiceProvider extends OLSAbstractServiceProvider implements 
     public static final String  PN_ENDPOINT_ADDRESS = "OLS.serviceProvider.geocoding.rfc59.service.endpointAddress";
     public static final String  PN_GEOCODING_ALGORITHM = "OLS.serviceProvider.geocoding.rfc59.algorithm";
     public static final String  PN_TIMEOUT = "OLS.serviceProvider.geocoding.rfc59.service.timeout";
+    public static final String  PN_ACTIVE_SERVICE = "OLS.serviceProvider.geocoding.rfc59.service.active";
     
     private String      descriptionKey;
     private Properties  properties = new Properties();
@@ -90,6 +91,14 @@ public class RFC59ServiceProvider extends OLSAbstractServiceProvider implements 
     public void setTimeout(String timeout) {
         properties.setProperty(PN_TIMEOUT, timeout);
     }
+    
+    public String getActive(){
+        return properties.getProperty(PN_ACTIVE_SERVICE);
+    }
+    
+    public void setActive(String activeService){
+        properties.setProperty(PN_ACTIVE_SERVICE, activeService);
+    }
 
     @Override
     public OLSService getServiceType() {
@@ -111,19 +120,24 @@ public class RFC59ServiceProvider extends OLSAbstractServiceProvider implements 
         public void setPropertiesTab(ITab rfc59Tab) {
                 ((RFC59Tab)rfc59Tab).setUrlRFC59(this.getEndpointAddress());
                 ((RFC59Tab)rfc59Tab).setTimeoutRFC59(this.getTimeout());
-        }
+                Algorithm algorithm = Algorithm.get(this.getAlgorithm());
+                ((RFC59Tab)rfc59Tab).setCodeAlgorithmSelected(Integer.parseInt(algorithm.getCode()));
+                ((RFC59Tab)rfc59Tab).setActiveRFC59(this.getActive());
+       }
 
         @Override
     	public void handleServiceChange(ServiceInfo service,
     			List<String> propertyNames, List<Object> oldValues,
     			List<Object> newValues) {
-    		String timeout = ((RFC59Tab)getTab()).getTimeoutRFC59();
+                String active = ((RFC59Tab)getTab()).getActiveRFC59();
+                String timeout = ((RFC59Tab)getTab()).getTimeoutRFC59();
     		String url = ((RFC59Tab)getTab()).getUrlRFC59();
     		String algorithm = ((RFC59Tab)getTab()).getSelectedAlgorithm().getCode();
     		
     		setEndpointAddress(url);
     		setTimeout(timeout);
     		setAlgorithm(algorithm);
+    		setActive(active);
     	}
 
         
