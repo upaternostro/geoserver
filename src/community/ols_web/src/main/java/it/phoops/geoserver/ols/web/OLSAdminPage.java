@@ -12,21 +12,13 @@ import org.apache.wicket.Application;
 import org.apache.wicket.Component;
 import org.apache.wicket.Localizer;
 import org.apache.wicket.extensions.ajax.markup.html.tabs.AjaxTabbedPanel;
-import org.apache.wicket.extensions.markup.html.tabs.AbstractTab;
 import org.apache.wicket.extensions.markup.html.tabs.ITab;
 import org.apache.wicket.extensions.markup.html.tabs.TabbedPanel;
 import org.apache.wicket.markup.html.WebMarkupContainer;
-import org.apache.wicket.markup.html.form.ChoiceRenderer;
 import org.apache.wicket.markup.html.form.Form;
-import org.apache.wicket.markup.html.form.SubmitLink;
-import org.apache.wicket.markup.html.form.TextField;
-import org.apache.wicket.markup.html.panel.Panel;
-import org.apache.wicket.model.CompoundPropertyModel;
+import org.apache.wicket.markup.html.link.Link;
 import org.apache.wicket.model.IModel;
-import org.apache.wicket.model.Model;
 import org.apache.wicket.model.PropertyModel;
-import org.apache.wicket.model.StringResourceModel;
-import org.apache.wicket.validation.validator.MinimumValidator;
 import org.geoserver.web.services.BaseServiceAdminPage;
 
 /**

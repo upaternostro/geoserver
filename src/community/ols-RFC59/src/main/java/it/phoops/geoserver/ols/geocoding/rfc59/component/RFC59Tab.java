@@ -17,11 +17,6 @@ import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.Model;
 import org.apache.wicket.model.PropertyModel;
-import org.geoserver.config.ConfigurationListener;
-import org.geoserver.config.GeoServerInfo;
-import org.geoserver.config.LoggingInfo;
-import org.geoserver.config.ServiceInfo;
-import org.geoserver.config.SettingsInfo;
 
 public class RFC59Tab extends AbstractTab{
 
@@ -120,7 +115,8 @@ public class RFC59Tab extends AbstractTab{
 	
 	@Override
 	public Panel getPanel(String panelId) {
-		instancePanel = new RFC59Panel(panelId);
+//	        if(instancePanel == null)
+	        instancePanel = new RFC59Panel(panelId);
 		instancePanel.setActiveRFC59(activeRFC59);
 		instancePanel.getCheckBoxRFC59().setModelObject(Boolean.parseBoolean(activeRFC59));
 		instancePanel.setUrlRFC59(urlRFC59);
