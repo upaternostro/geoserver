@@ -114,8 +114,7 @@ public class RFC59ServiceProvider extends OLSAbstractServiceProvider implements 
 
         @Override
         public ITab getTab() {
-                IModel<String> title = new ResourceModel("RFC59 ", "PIPPO");
-//                        new ResourceModel("RFC59 ", "PIPPO");
+                IModel<String> title = new ResourceModel("RFC59 ", "RFC59");
                 return RFC59TabFactory.getRFC59TabFactory().getRFC59Tab(title);
         }
 

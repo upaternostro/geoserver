@@ -8,4 +8,11 @@
 	   <property name="descriptionKey" value="OLS.serviceProvider.geocoding.solr.description" />
        <property name="endpointAddress" value="http://lucene.apache.org/solr/" />
     </bean>
+    
+    <!-- Service Provider Reverse Geocoding SOLR -->
+	<bean id="solrReverseServiceProvider" class="it.phoops.geoserver.ols.reverse.solr.SOLRReverseServiceProvider">
+	   <property name="active" value="false" />
+	   <property name="descriptionKey" value="OLS.serviceProvider.reverse.solr.description" />
+       <property name="endpointAddress" value="http://lucene.apache.org/solr/" />
+    </bean>
 </beans>
