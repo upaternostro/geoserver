@@ -15,5 +15,6 @@ public interface OLSInfo extends ServiceInfo {
         public abstract List<OLSServiceProvider> getServiceProvider();
         public abstract void setServiceProvider(OLSServiceProvider provider);
         public void addServiceProvide(OLSServiceProvider provider);
-//        public abstract OLSServiceProvider findServiceProvider(OLSService service);
+        public OLSServiceProvider findServiceNotActive(OLSAbstractServiceProvider provider, OLSService service);
+        public OLSServiceProvider findServiceActive(OLSService service);
 }
