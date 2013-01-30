@@ -15,6 +15,7 @@ import java.util.Map;
 
 import org.apache.wicket.extensions.markup.html.tabs.ITab;
 import org.apache.wicket.extensions.markup.html.tabs.TabbedPanel;
+import org.apache.wicket.markup.ComponentTag;
 import org.apache.wicket.markup.html.form.DropDownChoice;
 import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.markup.html.panel.Panel;
@@ -29,14 +30,10 @@ import org.springframework.context.ApplicationContext;
 public class ServiceDropDownChoice extends DropDownChoice<OLSGUIService>{
 	private OLSGUIService			selectedService = null;
 	private Form				form;
-	private String 				urlRFC59;
-	private String 				timeoutRFC59;
-	private List<OLSGUIService>		displayData;
 
 	public ServiceDropDownChoice(String id, PropertyModel<OLSGUIService> model, List<OLSGUIService> displayData, Form form) {
 	    super(id,model,displayData);
 	    this.form = form;
-	    this.displayData = displayData;
 	}
 	
 	@Override
@@ -61,17 +58,6 @@ public class ServiceDropDownChoice extends DropDownChoice<OLSGUIService>{
 	    this.selectedService = selectedService;
 	}
 	
-	private OLSServiceProvider findServiceProvider(OLSInfo olsInfo, OLSService service) {
-	        OLSServiceProvider serviceFound = null;
-	        for (OLSServiceProvider serviceProvider : olsInfo.getServiceProvider()) {
-	           if(serviceProvider.getServiceType() == service){
-	               serviceFound = serviceProvider;
-	               break;
-	           }
-	        }
-	        return serviceFound;
-	}
-	
 	private void showPanelOLS(Form form){
 	    ApplicationContextUtil appContextUtil = ApplicationContextUtil.getIstance();
     	    ApplicationContext appContext = appContextUtil.getAppContext();
@@ -82,86 +68,53 @@ public class ServiceDropDownChoice extends DropDownChoice<OLSGUIService>{
     	    GeoServer gs = ols.getGeoServer();
     	    OLSInfo olsInfo = gs.getService(OLSInfo.class);
     	    
-    	    //Ricerca del service Provider selezionato
-    	    OLSAbstractServiceProvider	activeProvider = (OLSAbstractServiceProvider)findServiceProvider(olsInfo, selectedService);
+    	    OLSAbstractServiceProvider     activeProvider = (OLSAbstractServiceProvider)olsInfo.findServiceActive(selectedService);
+    	    OLSAbstractServiceProvider     provider = null;
+            OLSAbstractServiceProvider     notActiveProvider = null;
     	
-    	    for (Object listener : gs.getListeners().toArray()) {
+            //Revome Listener
+            for (Object listener : gs.getListeners().toArray()) {
     	        if (listener instanceof OLSAbstractServiceProvider) {
     	            gs.removeListener((OLSAbstractServiceProvider)listener);
     	        }
     	    }
-    	
-    	//Choose the correct beans
+    	    
+    	    //Choose the correct beans
     	    Map<String,OLSAbstractServiceProvider>    beans = appContext.getBeansOfType(OLSAbstractServiceProvider.class);
-    	
-    	    OLSAbstractServiceProvider                provider = null;
-        
     	    List<ITab> tabsOLS = new ArrayList<ITab>();
-   		
-    	 for (String beanName : beans.keySet()) {
-            provider = beans.get(beanName);
-        	
-            if(provider.getServiceType() == selectedService){
-            	if (activeProvider != null) {
-            		if (activeProvider instanceof OLSAbstractServiceProvider && provider.getClass().equals(activeProvider.getClass())) {
-            			provider = (OLSAbstractServiceProvider)activeProvider;
+
+            for (String beanName : beans.keySet()) {
+                provider = beans.get(beanName);
+
+                if(provider.getServiceType() == selectedService){
+                    if (activeProvider != null) {
+                            if (activeProvider instanceof OLSAbstractServiceProvider && provider.getClass().equals(activeProvider.getClass())) {
+                                    provider = (OLSAbstractServiceProvider)activeProvider;
+                                    gs.addListener(provider);
+                            }else{
+                                notActiveProvider = (OLSAbstractServiceProvider)olsInfo.findServiceNotActive(provider, selectedService);
+                                if(notActiveProvider != null)
+                                    provider = notActiveProvider;
                                 gs.addListener(provider);
-            		}else{
-            		    gs.addListener(provider);
-            		    olsInfo.addServiceProvide(provider);
-//            		    olsInfo.setServiceProvider(provider);
-            		}
-            	} else if(Boolean.parseBoolean(provider.getProperties().getProperty("PN_ACTIVE_SERVICE"))){
-            	    //Servizio Attivo
-            	    activeProvider = provider;
-            	    olsInfo.addServiceProvide(provider);
-//            	    olsInfo.setServiceProvider(provider);
-            	    gs.addListener(provider);
-            	}else{
-            	    //Servizio non attivo
-            	olsInfo.addServiceProvide(provider);
-//            	    olsInfo.setServiceProvider(provider);
-            	    gs.addListener(provider);
-            	}
-            	ITab tab = provider.getTab();
-            	provider.setPropertiesTab(tab);
-            	tabsOLS.add(tab);
+                                olsInfo.addServiceProvide(provider);
+//                                olsInfo.setServiceProvider(provider);
+                            }
+                    } else {
+//                            olsInfo.setServiceProvider(provider);
+                            notActiveProvider = (OLSAbstractServiceProvider)olsInfo.findServiceNotActive(provider, selectedService);
+                            if(notActiveProvider != null)
+                                provider = notActiveProvider;
+                            olsInfo.addServiceProvide(provider);
+//                            activeProvider = provider;
+                            gs.addListener(provider);
+                    }
+                    ITab tab = provider.getTab();
+                    provider.setPropertiesTab(tab);
+                    tabsOLS.add(tab);
+                }
             }
-        }
     	
-    	
-    	form.remove("tabList");
-        form.add(new TabbedPanel("tabList", tabsOLS));	
-	}
-	
-	private void handlerProvider(){
-	    
-	}
-	
-    
-    /**
-     * OTP tabPanel
-     *
-     */
-    private static class OTPPanel extends Panel{
-    	public OTPPanel(String id){
-    		super(id);
-    	}
-    }
-
-	public String getUrlRFC59() {
-		return urlRFC59;
-	}
-
-	public void setUrlRFC59(String urlRFC59) {
-		this.urlRFC59 = urlRFC59;
-	}
-
-	public String getTimeoutRFC59() {
-		return timeoutRFC59;
-	}
-
-	public void setTimeoutRFC59(String timeoutRFC59) {
-		this.timeoutRFC59 = timeoutRFC59;
+            form.remove("tabList");
+            form.add(new TabbedPanel("tabList", tabsOLS));
 	}
 }

@@ -23,7 +23,7 @@ import org.geoserver.config.ServiceInfo;
 public class SOLRServiceProvider extends OLSAbstractServiceProvider implements GeocodingServiceProvider{
 	//Properties Name
 	private static final String  PN_ENDPOINT_ADDRESS = "OLS.serviceProvider.geocoding.solr.service.endpointAddress";
-	private static final String  PN_ACTIVE_SERVICE = "OLS.serviceProvider.geocoding.solr.service.active";
+	private static final String  PN_ACTIVE_SERVICE = "OLS.serviceProvider.service.active";
 	
 	private String      descriptionKey;
 	private Properties  properties = new Properties();

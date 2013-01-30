@@ -54,7 +54,7 @@ public class RFC59ServiceProvider extends OLSAbstractServiceProvider implements 
     public static final String  PN_ENDPOINT_ADDRESS = "OLS.serviceProvider.geocoding.rfc59.service.endpointAddress";
     public static final String  PN_GEOCODING_ALGORITHM = "OLS.serviceProvider.geocoding.rfc59.algorithm";
     public static final String  PN_TIMEOUT = "OLS.serviceProvider.geocoding.rfc59.service.timeout";
-    public static final String  PN_ACTIVE_SERVICE = "OLS.serviceProvider.geocoding.rfc59.service.active";
+    public static final String  PN_ACTIVE_SERVICE = "OLS.serviceProvider.service.active";
     
     private String      descriptionKey;
     private Properties  properties = new Properties();

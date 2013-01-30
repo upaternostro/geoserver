@@ -33,6 +33,46 @@ public class OLSInfoImpl extends ServiceInfoImpl implements OLSInfo {
     
     @Override
     public void addServiceProvide(OLSServiceProvider provider){
-        servicesProviders.add(provider);
+        boolean exist = false;
+        OLSServiceProvider toRemove = null;
+        for (OLSServiceProvider element : servicesProviders) {
+            if(element.getClass() == provider.getClass()){
+                exist = true;
+                toRemove = element;
+                break;
+            }
+        }
+        
+        if(exist){
+           servicesProviders.remove(toRemove);
+           servicesProviders.add(provider);
+        }
+    }
+    
+    @Override
+    public OLSServiceProvider findServiceNotActive(OLSAbstractServiceProvider provider, OLSService service){
+        OLSServiceProvider serviceFound = null;
+        for (OLSServiceProvider serviceProvider : getServiceProvider()) {
+           if(serviceProvider.getServiceType() == service
+                   && serviceProvider.getClass() == provider.getClass()
+                   && !(Boolean.parseBoolean(((OLSAbstractServiceProvider)serviceProvider).getProperties().getProperty("OLS.serviceProvider.service.active")))){
+               serviceFound = serviceProvider;
+               break;
+           }
+        }
+        return serviceFound;
+    }
+    
+    @Override
+    public OLSServiceProvider findServiceActive(OLSService service) {
+        OLSServiceProvider serviceFound = null;
+        for (OLSServiceProvider serviceProvider : getServiceProvider()) {
+           if(serviceProvider.getServiceType() == service
+                   && (Boolean.parseBoolean(((OLSAbstractServiceProvider)serviceProvider).getProperties().getProperty("OLS.serviceProvider.service.active")))){
+               serviceFound = serviceProvider;
+               break;
+           }
+        }
+        return serviceFound;
     }
 }
