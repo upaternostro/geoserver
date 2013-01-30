@@ -13,7 +13,7 @@ import org.apache.wicket.model.PropertyModel;
 
 public class SOLRTab extends AbstractTab{
 	private String 			urlSOLR;
-	private String                 activeSOLR;
+	private String          activeSOLR;
 	private SOLR9Panel 		instancePanel;
 	
 	public String getUrlSOLR() {
