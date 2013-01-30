@@ -42,7 +42,9 @@ import net.opengis.www.xls.Street;
 import net.opengis.www.xls.StreetAddress;
 
 import org.apache.wicket.extensions.markup.html.tabs.ITab;
+import org.apache.wicket.markup.html.link.Link;
 import org.apache.wicket.model.IModel;
+import org.apache.wicket.model.Model;
 import org.apache.wicket.model.ResourceModel;
 import org.geoserver.config.ServiceInfo;
 
@@ -112,7 +114,8 @@ public class RFC59ServiceProvider extends OLSAbstractServiceProvider implements 
 
         @Override
         public ITab getTab() {
-                IModel<String> title = new ResourceModel("RFC59 ", "RFC59");
+                IModel<String> title = new ResourceModel("RFC59 ", "PIPPO");
+//                        new ResourceModel("RFC59 ", "PIPPO");
                 return RFC59TabFactory.getRFC59TabFactory().getRFC59Tab(title);
         }
 

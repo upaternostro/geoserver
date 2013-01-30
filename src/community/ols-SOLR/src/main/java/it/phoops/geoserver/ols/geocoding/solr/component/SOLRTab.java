@@ -50,7 +50,8 @@ public class SOLRTab extends AbstractTab{
 
 	@Override
 	public Panel getPanel(String panelId) {
-	    instancePanel = new SOLR9Panel(panelId);
+	    if(instancePanel == null)
+	        instancePanel = new SOLR9Panel(panelId);
 	    instancePanel.setActiveSOLR(activeSOLR);
 	    instancePanel.getCheckboxSOLR().setModelObject(Boolean.parseBoolean(activeSOLR));
 	    instancePanel.setUrlSOLR(urlSOLR);
