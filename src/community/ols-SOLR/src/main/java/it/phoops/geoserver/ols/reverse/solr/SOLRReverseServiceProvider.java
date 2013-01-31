@@ -1,6 +1,7 @@
 package it.phoops.geoserver.ols.reverse.solr;
 
 import it.phoops.geoserver.ols.OLSAbstractServiceProvider;
+import it.phoops.geoserver.ols.OLSException;
 import it.phoops.geoserver.ols.OLSService;
 import it.phoops.geoserver.ols.geocoding.ReverseGeocodingServiceProvider;
 import it.phoops.geoserver.ols.reverse.solr.component.SOLRTabReverse;
@@ -8,6 +9,10 @@ import it.phoops.geoserver.ols.reverse.solr.component.SOLRTabReverseFactory;
 
 import java.util.List;
 import java.util.Properties;
+
+import javax.xml.bind.JAXBElement;
+
+import net.opengis.www.xls.ReverseGeocodeRequestType;
 
 import org.apache.wicket.extensions.markup.html.tabs.ITab;
 import org.apache.wicket.model.IModel;
@@ -81,8 +86,15 @@ public class SOLRReverseServiceProvider extends OLSAbstractServiceProvider imple
 	}
 	
 	@Override
-        public boolean isServiceActive() {
-            return Boolean.parseBoolean(this.getActive());
-        }
+	public boolean isServiceActive() {
+		return Boolean.parseBoolean(this.getActive());
+	}
 
+	@Override
+	public JAXBElement<ReverseGeocodeRequestType> geocode(
+			ReverseGeocodeRequestType input) throws OLSException {
+		// TODO Auto-generated method stub
+		System.out.println("---- Da Implementare il geocode per ReverseGeorouting");
+		return null;
+	}
 }
