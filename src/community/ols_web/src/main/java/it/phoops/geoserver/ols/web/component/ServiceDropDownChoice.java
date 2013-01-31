@@ -7,6 +7,7 @@ import it.phoops.geoserver.ols.OLSInfoImpl;
 import it.phoops.geoserver.ols.OLSService;
 import it.phoops.geoserver.ols.OLSServiceProvider;
 import it.phoops.geoserver.ols.util.ApplicationContextUtil;
+import it.phoops.geoserver.ols.web.OLSAdminPage;
 import it.phoops.geoserver.ols.web.OLSAdminPage.OLSGUIService;
 
 import java.util.ArrayList;
@@ -126,15 +127,13 @@ public class ServiceDropDownChoice extends DropDownChoice<OLSGUIService>{
                         
                         @Override
                         public void onClick(){
-                            System.out.println("Click sul TAB: "+index);
-                            System.out.println(tabsOLS.size());
-                            
-//                            tabsOLS.get(0).getPanel("panelId");
-                            System.out.println(tabsOLS.get(0).getClass());
-                            
-                            
-                            
-                            setSelectedTab(index);
+//                            System.out.println("Click sul TAB: "+index);
+//                            System.out.println(tabsOLS.size());
+//                            
+////                            tabsOLS.get(0).getPanel("panelId");
+//                            System.out.println(tabsOLS.get(0).getClass());
+//                            
+//                            setSelectedTab(index);
                         }
                     };
                     

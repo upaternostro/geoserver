@@ -42,9 +42,7 @@ import net.opengis.www.xls.Street;
 import net.opengis.www.xls.StreetAddress;
 
 import org.apache.wicket.extensions.markup.html.tabs.ITab;
-import org.apache.wicket.markup.html.link.Link;
 import org.apache.wicket.model.IModel;
-import org.apache.wicket.model.Model;
 import org.apache.wicket.model.ResourceModel;
 import org.geoserver.config.ServiceInfo;
 

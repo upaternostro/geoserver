@@ -1,7 +1,14 @@
 package it.phoops.geoserver.ols.geocoding.rfc59.component;
 
 
+import it.phoops.geoserver.ols.OLS;
+import it.phoops.geoserver.ols.OLSInfo;
+import it.phoops.geoserver.ols.OLSService;
+import it.phoops.geoserver.ols.OLSServiceProvider;
+import it.phoops.geoserver.ols.OLSServiceProviderGUI;
 import it.phoops.geoserver.ols.geocoding.rfc59.Algorithm;
+import it.phoops.geoserver.ols.geocoding.rfc59.RFC59ServiceProvider;
+import it.phoops.geoserver.ols.web.validator.ValidateCheckboxTab;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -17,8 +24,9 @@ import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.Model;
 import org.apache.wicket.model.PropertyModel;
+import org.geoserver.config.GeoServer;
 
-public class RFC59Tab extends AbstractTab{
+public class RFC59Tab extends AbstractTab implements ValidateCheckboxTab{
 
 	private String 						urlRFC59;
 	private String 						timeoutRFC59;
@@ -85,7 +93,25 @@ public class RFC59Tab extends AbstractTab{
 	    }
 	}
 	
-	public String getAlgorithmDescriptionKey(Algorithm algorithm){
+	@Override
+        public String getCheckboxValue() {
+	    if(instancePanel != null)
+                return this.instancePanel.getCheckBoxRFC59().getModelObject().toString();
+	    return this.getActiveRFC59();
+        }
+    
+        @Override
+        public void setChecckboxValue(String value) {
+            if(instancePanel != null){
+                instancePanel.setActiveRFC59(value);
+                instancePanel.getCheckBoxRFC59().setModelObject(Boolean.parseBoolean(value));
+            }else{
+                instancePanel.setActiveRFC59(value);
+            }
+              
+        }
+
+        public String getAlgorithmDescriptionKey(Algorithm algorithm){
             if(algorithm == Algorithm.FUZZY_QUERIES){
                 return "OLSAlgorithmType.fuzzy";
             }else if(algorithm == Algorithm.RADIX){
@@ -150,8 +176,30 @@ public class RFC59Tab extends AbstractTab{
         	        @Override
         	        public void onSelectionChanged() {
         	            super.onSelectionChanged();
+        	            Boolean value = this.getModelObject();
+        	            activeOnlyOneCheck(value);
+        	            
         	            setActiveRFC59(this.getModelObject().toString());
         	        }    
+        	        
+        	        private void activeOnlyOneCheck(Boolean value){
+                            OLS ols = OLS.get();
+                            GeoServer gs = ols.getGeoServer();
+                            OLSInfo olsInfo = gs.getService(OLSInfo.class);
+                            List<OLSServiceProvider> serviceProvider = olsInfo.getServiceProvider();
+                            
+                            for (OLSServiceProvider provider : serviceProvider) {
+                                if(provider.getServiceType() == OLSService.GEOCODING
+                                        && !(provider instanceof RFC59ServiceProvider)
+                                        && value){
+                                    OLSServiceProviderGUI providerGUI = (OLSServiceProviderGUI)provider;
+                                    Boolean notValue = !value;
+                                    String strValue = notValue.toString();
+                                    providerGUI.getProperties().setProperty("OLS.serviceProvider.service.active", strValue);
+                                    ((ValidateCheckboxTab)providerGUI.getTab()).setChecckboxValue(strValue);
+                                }
+                            }
+        	        }
         	    };
         	    add(checkBoxRFC59);
         	    add(new TextField("urlRFC59",new PropertyModel(this,"urlRFC59")));
