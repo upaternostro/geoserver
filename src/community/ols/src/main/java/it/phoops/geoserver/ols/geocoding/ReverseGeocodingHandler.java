@@ -25,4 +25,10 @@ public class ReverseGeocodingHandler implements OLSHandler {
     public void setServiceProvider(OLSServiceProvider provider) {
         this.provider = (ReverseGeocodingServiceProvider)provider;
     }
+    
+    @Override
+    public void setActiveServiceProvider(OLSServiceProvider provider) {
+        if(provider.isServiceActive())
+            this.provider = (ReverseGeocodingServiceProvider)provider;
+    }
 }

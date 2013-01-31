@@ -139,8 +139,12 @@ public class RFC59ServiceProvider extends OLSAbstractServiceProvider implements 
     		setAlgorithm(algorithm);
     		setActive(active);
     	}
-
         
+        @Override
+        public boolean isServiceActive() {
+            return Boolean.parseBoolean(this.getActive());
+        }
+
     @Override
     public JAXBElement<GeocodeResponseType> geocode(GeocodeRequestType input) throws OLSException {
         ObjectFactory                                           of = new ObjectFactory();

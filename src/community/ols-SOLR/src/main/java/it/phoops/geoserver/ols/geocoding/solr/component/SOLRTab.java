@@ -69,7 +69,7 @@ public class SOLRTab extends AbstractTab implements ValidateCheckboxTab{
                 instancePanel.setActiveSOLR(value);
                 instancePanel.getCheckboxSOLR().setModelObject(Boolean.parseBoolean(value));
             }else{
-                instancePanel.setActiveSOLR(value);
+                setActiveSOLR(value);
             }
         }
 

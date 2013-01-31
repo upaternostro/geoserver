@@ -79,5 +79,10 @@ public class SOLRReverseServiceProvider extends OLSAbstractServiceProvider imple
         setEndpointAddress(url);
         setActive(active);
 	}
+	
+	@Override
+        public boolean isServiceActive() {
+            return Boolean.parseBoolean(this.getActive());
+        }
 
 }
