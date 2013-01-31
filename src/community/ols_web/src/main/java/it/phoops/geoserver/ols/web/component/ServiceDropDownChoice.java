@@ -133,7 +133,7 @@ public class ServiceDropDownChoice extends DropDownChoice<OLSGUIService>{
 ////                            tabsOLS.get(0).getPanel("panelId");
 //                            System.out.println(tabsOLS.get(0).getClass());
 //                            
-//                            setSelectedTab(index);
+                            setSelectedTab(index);
                         }
                     };
                     
