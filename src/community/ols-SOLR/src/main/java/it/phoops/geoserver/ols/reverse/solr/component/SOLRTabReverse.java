@@ -28,7 +28,7 @@ public class SOLRTabReverse extends AbstractTab{
 
 	public String getActiveSOLRReverse() {
 		if(instancePanel != null)
-			instancePanel.getActiveSOLRReverse();
+			return instancePanel.getActiveSOLRReverse();
 		return activeSOLRReverse;
 	}
 
@@ -61,7 +61,7 @@ public class SOLRTabReverse extends AbstractTab{
 	}
 	
 	private static class SOLRReversePanel extends Panel{
-	    private String 			urlSOLRReverse;
+	    private String             urlSOLRReverse;
 	    private String     		activeSOLRReverse;
 	    private CheckBox   		checkboxSOLRReverse;
 	
