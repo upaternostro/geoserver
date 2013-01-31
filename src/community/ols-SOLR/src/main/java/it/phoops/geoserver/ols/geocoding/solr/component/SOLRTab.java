@@ -1,19 +1,27 @@
 package it.phoops.geoserver.ols.geocoding.solr.component;
 
+import it.phoops.geoserver.ols.OLS;
+import it.phoops.geoserver.ols.OLSInfo;
+import it.phoops.geoserver.ols.OLSService;
+import it.phoops.geoserver.ols.OLSServiceProvider;
+import it.phoops.geoserver.ols.OLSServiceProviderGUI;
+import it.phoops.geoserver.ols.geocoding.solr.SOLRServiceProvider;
+import it.phoops.geoserver.ols.web.validator.ValidateCheckboxTab;
+
+import java.util.List;
+
 import org.apache.wicket.extensions.markup.html.tabs.AbstractTab;
-import org.apache.wicket.markup.html.WebMarkupContainer;
 import org.apache.wicket.markup.html.form.CheckBox;
-import org.apache.wicket.markup.html.form.RadioChoice;
 import org.apache.wicket.markup.html.form.TextField;
-import org.apache.wicket.markup.html.link.Link;
 import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.Model;
 import org.apache.wicket.model.PropertyModel;
+import org.geoserver.config.GeoServer;
 
-public class SOLRTab extends AbstractTab{
+public class SOLRTab extends AbstractTab implements ValidateCheckboxTab{
 	private String 			urlSOLR;
-	private String          activeSOLR;
+	private String                 activeSOLR;
 	private SOLR9Panel 		instancePanel;
 	
 	public String getUrlSOLR() {
@@ -49,6 +57,23 @@ public class SOLRTab extends AbstractTab{
 	}
 
 	@Override
+        public String getCheckboxValue() {
+	    if(instancePanel != null)
+                return instancePanel.getCheckboxSOLR().getModelObject().toString();
+	    return this.getActiveSOLR();
+        }
+    
+        @Override
+        public void setChecckboxValue(String value) {
+            if(instancePanel != null){
+                instancePanel.setActiveSOLR(value);
+                instancePanel.getCheckboxSOLR().setModelObject(Boolean.parseBoolean(value));
+            }else{
+                instancePanel.setActiveSOLR(value);
+            }
+        }
+
+        @Override
 	public Panel getPanel(String panelId) {
 	    if(instancePanel == null)
 	        instancePanel = new SOLR9Panel(panelId);
@@ -57,9 +82,9 @@ public class SOLRTab extends AbstractTab{
 	    instancePanel.setUrlSOLR(urlSOLR);
 	    return instancePanel;
 	}
-
-	public SOLRTab(IModel<String> title) {
-	    super(title);
+    
+        public SOLRTab(IModel<String> title) {
+    	    super(title);
 	}
 	
 	private static class SOLR9Panel extends Panel{
@@ -80,8 +105,29 @@ public class SOLRTab extends AbstractTab{
                     @Override
                     public void onSelectionChanged() {
                         super.onSelectionChanged();
+                        activeOnlyOneCheck(this.getModelObject());
                         setActiveSOLR(this.getModelObject().toString());
                     }    
+                    
+                    private void activeOnlyOneCheck(Boolean value){
+                          OLS ols = OLS.get();
+                          GeoServer gs = ols.getGeoServer();
+                          OLSInfo olsInfo = gs.getService(OLSInfo.class);
+                          List<OLSServiceProvider> serviceProvider = olsInfo.getServiceProvider();
+                          
+                          for (OLSServiceProvider provider : serviceProvider) {
+                              if(provider.getServiceType() == OLSService.GEOCODING
+                                      && !(provider instanceof SOLRServiceProvider)
+                                      && value){
+                                  
+                                  OLSServiceProviderGUI providerGUI = (OLSServiceProviderGUI)provider;
+                                  Boolean notValue = !value;
+                                  String strValue = notValue.toString();
+                                  providerGUI.getProperties().setProperty("OLS.serviceProvider.service.active", strValue);
+                                  ((ValidateCheckboxTab)providerGUI.getTab()).setChecckboxValue(strValue);
+                              }
+                          }
+                      }
                 };
                 add(checkboxSOLR);
 	        add(new TextField("urlSOLR",new PropertyModel(this,"urlSOLR")));
