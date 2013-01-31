@@ -106,7 +106,7 @@ public class RFC59Tab extends AbstractTab implements ValidateCheckboxTab{
                 instancePanel.setActiveRFC59(value);
                 instancePanel.getCheckBoxRFC59().setModelObject(Boolean.parseBoolean(value));
             }else{
-                instancePanel.setActiveRFC59(value);
+                setActiveRFC59(value);
             }
               
         }

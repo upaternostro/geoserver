@@ -86,6 +86,11 @@ public class SOLRServiceProvider extends OLSAbstractServiceProvider implements G
 	    ((SOLRTab)solrTab).setUrlSOLR(this.getEndpointAddress());
 	    ((SOLRTab)solrTab).setActiveSOLR(this.getActive());
 	}
+	
+	@Override
+        public boolean isServiceActive() {
+            return Boolean.parseBoolean(this.getActive());
+        }
 
 	@Override
 	public JAXBElement<GeocodeResponseType> geocode(GeocodeRequestType input)

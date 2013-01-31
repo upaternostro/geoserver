@@ -128,6 +128,11 @@ public class RFC59ServiceProviderMock extends OLSAbstractServiceProvider impleme
     		setTimeout(timeout);
     		setAlgorithm(algorithm);
     	}
+        
+        @Override
+        public boolean isServiceActive() {
+            return Boolean.parseBoolean("true");
+        }
 
 	@Override
 	public JAXBElement<GeocodeResponseType> geocode(GeocodeRequestType input)
