@@ -65,7 +65,7 @@ public class SOLRReverseServiceProvider extends OLSAbstractServiceProvider imple
 
 	@Override
 	public void setPropertiesTab(ITab solrTabReverse) {
-		((SOLRTabReverse)solrTabReverse).setUrlSOLRReverse(this.getEndpointAddress());
+	    ((SOLRTabReverse)solrTabReverse).setUrlSOLRReverse(this.getEndpointAddress());
 	    ((SOLRTabReverse)solrTabReverse).setActiveSOLRReverse(this.getActive());
 	}
 

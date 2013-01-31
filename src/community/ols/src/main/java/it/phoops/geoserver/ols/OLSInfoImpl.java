@@ -46,6 +46,8 @@ public class OLSInfoImpl extends ServiceInfoImpl implements OLSInfo {
         if(exist){
            servicesProviders.remove(toRemove);
            servicesProviders.add(provider);
+        }else{
+            servicesProviders.add(provider);
         }
     }
     
