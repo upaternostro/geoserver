@@ -1,4 +1,4 @@
-/* Copyright (c) 2001 - 2011 TOPP - www.openplans.org. All rights reserved.
+/* Copyright (c) 2001 - 2013 OpenPlans - www.openplans.org. All rights reserved.
  * This code is licensed under the GPL 2.0 license, available at the root
  * application directory.
  */
@@ -48,7 +48,7 @@ import com.mockrunner.mock.web.MockHttpServletResponse;
 public class DynamicDimensionsTest extends WMSTestSupport {
     
     private static final QName WATTEMP = new QName(MockData.DEFAULT_URI, "watertemp", MockData.DEFAULT_PREFIX);
-    private static final String DIMENSION_NAME = "wavelength";
+    private static final String DIMENSION_NAME = "WAVELENGTH";
     private static final String CAPABILITIES_REQUEST = "wms?request=getCapabilities&version=1.1.1";
     private static final String BBOX = "0,40,15,45";
     private static final String LAYERS = "gs:watertemp";
