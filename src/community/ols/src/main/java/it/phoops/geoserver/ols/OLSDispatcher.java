@@ -67,6 +67,8 @@ public class OLSDispatcher extends AbstractController {
                 XPath                       xPath = XPathFactory.newInstance().newXPath();
                 XPathExpression             xPathExpr;
                 
+                httpResponse.setContentType("text/xml");
+                
                 for (String path : handlers.keySet()) {
                     xPathExpr = xPath.compile(path);
                     
