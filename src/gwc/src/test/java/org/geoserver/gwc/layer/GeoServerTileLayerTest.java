@@ -1,4 +1,4 @@
-/* Copyright (c) 2012 TOPP - www.openplans.org. All rights reserved.
+/* Copyright (c) 2001 - 2013 OpenPlans - www.openplans.org. All rights reserved.
  * This code is licensed under the GPL 2.0 license, available at the root
  * application directory.
  */
@@ -39,6 +39,7 @@ import org.geoserver.catalog.Keyword;
 import org.geoserver.catalog.LayerInfo;
 import org.geoserver.catalog.LayerInfo.Type;
 import org.geoserver.catalog.NamespaceInfo;
+import org.geoserver.catalog.PublishedInfo;
 import org.geoserver.catalog.StyleInfo;
 import org.geoserver.catalog.impl.DataStoreInfoImpl;
 import org.geoserver.catalog.impl.FeatureTypeInfoImpl;
@@ -159,7 +160,7 @@ public class GeoServerTileLayerTest {
         final String layerGroupId = "mock-layergroup-id";
         layerGroup.setId(layerGroupId);
         layerGroup.setName("MockLayerGroup");
-        layerGroup.setLayers(Collections.singletonList((LayerInfo) layerInfo));
+        layerGroup.setLayers(Collections.singletonList((PublishedInfo) layerInfo));
 
         defaults = GWCConfig.getOldDefaults();
 
