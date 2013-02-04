@@ -1,19 +1,4 @@
-package it.phoops.geoserver.ols.geocoding.rfc59;
-
-import it.phoops.geoserver.ols.OLSAbstractServiceProvider;
-import it.phoops.geoserver.ols.OLSException;
-import it.phoops.geoserver.ols.OLSService;
-import it.phoops.geoserver.ols.geocoding.GeocodingServiceProvider;
-import it.phoops.geoserver.ols.geocoding.rfc59.component.RFC59Tab;
-import it.phoops.geoserver.ols.geocoding.rfc59.component.RFC59TabFactory;
-import it.toscana.regione.normaws.AmbiguitaIndItem;
-import it.toscana.regione.normaws.DatiGeoreferenziazioneInd;
-import it.toscana.regione.normaws.DatiNormalizzazioneInd;
-import it.toscana.regione.normaws.DatiNormalizzazioneLoc;
-import it.toscana.regione.normaws.IndirizzoRiconosciuto;
-import it.toscana.regione.normaws.MusumeServiceLocator;
-import it.toscana.regione.normaws.MusumeSoapBindingStub;
-import it.toscana.regione.normaws.RispostaNormalizzataType;
+package it.phoops.geoserver.ols.geocoding.rfc59.mock;
 
 import java.math.BigInteger;
 import java.net.MalformedURLException;
@@ -46,8 +31,26 @@ import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.ResourceModel;
 import org.geoserver.config.ServiceInfo;
 
-public class RFC59ServiceProvider extends OLSAbstractServiceProvider implements GeocodingServiceProvider {
-    public static final DataSource DATA_SOURCE = DataSource.REGIONE_TOSCANA;
+import it.phoops.geoserver.ols.OLSAbstractServiceProvider;
+import it.phoops.geoserver.ols.OLSException;
+import it.phoops.geoserver.ols.OLSService;
+import it.phoops.geoserver.ols.geocoding.GeocodingServiceProvider;
+import it.phoops.geoserver.ols.geocoding.rfc59.Algorithm;
+import it.phoops.geoserver.ols.geocoding.rfc59.DataSource;
+import it.phoops.geoserver.ols.geocoding.rfc59.ResponseType;
+import it.phoops.geoserver.ols.geocoding.rfc59.component.RFC59Tab;
+import it.phoops.geoserver.ols.geocoding.rfc59.component.RFC59TabFactory;
+import it.toscana.regione.normaws.AmbiguitaIndItem;
+import it.toscana.regione.normaws.DatiGeoreferenziazioneInd;
+import it.toscana.regione.normaws.DatiNormalizzazioneInd;
+import it.toscana.regione.normaws.DatiNormalizzazioneLoc;
+import it.toscana.regione.normaws.IndirizzoRiconosciuto;
+import it.toscana.regione.normaws.MusumeServiceLocator;
+import it.toscana.regione.normaws.MusumeSoapBindingStub;
+import it.toscana.regione.normaws.RispostaNormalizzataType;
+
+public class RFC59ServiceProviderMock extends OLSAbstractServiceProvider implements GeocodingServiceProvider {
+	public static final DataSource DATA_SOURCE = DataSource.REGIONE_TOSCANA;
     public static final String COUNTRY_CODE = "IT";
 
     // Properties names
@@ -56,7 +59,7 @@ public class RFC59ServiceProvider extends OLSAbstractServiceProvider implements 
     public static final String  PN_TIMEOUT = "OLS.serviceProvider.geocoding.rfc59.service.timeout";
     
     private String      descriptionKey;
-    private Properties  properties = new Properties();
+    private Properties  properties = new Properties();;
 
     @Override
     public String getDescriptionKey() {
@@ -126,10 +129,10 @@ public class RFC59ServiceProvider extends OLSAbstractServiceProvider implements 
     		setAlgorithm(algorithm);
     	}
 
-        
-    @Override
-    public JAXBElement<GeocodeResponseType> geocode(GeocodeRequestType input) throws OLSException {
-        ObjectFactory                                           of = new ObjectFactory();
+	@Override
+	public JAXBElement<GeocodeResponseType> geocode(GeocodeRequestType input)
+			throws OLSException {
+		ObjectFactory                                           of = new ObjectFactory();
         GeocodeResponseType                                     output = of.createGeocodeResponseType();
         JAXBElement<GeocodeResponseType>                        retval = of.createGeocodeResponse(output);
         MusumeSoapBindingStub                                   binding = null;
@@ -249,32 +252,33 @@ public class RFC59ServiceProvider extends OLSAbstractServiceProvider implements 
             }
             
             // Lazy bind to web service
-            if (binding == null) {
-                try {
-                    binding = (MusumeSoapBindingStub) new MusumeServiceLocator().getMusume(new URL(getEndpointAddress()));
-                    // Time out after a minute
-                    binding.setTimeout(Integer.valueOf(getTimeout()));
-                } catch (ServiceException e) {
-                    throw new OLSException("JAX-RPC error: " + e.getLocalizedMessage(), e);
-                } catch (MalformedURLException e) {
-                    throw new OLSException("Malformed URL error: " + e.getLocalizedMessage(), e);
-                }
-            }
+//            if (binding == null) {
+//                try {
+//                    binding = (MusumeSoapBindingStub) new MusumeServiceLocator().getMusume(new URL(""));
+//                    // Time out after a minute
+//                    binding.setTimeout(Integer.valueOf("6000"));
+//                } catch (ServiceException e) {
+//                    throw new OLSException("JAX-RPC error: " + e.getLocalizedMessage(), e);
+//                } catch (MalformedURLException e) {
+//                    throw new OLSException("Malformed URL error: " + e.getLocalizedMessage(), e);
+//                }
+//            }
 
             try {
                 // Call RFC59 web service
-                rispostaNormalizzata = binding.richiesta(Algorithm.get(getAlgorithm()).toString(),
-                        street.getValue() + (buildingNumber == null ? "" : ", " + buildingNumber), municipality, countrySecondarySubdivision,
-                        address.getPostalCode(), DATA_SOURCE.toString());
+//                rispostaNormalizzata = binding.richiesta(Algorithm.get(getAlgorithm()).toString(),
+//                        street.getValue() + (buildingNumber == null ? "" : ", " + buildingNumber), municipality, countrySecondarySubdivision,
+//                        address.getPostalCode(), DATA_SOURCE.toString());
 
                 listItem = of.createGeocodeResponseList();
                 listItem.setNumberOfGeocodedAddresses(BigInteger.ZERO);
                 geocodedAddresses = listItem.getGeocodedAddresses();
                 
-                switch (ResponseType.get(rispostaNormalizzata.getTipoRispostaNorm())) {
+                switch (ResponseType.GEOCODING_OK) {
                 case GEOCODING_OK:
                     listItem.setNumberOfGeocodedAddresses(BigInteger.ONE);
-                    indirizzoRiconosciuto = rispostaNormalizzata.getIndirizzoRiconosciuto();
+                    indirizzoRiconosciuto = new IndirizzoRiconosciuto();
+                    
                     
                     geocodedAddress = of.createGeocodedAddressType();
                     point = of.createPointType();
@@ -284,8 +288,8 @@ public class RFC59ServiceProvider extends OLSAbstractServiceProvider implements 
                     
                     coordinates = pos.getValues();
                     datiGeoreferenziazioneInd = indirizzoRiconosciuto.getDatiGeoreferenziazioneInd();
-                    coordinates.add(Double.valueOf(datiGeoreferenziazioneInd.getLongitudine()));
-                    coordinates.add(Double.valueOf(datiGeoreferenziazioneInd.getLatitudine()));
+                    coordinates.add(Double.valueOf("43.766135280960945"));
+                    coordinates.add(Double.valueOf("11.278839111328125"));
                     
 //                    pos.setSrsName(value);
                     
@@ -302,14 +306,14 @@ public class RFC59ServiceProvider extends OLSAbstractServiceProvider implements 
                     Place place = of.createPlace();
                     
                     place.setType(NamedPlaceClassification.MUNICIPALITY);
-                    place.setValue(datiNormalizzazioneInd.getLocalita());
+                    place.setValue("Firenze");
                     
                     places.add(place);
                     
                     place = of.createPlace();
                     
                     place.setType(NamedPlaceClassification.COUNTRY_SECONDARY_SUBDIVISION);
-                    place.setValue(datiNormalizzazioneInd.getProvincia());
+                    place.setValue("Firenze");
                     
                     places.add(place);
                     
@@ -320,16 +324,16 @@ public class RFC59ServiceProvider extends OLSAbstractServiceProvider implements 
                     
                     places.add(place);
                     
-                    returnAddress.setPostalCode(datiNormalizzazioneInd.getCap());
+                    returnAddress.setPostalCode("50100");
                     
                     streetAddress = of.createStreetAddress();
                     street = of.createStreet();
                     
-                    if (datiNormalizzazioneInd.getCivico() != null && !datiNormalizzazioneInd.getCivico().equals("") && !datiNormalizzazioneInd.getCivico().equals("0")) {
-                        street.setValue(datiNormalizzazioneInd.getDug() + " " + datiNormalizzazioneInd.getToponimo() + ", " + datiNormalizzazioneInd.getCivico());
-                    } else {
-                        street.setValue(datiNormalizzazioneInd.getDug() + " " + datiNormalizzazioneInd.getToponimo());
-                    }
+//                    if (datiNormalizzazioneInd.getCivico() != null && !datiNormalizzazioneInd.getCivico().equals("") && !datiNormalizzazioneInd.getCivico().equals("0")) {
+                        street.setValue("Via" + " " + "Della Torretta" + ", " + "14");
+//                    } else {
+//                        street.setValue("Via" + " " + "Della Torretta");
+//                    }
                     
                     streetAddress.getStreets().add(street);
                     
@@ -338,141 +342,142 @@ public class RFC59ServiceProvider extends OLSAbstractServiceProvider implements 
                     geocodedAddress.setAddress(returnAddress);
                     
                     geocodeMatchCode = of.createGeocodeMatchCode();
-                    geocodeMatchCode.setMatchType("RFC59-" + getAlgorithm());
+                    geocodeMatchCode.setMatchType("RFC59-" + "1");
                     geocodeMatchCode.setAccuracy(new Float(1));
                     
                     geocodedAddress.setGeocodeMatchCode(geocodeMatchCode);
                     geocodedAddresses.add(geocodedAddress);
                     break;
-                case UNKNOWN_ADDRESS:
-                    break;
-                case UNKNOWN_MUNICIPALITY:
-                    break;
-                case INPUT_PARAMETER_ERROR:
-                    throw new OLSException("Parameter error");
-                case AMBIGUOUS_MUNICIPALITY:
-//                    rispostaNormalizzata.getLocalitaAmbigua().getAmbiguitaLoc().getAmbiguitaLocItem()[0].get;
-                    break;
-                case AMBIGUOUS_ADDRESS:
-                    listItem.setNumberOfGeocodedAddresses(BigInteger.valueOf(rispostaNormalizzata.getIndirizzoAmbiguo().getAmbiguitaInd().getAmbiguitaIndItemCount()));
-                    
-                    for (AmbiguitaIndItem ambiguitaInd : rispostaNormalizzata.getIndirizzoAmbiguo().getAmbiguitaInd().getAmbiguitaIndItem()) {
-                        geocodedAddress = of.createGeocodedAddressType();
-                        point = of.createPointType();
-                        pos = of.createPos();
-                        
-                        pos.setDimension(BigInteger.valueOf(2));
-                        
-                        coordinates = pos.getValues();
-                        coordinates.add(Double.valueOf(ambiguitaInd.getX()));
-                        coordinates.add(Double.valueOf(ambiguitaInd.getY()));
-                        
-//                        pos.setSrsName(value);
-                        
-                        point.setPos(pos);
-//                        point.setSrsName(value);
-//                        point.setId(value);
-                        geocodedAddress.setPoint(point);
-                        returnAddress = of.createAddressType();
-                        
-                        returnAddress.setCountryCode(COUNTRY_CODE);
-                        
-                        streetAddress = of.createStreetAddress();
-                        street = of.createStreet();
-                        
-                        if (ambiguitaInd.getCivico() != null && !ambiguitaInd.getCivico().equals("")) {
-                            street.setValue(ambiguitaInd.getIndirizzo() + ", " + ambiguitaInd.getCivico());
-                        } else {
-                            street.setValue(ambiguitaInd.getIndirizzo());
-                        }
-                        
-                        streetAddress.getStreets().add(street);
-                        
-                        returnAddress.setStreetAddress(streetAddress);
-                        
-                        geocodedAddress.setAddress(returnAddress);
-                        
-                        geocodeMatchCode = of.createGeocodeMatchCode();
-                        geocodeMatchCode.setMatchType("RFC59-" + getAlgorithm());
-                        geocodeMatchCode.setAccuracy(new Float(0));
-                        
-                        geocodedAddress.setGeocodeMatchCode(geocodeMatchCode);
-                        geocodedAddresses.add(geocodedAddress);
-                    }
-                    break;
-                case MUNICIPALITY_DATA_ONLY:
-                    datiNormalizzazioneLoc = rispostaNormalizzata.getLocalitaNormalizzata().getDatiNormalizzazioneLoc();
-                    listItem.setNumberOfGeocodedAddresses(BigInteger.ONE);
-                    geocodedAddress = of.createGeocodedAddressType();
-                    point = of.createPointType();
-                    pos = of.createPos();
-                    
-                    pos.setDimension(BigInteger.valueOf(2));
-                    
-                    coordinates = pos.getValues();
-                    coordinates.add(Double.valueOf(datiNormalizzazioneLoc.getXSezioneIstat()));
-                    coordinates.add(Double.valueOf(datiNormalizzazioneLoc.getYSezioneIstat()));
-                    
-//                    pos.setSrsName(value);
-                    
-                    point.setPos(pos);
-//                    point.setSrsName(value);
-//                    point.setId(value);
-                    geocodedAddress.setPoint(point);
-                    returnAddress = of.createAddressType();
-                    
-                    returnAddress.setCountryCode(COUNTRY_CODE);
-                    places = returnAddress.getPlaces();
-                    
-                    place = of.createPlace();
-                    
-                    place.setType(NamedPlaceClassification.MUNICIPALITY_SUBDIVISION);
-                    place.setValue(datiNormalizzazioneLoc.getFrazione());
-                    
-                    places.add(place);
-                    
-                    place = of.createPlace();
-                    
-                    place.setType(NamedPlaceClassification.MUNICIPALITY);
-                    place.setValue(datiNormalizzazioneLoc.getLocalita());
-                    
-                    places.add(place);
-                    
-                    place = of.createPlace();
-                    
-                    place.setType(NamedPlaceClassification.COUNTRY_SECONDARY_SUBDIVISION);
-                    place.setValue(datiNormalizzazioneLoc.getProvincia());
-                    
-                    places.add(place);
-                    
-                    place = of.createPlace();
-                    
-                    place.setType(NamedPlaceClassification.COUNTRY_SUBDIVISION);
-                    place.setValue("Toscana");
-                    
-                    places.add(place);
-                    
-                    returnAddress.setPostalCode(datiNormalizzazioneLoc.getCap());
-                    
-                    geocodedAddress.setAddress(returnAddress);
-                    
-                    geocodeMatchCode = of.createGeocodeMatchCode();
-                    geocodeMatchCode.setMatchType("RFC59-" + getAlgorithm());
-                    geocodeMatchCode.setAccuracy(new Float(1));
-                    
-                    geocodedAddress.setGeocodeMatchCode(geocodeMatchCode);
-                    geocodedAddresses.add(geocodedAddress);
-                    break;
-                case DATA_ACCESS_ERROR:
-                    throw new OLSException("Data access error");
+//                case UNKNOWN_ADDRESS:
+//                    break;
+//                case UNKNOWN_MUNICIPALITY:
+//                    break;
+//                case INPUT_PARAMETER_ERROR:
+//                    throw new OLSException("Parameter error");
+//                case AMBIGUOUS_MUNICIPALITY:
+////                    rispostaNormalizzata.getLocalitaAmbigua().getAmbiguitaLoc().getAmbiguitaLocItem()[0].get;
+//                    break;
+//                case AMBIGUOUS_ADDRESS:
+//                    listItem.setNumberOfGeocodedAddresses(BigInteger.valueOf(rispostaNormalizzata.getIndirizzoAmbiguo().getAmbiguitaInd().getAmbiguitaIndItemCount()));
+//                    
+//                    for (AmbiguitaIndItem ambiguitaInd : rispostaNormalizzata.getIndirizzoAmbiguo().getAmbiguitaInd().getAmbiguitaIndItem()) {
+//                        geocodedAddress = of.createGeocodedAddressType();
+//                        point = of.createPointType();
+//                        pos = of.createPos();
+//                        
+//                        pos.setDimension(BigInteger.valueOf(2));
+//                        
+//                        coordinates = pos.getValues();
+//                        coordinates.add(Double.valueOf(ambiguitaInd.getX()));
+//                        coordinates.add(Double.valueOf(ambiguitaInd.getY()));
+//                        
+////                        pos.setSrsName(value);
+//                        
+//                        point.setPos(pos);
+////                        point.setSrsName(value);
+////                        point.setId(value);
+//                        geocodedAddress.setPoint(point);
+//                        returnAddress = of.createAddressType();
+//                        
+//                        returnAddress.setCountryCode(COUNTRY_CODE);
+//                        
+//                        streetAddress = of.createStreetAddress();
+//                        street = of.createStreet();
+//                        
+//                        if (ambiguitaInd.getCivico() != null && !ambiguitaInd.getCivico().equals("")) {
+//                            street.setValue(ambiguitaInd.getIndirizzo() + ", " + ambiguitaInd.getCivico());
+//                        } else {
+//                            street.setValue(ambiguitaInd.getIndirizzo());
+//                        }
+//                        
+//                        streetAddress.getStreets().add(street);
+//                        
+//                        returnAddress.setStreetAddress(streetAddress);
+//                        
+//                        geocodedAddress.setAddress(returnAddress);
+//                        
+//                        geocodeMatchCode = of.createGeocodeMatchCode();
+//                        geocodeMatchCode.setMatchType("RFC59-" + "1");
+//                        geocodeMatchCode.setAccuracy(new Float(0));
+//                        
+//                        geocodedAddress.setGeocodeMatchCode(geocodeMatchCode);
+//                        geocodedAddresses.add(geocodedAddress);
+//                    }
+//                    break;
+//                case MUNICIPALITY_DATA_ONLY:
+//                    datiNormalizzazioneLoc = rispostaNormalizzata.getLocalitaNormalizzata().getDatiNormalizzazioneLoc();
+//                    listItem.setNumberOfGeocodedAddresses(BigInteger.ONE);
+//                    geocodedAddress = of.createGeocodedAddressType();
+//                    point = of.createPointType();
+//                    pos = of.createPos();
+//                    
+//                    pos.setDimension(BigInteger.valueOf(2));
+//                    
+//                    coordinates = pos.getValues();
+//                    coordinates.add(Double.valueOf(datiNormalizzazioneLoc.getXSezioneIstat()));
+//                    coordinates.add(Double.valueOf(datiNormalizzazioneLoc.getYSezioneIstat()));
+//                    
+////                    pos.setSrsName(value);
+//                    
+//                    point.setPos(pos);
+////                    point.setSrsName(value);
+////                    point.setId(value);
+//                    geocodedAddress.setPoint(point);
+//                    returnAddress = of.createAddressType();
+//                    
+//                    returnAddress.setCountryCode(COUNTRY_CODE);
+//                    places = returnAddress.getPlaces();
+//                    
+//                    place = of.createPlace();
+//                    
+//                    place.setType(NamedPlaceClassification.MUNICIPALITY_SUBDIVISION);
+//                    place.setValue(datiNormalizzazioneLoc.getFrazione());
+//                    
+//                    places.add(place);
+//                    
+//                    place = of.createPlace();
+//                    
+//                    place.setType(NamedPlaceClassification.MUNICIPALITY);
+//                    place.setValue(datiNormalizzazioneLoc.getLocalita());
+//                    
+//                    places.add(place);
+//                    
+//                    place = of.createPlace();
+//                    
+//                    place.setType(NamedPlaceClassification.COUNTRY_SECONDARY_SUBDIVISION);
+//                    place.setValue(datiNormalizzazioneLoc.getProvincia());
+//                    
+//                    places.add(place);
+//                    
+//                    place = of.createPlace();
+//                    
+//                    place.setType(NamedPlaceClassification.COUNTRY_SUBDIVISION);
+//                    place.setValue("Toscana");
+//                    
+//                    places.add(place);
+//                    
+//                    returnAddress.setPostalCode(datiNormalizzazioneLoc.getCap());
+//                    
+//                    geocodedAddress.setAddress(returnAddress);
+//                    
+//                    geocodeMatchCode = of.createGeocodeMatchCode();
+//                    geocodeMatchCode.setMatchType("RFC59-" + "1");
+//                    geocodeMatchCode.setAccuracy(new Float(1));
+//                    
+//                    geocodedAddress.setGeocodeMatchCode(geocodeMatchCode);
+//                    geocodedAddresses.add(geocodedAddress);
+//                    break;
+//                case DATA_ACCESS_ERROR:
+//                    throw new OLSException("Data access error");
                 }
 
                 responseList.add(listItem);
-            } catch (RemoteException e) {
+            } catch (Exception e) {
                 throw new OLSException("Remote error: " + e.getLocalizedMessage(), e);
             }
         }
 
         return retval;
     }
+
 }
