@@ -46,9 +46,9 @@ public class OLS implements ApplicationContextAware {
     }
 
     public OLSServiceProvider getServiceProvider(OLSService service) {
-        return getServiceInfo().getServiceProvider(service);
+        return this.geoserver.getService(OLSInfo.class).findServiceActive(service);
     }
-
+    
     public GeoServer getGeoServer() {
         return this.geoserver;
     }

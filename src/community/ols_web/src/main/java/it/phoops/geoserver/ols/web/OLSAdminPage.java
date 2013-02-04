@@ -3,6 +3,7 @@ package it.phoops.geoserver.ols.web;
 import it.phoops.geoserver.ols.OLSInfo;
 import it.phoops.geoserver.ols.OLSService;
 import it.phoops.geoserver.ols.web.component.ServiceDropDownChoice;
+import it.phoops.geoserver.ols.web.validator.ValidateCheckboxTab;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -11,20 +12,17 @@ import java.util.List;
 import org.apache.wicket.Application;
 import org.apache.wicket.Component;
 import org.apache.wicket.Localizer;
-import org.apache.wicket.extensions.markup.html.tabs.AbstractTab;
+import org.apache.wicket.Session;
+import org.apache.wicket.extensions.ajax.markup.html.tabs.AjaxTabbedPanel;
 import org.apache.wicket.extensions.markup.html.tabs.ITab;
 import org.apache.wicket.extensions.markup.html.tabs.TabbedPanel;
-import org.apache.wicket.markup.html.form.ChoiceRenderer;
+import org.apache.wicket.markup.html.WebMarkupContainer;
+import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.markup.html.form.SubmitLink;
-import org.apache.wicket.markup.html.form.TextField;
-import org.apache.wicket.markup.html.panel.Panel;
-import org.apache.wicket.model.CompoundPropertyModel;
+import org.apache.wicket.markup.html.link.Link;
 import org.apache.wicket.model.IModel;
-import org.apache.wicket.model.Model;
 import org.apache.wicket.model.PropertyModel;
-import org.apache.wicket.model.StringResourceModel;
-import org.apache.wicket.validation.validator.MinimumValidator;
 import org.geoserver.web.services.BaseServiceAdminPage;
 
 /**
@@ -89,10 +87,11 @@ public class OLSAdminPage extends BaseServiceAdminPage<OLSInfo> {
 		}
 	}
 	
-	private List<ITab> 				tabsOLS = null;
+	private static List<ITab>              tabsOLS = null;
 	private List<OLSGUIService>		SERVICES = null;
-	private TabbedPanel				tabPanelOLS = null;
+	private TabbedPanel			tabPanelOLS = null;
 	private OLSGUIService			selectedService = null;
+	private static Form                           form;
 	
     @Override
     protected void build(IModel info, Form form) {
@@ -111,7 +110,8 @@ public class OLSAdminPage extends BaseServiceAdminPage<OLSInfo> {
 	    if(tabsOLS == null){
 		tabsOLS = new ArrayList<ITab>();
 	    }
-	    tabPanelOLS = new TabbedPanel("tabList", tabsOLS);
+	    tabPanelOLS = new AjaxTabbedPanel("tabList", tabsOLS);
+//	    tabPanelOLS = new TabbedPanel("tabList", tabsOLS);
 	    tabPanelOLS.setVisible(false);
 	    form.add(tabPanelOLS);
 	}
@@ -127,13 +127,32 @@ public class OLSAdminPage extends BaseServiceAdminPage<OLSInfo> {
     protected String getServiceName() {
         return "OLS";
     }
+    
+//    @Override
+//    protected void handleSubmit(OLSInfo info) {
+//        // TODO Auto-generated method stub
+//        System.out.println("--- Handler Submit");
+//        super.handleSubmit(info);
+//        
+//    }
 
-	public OLSGUIService getSelectedService() {
-		return selectedService;
-	}
+    public OLSGUIService getSelectedService() {
+	return selectedService;
+    }
 
-	public void setSelectedService(OLSGUIService selectedService) {
-		this.selectedService = selectedService;
-	}
-	
+    public void setSelectedService(OLSGUIService selectedService) {
+        this.selectedService = selectedService;
+    }
+    
+//    public static void addOLSTab(ITab iTab){
+//        if(tabsOLS == null){
+//            tabsOLS = new ArrayList<ITab>();
+//        }
+//        tabsOLS.add(iTab);
+//    }
+    
+//    public static void setForm(Form form){
+//        OLSAdminPage.form = form;
+//    }
+//	
 }

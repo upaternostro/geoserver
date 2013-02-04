@@ -76,7 +76,7 @@ public class OLSDispatcher extends AbstractController {
                         OLSHandler          handler = handlers.get(path);
                         
                         // Set configured service provider for this service handler
-                        handler.setServiceProvider(OLS.get().getServiceProvider(handler.getService()));
+                        handler.setActiveServiceProvider(OLS.get().getServiceProvider(handler.getService()));
                         
                         Document            domResponse = handler.processRequest(domRequest);
                         TransformerFactory  transFactory = TransformerFactory.newInstance();

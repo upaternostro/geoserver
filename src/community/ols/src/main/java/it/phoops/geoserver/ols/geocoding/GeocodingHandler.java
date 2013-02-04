@@ -4,6 +4,7 @@ import it.phoops.geoserver.ols.OLSException;
 import it.phoops.geoserver.ols.OLSHandler;
 import it.phoops.geoserver.ols.OLSService;
 import it.phoops.geoserver.ols.OLSServiceProvider;
+import it.phoops.geoserver.ols.OLSServiceProviderGUI;
 
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBElement;
@@ -69,4 +70,12 @@ public class GeocodingHandler implements OLSHandler {
     public void setServiceProvider(OLSServiceProvider provider) {
         this.provider = (GeocodingServiceProvider)provider;
     }
+
+    @Override
+    public void setActiveServiceProvider(OLSServiceProvider provider) {
+        if(provider.isServiceActive())
+            this.provider = (GeocodingServiceProvider)provider;
+    }
+    
+    
 }

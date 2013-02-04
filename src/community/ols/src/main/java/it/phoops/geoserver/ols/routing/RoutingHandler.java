@@ -4,6 +4,7 @@ import it.phoops.geoserver.ols.OLSException;
 import it.phoops.geoserver.ols.OLSHandler;
 import it.phoops.geoserver.ols.OLSService;
 import it.phoops.geoserver.ols.OLSServiceProvider;
+import it.phoops.geoserver.ols.geocoding.ReverseGeocodingServiceProvider;
 
 import org.w3c.dom.Document;
 
@@ -24,5 +25,11 @@ public class RoutingHandler implements OLSHandler {
     @Override
     public void setServiceProvider(OLSServiceProvider provider) {
         this.provider = (RoutingServiceProvider)provider;
+    }
+    
+    @Override
+    public void setActiveServiceProvider(OLSServiceProvider provider) {
+        if(provider.isServiceActive())
+            this.provider = (RoutingServiceProvider)provider;
     }
 }
