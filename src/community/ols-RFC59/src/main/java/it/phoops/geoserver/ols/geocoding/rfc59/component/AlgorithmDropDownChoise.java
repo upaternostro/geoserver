@@ -15,8 +15,10 @@ public class AlgorithmDropDownChoise extends DropDownChoice<OLSAlgorithmType>{
 	}
 	@Override
 	protected void onSelectionChanged(OLSAlgorithmType newSelection) {
-		// TODO Auto-generated method stub
 		super.onSelectionChanged(newSelection);
+		setSelectedAlgorithm(newSelection);
+		System.out.println("Algoritmo Selezionato: "+newSelection.toString());
+		System.out.println("Tipop Algoritmo Selezionato: "+newSelection.getService().getCode());
 	}
 	
 	@Override
@@ -31,3 +33,4 @@ public class AlgorithmDropDownChoise extends DropDownChoice<OLSAlgorithmType>{
 	}
 
 }
+

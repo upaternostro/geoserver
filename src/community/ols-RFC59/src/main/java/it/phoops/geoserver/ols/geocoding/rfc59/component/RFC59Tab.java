@@ -23,67 +23,65 @@ import org.geoserver.config.SettingsInfo;
 
 public class RFC59Tab extends AbstractTab{
 
-	private String 								urlRFC59;
-	private String 								timeoutRFC59;
-	private RFC59Panel 							instancePanel;
+	private String 						urlRFC59;
+	private String 						timeoutRFC59;
+	private RFC59Panel 					instancePanel;
 	private List<OLSAlgorithmType>				algorithmList = null;
-	private OLSAlgorithmType 					selectedAlgorithm;
-	private RFC59Tab							instanceTabRFC59 = null;
+	private OLSAlgorithmType 				selectedAlgorithm;
+	private RFC59Tab					instanceTabRFC59 = null;
 	
 	public class OLSAlgorithmType implements Serializable {
-		private Algorithm 			algorithm;
-		private String				code;
-		private String 				descriptionKey;
-		private Component 			component;
+	    private Algorithm 			algorithm;
+	    private String				code;
+	    private String 				descriptionKey;
+	    private Component 			component;
 		
-		public OLSAlgorithmType() {
-		}
+	    public OLSAlgorithmType() {}
 		
-		public OLSAlgorithmType(Algorithm algorithm, String descriptionKey) {
-			super();
-			this.algorithm = algorithm;
-			this.code = algorithm.toString();
-			this.descriptionKey = descriptionKey;
-//			this.component = component;
-		}
+	    public OLSAlgorithmType(Algorithm algorithm, String descriptionKey) {
+		super();
+		this.algorithm = algorithm;
+		this.code = algorithm.toString();
+		this.descriptionKey = descriptionKey;
+	    }
 		
-		public Algorithm getService() {
-			return algorithm;
-		}
+	    public Algorithm getService() {
+		return algorithm;
+	    }
 
-		public void setService(Algorithm algorithm) {
-			this.algorithm = algorithm;
-		}
+	    public void setService(Algorithm algorithm) {
+		this.algorithm = algorithm;
+	    }
 
-		public String getCode() {
-			return code;
-		}
+	    public String getCode() {
+		return code;
+	    }
 
-		public void setCode(String code) {
-			this.code = code;
-		}
+	    public void setCode(String code) {
+		this.code = code;
+	    }
 
-		public String getDescriptionKey() {
-			return descriptionKey;
-		}
+	    public String getDescriptionKey() {
+		return descriptionKey;
+	    }
 
-		public void setDescriptionKey(String descriptionKey) {
-			this.descriptionKey = descriptionKey;
-		}
+	    public void setDescriptionKey(String descriptionKey) {
+		this.descriptionKey = descriptionKey;
+	    }
 		
-		public Component getComponent() {
-			return component;
-		}
+	    public Component getComponent() {
+		return component;
+	    }
 
-		public void setComponent(Component component) {
-			this.component = component;
-		}
+	    public void setComponent(Component component) {
+		this.component = component;
+	    }
 
-		@Override
-		public String toString() {
-			Localizer	localizer = Application.get().getResourceSettings().getLocalizer();
-			return localizer.getString(descriptionKey, component);
-		}
+	    @Override
+	    public String toString() {
+		Localizer localizer = Application.get().getResourceSettings().getLocalizer();
+		return localizer.getString(descriptionKey, component);
+	    }
 	}
 	
 	public RFC59Tab(IModel<String> title) {
@@ -101,14 +99,15 @@ public class RFC59Tab extends AbstractTab{
 		instancePanel.setTimeoutRFC59(timeoutRFC59);
 		instancePanel.setAlgorithmList(this.algorithmList);
 		instancePanel.add(new AlgorithmDropDownChoise("algorithm", new PropertyModel<OLSAlgorithmType>(this, "selectedAlgorithm"), algorithmList));
-		this.setSelectedAlgorithm(new OLSAlgorithmType(Algorithm.FUZZY_QUERIES, "OLSAlgorithmType.fuzzy"));
+		this.setSelectedAlgorithm(selectedAlgorithm);
 		
 		return instancePanel;
 	}
 	
 	private static class RFC59Panel extends Panel{
-    	private String 							urlRFC59;
-    	private String 							timeoutRFC59;
+    	private String 					urlRFC59;
+    	private String 					timeoutRFC59;
+    	private OLSAlgorithmType			selectedAlgorithm;
     	private List<OLSAlgorithmType>			algorithmList = null;
     	
     	
@@ -141,8 +140,15 @@ public class RFC59Tab extends AbstractTab{
 		public void setAlgorithmList(List<OLSAlgorithmType> algorithmList) {
 			this.algorithmList = algorithmList;
 		}
-    	
-    }
+
+		public OLSAlgorithmType getSelectedAlgorithm() {
+			return selectedAlgorithm;
+		}
+
+		public void setSelectedAlgorithm(OLSAlgorithmType selectedAlgorithm) {
+			this.selectedAlgorithm = selectedAlgorithm;
+		}
+        }
 
 	public String getUrlRFC59() {
 		if(instancePanel != null)
@@ -171,10 +177,16 @@ public class RFC59Tab extends AbstractTab{
 	}
 
 	public OLSAlgorithmType getSelectedAlgorithm() {
+		if(instancePanel != null){
+			return instancePanel.getSelectedAlgorithm();
+		}
 		return selectedAlgorithm;
 	}
 
 	public void setSelectedAlgorithm(OLSAlgorithmType selectedAlgorithm) {
+		if(instancePanel != null){
+			instancePanel.setSelectedAlgorithm(selectedAlgorithm);
+		}
 		this.selectedAlgorithm = selectedAlgorithm;
 	}
 }
