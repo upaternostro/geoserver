@@ -71,7 +71,6 @@ public class OTPTab extends AbstractTab implements ValidateCheckboxTab{
 
     public OTPTab(IModel<String> title) {
         super(title);
-        // TODO Auto-generated constructor stub
     }
 
     @Override
@@ -89,7 +88,6 @@ public class OTPTab extends AbstractTab implements ValidateCheckboxTab{
         }else{
             setActiveOTP(value);
         }
-        
     }
 
     @Override
@@ -132,7 +130,7 @@ public class OTPTab extends AbstractTab implements ValidateCheckboxTab{
                       List<OLSServiceProvider> serviceProvider = olsInfo.getServiceProvider();
                       
                       for (OLSServiceProvider provider : serviceProvider) {
-                          if(provider.getServiceType() == OLSService.GEOCODING
+                          if(provider.getServiceType() == OLSService.ROUTING_NAVIGATION
                                   && !(provider instanceof OTPServiceProvider)
                                   && value){
                               
