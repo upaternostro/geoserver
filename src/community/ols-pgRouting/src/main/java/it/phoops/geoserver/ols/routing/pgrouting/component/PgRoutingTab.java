@@ -60,6 +60,7 @@ public class PgRoutingTab extends AbstractTab implements ValidateCheckboxTab{
         instancePanel.setHostPgRouting(hostPgRouting);
         instancePanel.setPortPgRouting(portPgRouting);
         instancePanel.setPswPgRouting(pswPgRouting);
+        instancePanel.setDbPgRouting(dbPgRouting);
         instancePanel.setUserPgRouting(userPgRouting);
         return instancePanel;
     }
