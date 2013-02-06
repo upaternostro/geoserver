@@ -14,17 +14,17 @@
 	<packaging>jar</packaging>
 	<name>Open Location Services Service Module</name>
 
-    <repositories>
-        <repository>
-            <id>jboss</id>
-            <name>JBoss Repository</name>
-            <url>http://repository.jboss.org/nexus/content/groups/public/</url>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-        </repository>
-    </repositories>
-    
+	<repositories>
+		<repository>
+			<id>jboss</id>
+			<name>JBoss Repository</name>
+			<url>http://repository.jboss.org/nexus/content/groups/public/</url>
+			<snapshots>
+				<enabled>false</enabled>
+			</snapshots>
+		</repository>
+	</repositories>
+
 	<dependencies>
 		<dependency>
 			<groupId>org.geoserver</groupId>
@@ -49,6 +49,11 @@
             <artifactId>xercesImpl</artifactId>
             <version>2.7.1</version>
         </dependency>
+		<dependency>
+			<groupId>apache-xerces</groupId>
+			<artifactId>xercesImpl</artifactId>
+			<version>2.7.1</version>
+		</dependency>
 		<dependency>
 			<groupId>org.geoserver</groupId>
 			<artifactId>main</artifactId>
