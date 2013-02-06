@@ -5,11 +5,17 @@ import it.phoops.geoserver.ols.OLSInfo;
 import it.phoops.geoserver.ols.OLSService;
 import it.phoops.geoserver.ols.OLSServiceProvider;
 import it.phoops.geoserver.ols.OLSServiceProviderGUI;
+import it.phoops.geoserver.ols.routing.pgrouting.Algorithm;
 import it.phoops.geoserver.ols.routing.pgrouting.PgRoutingServiceProvider;
 import it.phoops.geoserver.ols.web.validator.ValidateCheckboxTab;
 
+import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.wicket.Application;
+import org.apache.wicket.Component;
+import org.apache.wicket.Localizer;
 import org.apache.wicket.extensions.markup.html.tabs.AbstractTab;
 import org.apache.wicket.markup.html.form.CheckBox;
 import org.apache.wicket.markup.html.form.PasswordTextField;
@@ -22,16 +28,77 @@ import org.apache.wicket.validation.validator.PatternValidator;
 import org.geoserver.config.GeoServer;
 
 public class PgRoutingTab extends AbstractTab implements ValidateCheckboxTab{
-    private String              activePgRouting;
-    private String              hostPgRouting;
-    private String              portPgRouting;
-    private String              pswPgRouting;
-    private String              dbPgRouting;
-    private String              userPgRouting;
-    private PgRoutingPanel      instancePanel;
+    private String                              activePgRouting;
+    private String                              hostPgRouting;
+    private String                              portPgRouting;
+    private String                              pswPgRouting;
+    private String                              dbPgRouting;
+    private String                              userPgRouting;
+    private int                                 codeAlgorithmSelected;
+    private PgRoutingPanel                      instancePanel;
+    private List<ShortestPathAlgorithmType>     algorithmList = null;
+    private ShortestPathAlgorithmType           selectedAlgorithm;
+    
+    public class ShortestPathAlgorithmType implements Serializable{
+        private Algorithm               algorithm;
+        private String                  code;
+        private String                  descriptionKey;
+        private Component               component;
+        
+        public ShortestPathAlgorithmType() {}
+        
+        public ShortestPathAlgorithmType(Algorithm algorithm, String descriptionKey){
+            super();
+            this.algorithm = algorithm;
+            this.code = algorithm.toString();
+            this.descriptionKey = descriptionKey;
+        }
+        
+        public Algorithm getService() {
+            return algorithm;
+        }
+
+        public void setService(Algorithm algorithm) {
+            this.algorithm = algorithm;
+        }
+
+        public String getCode() {
+            return code;
+        }
+
+        public void setCode(String code) {
+            this.code = code;
+        }
+
+        public String getDescriptionKey() {
+            return descriptionKey;
+        }
+
+        public void setDescriptionKey(String descriptionKey) {
+            this.descriptionKey = descriptionKey;
+        }
+        
+        public Component getComponent() {
+            return component;
+        }
+
+        public void setComponent(Component component) {
+            this.component = component;
+        }
+
+        @Override
+        public String toString() {
+            Localizer localizer = Application.get().getResourceSettings().getLocalizer();
+            return localizer.getString(descriptionKey, component);
+        }
+    }
 
     public PgRoutingTab(IModel<String> title) {
         super(title);
+        algorithmList = new ArrayList<PgRoutingTab.ShortestPathAlgorithmType>();
+        algorithmList.add(new ShortestPathAlgorithmType(Algorithm.DIJKSTRA, "ShortestPathAlgorithmType.dijkstra"));//1
+        algorithmList.add(new ShortestPathAlgorithmType(Algorithm.A_STAR, "ShortestPathAlgorithmType.a.star"));//2
+        algorithmList.add(new ShortestPathAlgorithmType(Algorithm.SHOOTING_STAR, "ShortestPathAlgorithmType.shooting.star"));//3
     }
 
     @Override
@@ -53,8 +120,10 @@ public class PgRoutingTab extends AbstractTab implements ValidateCheckboxTab{
 
     @Override
     public Panel getPanel(String panelId) {
-        if(instancePanel == null)
+        if(instancePanel == null){
             instancePanel = new PgRoutingPanel(panelId);
+            instancePanel.add(new ShortestPathDropDownChoice("algorithm", new PropertyModel<ShortestPathAlgorithmType>(this, "selectedAlgorithm"), algorithmList));
+        }
         instancePanel.setActivePgRouting(activePgRouting);
         instancePanel.getCheckboxPgRouting().setModelObject(Boolean.parseBoolean(activePgRouting));
         instancePanel.setHostPgRouting(hostPgRouting);
@@ -62,6 +131,8 @@ public class PgRoutingTab extends AbstractTab implements ValidateCheckboxTab{
         instancePanel.setPswPgRouting(pswPgRouting);
         instancePanel.setDbPgRouting(dbPgRouting);
         instancePanel.setUserPgRouting(userPgRouting);
+        instancePanel.setAlgorithmList(this.algorithmList);
+        instancePanel.setSelectedAlgorithm(this.algorithmList.get(getCodeAlgorithmSelected()-1));
         return instancePanel;
     }
     
@@ -137,6 +208,26 @@ public class PgRoutingTab extends AbstractTab implements ValidateCheckboxTab{
         this.userPgRouting = userPgRouting;
     }
 
+    public ShortestPathAlgorithmType getSelectedAlgorithm() {
+        if(instancePanel != null)
+            return instancePanel.getSelectedAlgorithm();
+        return selectedAlgorithm;
+    }
+
+    public void setSelectedAlgorithm(ShortestPathAlgorithmType selectedAlgorithm) {
+        if(instancePanel != null)
+            instancePanel.setSelectedAlgorithm(selectedAlgorithm);
+        this.selectedAlgorithm = selectedAlgorithm;
+    }
+
+    public int getCodeAlgorithmSelected() {
+        return codeAlgorithmSelected;
+    }
+
+    public void setCodeAlgorithmSelected(int codeAlgorithmSelected) {
+        this.codeAlgorithmSelected = codeAlgorithmSelected;
+    }
+
     public PgRoutingPanel getInstancePanel() {
         return instancePanel;
     }
@@ -146,14 +237,16 @@ public class PgRoutingTab extends AbstractTab implements ValidateCheckboxTab{
     }
 
     private static class PgRoutingPanel extends Panel{
-        private String                  activePgRouting;
-        private String                  hostPgRouting;
-        private String                  portPgRouting;
-        private String                  userPgRouting;
-        private String                  dbPgRouting;
-        private String                  pswPgRouting;
-        private CheckBox                checkboxPgRouting;
-        private PasswordTextField       password;
+        private String                                          activePgRouting;
+        private String                                          hostPgRouting;
+        private String                                          portPgRouting;
+        private String                                          userPgRouting;
+        private String                                          dbPgRouting;
+        private String                                          pswPgRouting;
+        private CheckBox                                        checkboxPgRouting;
+        private PasswordTextField                               password;
+        private List<ShortestPathAlgorithmType>                 algorithmList = null;
+        private ShortestPathAlgorithmType                       selectedAlgorithm;
         
         //1 digit, 1 lower, 1 upper, 1 symbol "@#$%", from 6 to 20
         private final String PASSWORD_PATTERN = "((?=.*\\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%]).{6,20})";
@@ -261,9 +354,25 @@ public class PgRoutingTab extends AbstractTab implements ValidateCheckboxTab{
         public void setUserPgRouting(String userPgRouting) {
             this.userPgRouting = userPgRouting;
         }
+        
+        public ShortestPathAlgorithmType getSelectedAlgorithm() {
+            return selectedAlgorithm;
+        }
 
+        public void setSelectedAlgorithm(ShortestPathAlgorithmType selectedAlgorithm) {
+            this.selectedAlgorithm = selectedAlgorithm;
+        }
+        
         public void setCheckboxPgRouting(CheckBox checkboxPgRouting) {
             this.checkboxPgRouting = checkboxPgRouting;
+        }
+        
+        public List<ShortestPathAlgorithmType> getAlgorithmList() {
+            return algorithmList;
+        }
+
+        public void setAlgorithmList(List<ShortestPathAlgorithmType> algorithmList) {
+            this.algorithmList = algorithmList;
         }
     }
 }
