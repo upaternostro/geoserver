@@ -22,6 +22,7 @@ public class PgRoutingServiceProvider extends OLSAbstractServiceProvider impleme
     private static final String  PN_USER = "OLS.serviceProvider.geocoding.pgrouting.service.user";
     private static final String  PN_PASSWORD = "OLS.serviceProvider.geocoding.pgrouting.service.password";
     private static final String  PN_ACTIVE_SERVICE = "OLS.serviceProvider.service.active";
+    private static final String  PN_PGROUTING_ALGORITHM ="OLS.serviceProvider.geocoding.pgrouting.service.shortest.algorithm";
     
     private String      descriptionKey;
     private Properties  properties = new Properties();
@@ -64,6 +65,14 @@ public class PgRoutingServiceProvider extends OLSAbstractServiceProvider impleme
 
     public void setPassword(String password) {
         properties.setProperty(PN_PASSWORD, password);
+    }
+    
+    public String getAlgorithm() {
+        return properties.getProperty(PN_PGROUTING_ALGORITHM);
+    }
+
+    public void setAlgorithm(String algorithm) {
+        properties.setProperty(PN_PGROUTING_ALGORITHM, algorithm);
     }
     
     public String getActive(){
@@ -118,12 +127,16 @@ public class PgRoutingServiceProvider extends OLSAbstractServiceProvider impleme
             psw = "";
         String active = ((PgRoutingTab)getTab()).getActivePgRouting();
         
+        String algorithm = ((PgRoutingTab)getTab()).getSelectedAlgorithm().getCode();
+        
+        
         setActive(active);
         setEndpointAddress(host);
         setPortNumber(port);
         setDatabase(db);
         setUser(user);
         setPassword(psw);
+        setAlgorithm(algorithm);
         
     }
     
@@ -139,5 +152,7 @@ public class PgRoutingServiceProvider extends OLSAbstractServiceProvider impleme
         ((PgRoutingTab)pgRoutingTab).setDbPgRouting(this.getDatabase());
         ((PgRoutingTab)pgRoutingTab).setUserPgRouting(this.getUser());
         ((PgRoutingTab)pgRoutingTab).setPswPgRouting(this.getPassword());
+        Algorithm algorithm = Algorithm.get(this.getAlgorithm());
+        ((PgRoutingTab)pgRoutingTab).setCodeAlgorithmSelected(Integer.parseInt(algorithm.getCode()));
     }
 }

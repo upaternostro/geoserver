@@ -11,5 +11,6 @@
        <property name="user" value="" />
        <property name="password" value="" />
        <property name="database" value="dbProva" />
+       <property name="algorithm" value="1" />
     </bean>
 </beans>
