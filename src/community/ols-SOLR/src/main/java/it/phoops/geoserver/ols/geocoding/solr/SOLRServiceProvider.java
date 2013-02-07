@@ -137,8 +137,6 @@ public class SOLRServiceProvider extends OLSAbstractServiceProvider implements G
         // DatiGeoreferenziazioneInd datiGeoreferenziazioneInd;
         AddressType                                             returnAddress;
         // DatiNormalizzazioneInd datiNormalizzazioneInd;
-        GeocodeMatchCode                                        geocodeMatchCode;
-        // DatiNormalizzazioneLoc datiNormalizzazioneLoc;
 
         solrParams.set("q", "");
 
@@ -473,92 +471,6 @@ public class SOLRServiceProvider extends OLSAbstractServiceProvider implements G
             // throw new OLSException("Remote error: " + e.getLocalizedMessage(), e);
             // }
         }
-
-	@Override
-	public JAXBElement<GeocodeResponseType> geocode(GeocodeRequestType input)
-			throws OLSException {
-		// TODO Auto-generated method stub
-	        System.out.println("Call geocode - SOLRServiceProvider");
-	        StreetAddress                                           streetAddress;
-	        List<Street>                                            streets;
-	        Street                                                  street;
-	        String                                                  buildingNumber;
-	        JAXBElement<? extends AbstractStreetLocatorType>        streetLocator;
-	        BuildingLocatorType                                     buildingLocator;
-	        List<Place>                                             places;
-	        String                                                  municipality;
-	        String                                                  countrySecondarySubdivision;
-	        
-	        
-	        for (AddressType address : input.getAddresses()) {
-	            // We cannot parse freeform requests in this backend
-	            if (address.getFreeFormAddress() != null && !address.getFreeFormAddress().equals("")) {
-	                throw new OLSException("Cannot parse free form requests");
-	            }
-	            
-	            // check for structured address presence
-	            streetAddress = address.getStreetAddress();
-	            
-	            if (streetAddress == null) {
-	                throw new OLSException("StreetAddress missing in geocoding request");
-	            }
-	            
-	            // Check for streets presence
-	            streets = streetAddress.getStreets();
-	            
-	            if (streets == null || streets.size() < 1) {
-	                throw new OLSException("Streets list missing or empty in geocoding request");
-	            }
-	            
-	            // Only first street is handled here
-	            if (streets.size() > 1) {
-	                throw new OLSException("Cannot manage street crossing");
-	            }
-	            
-	            street = streets.get(0);
-	            
-	            if (street == null) {
-	                throw new OLSException("Street missing in geocoding request");
-	            }
-	            
-	            // Check for street name presence (structured data ignored)
-	            if (street.getValue() == null || street.getValue().equals("")) {
-	                throw new OLSException("Street name missing in geocoding request");
-	            }
-	            
-	         // Check for building number (optional)
-	            buildingNumber = null;
-	            streetLocator = streetAddress.getStreetLocation();
-	            
-	            if (streetLocator != null) {
-	                if (streetLocator.getValue() instanceof BuildingLocatorType) {
-	                    buildingLocator = (BuildingLocatorType)streetLocator.getValue();
-	                    buildingNumber = buildingLocator.getNumber();
-	                    
-	                    if (buildingLocator.getSubdivision() != null && !buildingLocator.getSubdivision().equals("")) {
-	                        buildingNumber += "/" + buildingLocator.getSubdivision();
-	                    }
-	                }
-	            }
-	            
-	         // Check places: municipality has to be there (at least) (and once, please)
-	            places = address.getPlaces();
-	            
-	            if (places == null || places.size() < 1) {
-	                throw new OLSException("Places list missing or empty in geocoding request");
-	            }
-	            
-	            municipality = null;
-	            countrySecondarySubdivision = null;
-	            
-	            for (Place place : places) {
-	                //TODO: implementation
-	            }
-                }
-		return null;
-	}
-	
         return retval;
     }
-
 }

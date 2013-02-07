@@ -12,8 +12,27 @@ import java.util.Properties;
 
 import javax.xml.bind.JAXBElement;
 
+import net.opengis.www.xls.AbstractStreetLocatorType;
+import net.opengis.www.xls.AddressType;
+import net.opengis.www.xls.BuildingLocatorType;
+import net.opengis.www.xls.GeocodeResponseList;
+import net.opengis.www.xls.GeocodeResponseType;
+import net.opengis.www.xls.GeocodedAddressType;
+import net.opengis.www.xls.ObjectFactory;
+import net.opengis.www.xls.Place;
+import net.opengis.www.xls.PointType;
+import net.opengis.www.xls.Pos;
+import net.opengis.www.xls.PositionType;
 import net.opengis.www.xls.ReverseGeocodeRequestType;
+import net.opengis.www.xls.Street;
+import net.opengis.www.xls.StreetAddress;
 
+import org.apache.solr.client.solrj.SolrQuery;
+import org.apache.solr.client.solrj.SolrServer;
+import org.apache.solr.client.solrj.SolrServerException;
+import org.apache.solr.client.solrj.impl.HttpSolrServer;
+import org.apache.solr.client.solrj.response.QueryResponse;
+import org.apache.solr.common.params.ModifiableSolrParams;
 import org.apache.wicket.extensions.markup.html.tabs.ITab;
 import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.ResourceModel;
@@ -94,6 +113,54 @@ public class SOLRReverseServiceProvider extends OLSAbstractServiceProvider imple
 	public JAXBElement<ReverseGeocodeRequestType> geocode(
 			ReverseGeocodeRequestType input) throws OLSException {
 		// TODO Auto-generated method stub
+	        ObjectFactory                                           of = new ObjectFactory();
+	        GeocodeResponseType                                     output = of.createGeocodeResponseType();
+	        JAXBElement<GeocodeResponseType>                        retval = of.createGeocodeResponse(output);
+	        SolrServer                                              solrServer = new HttpSolrServer(getEndpointAddress());
+	        ModifiableSolrParams                                    solrParams = new ModifiableSolrParams();
+	        QueryResponse                                           solrResponse;
+	        List<GeocodeResponseList>                               responseList = output.getGeocodeResponseLists();
+	        GeocodeResponseList                                     listItem;
+	        List<Place>                                             places;
+	        StreetAddress                                           streetAddress;
+	        List<Street>                                            streets;
+	        Street                                                  street;
+	        JAXBElement<? extends AbstractStreetLocatorType>        streetLocator;
+	        BuildingLocatorType                                     buildingLocator;
+	        String                                                  buildingNumber;
+	        String                                                  municipality;
+	        String                                                  countrySecondarySubdivision;
+	        List<GeocodedAddressType>                               geocodedAddresses;
+	        // IndirizzoRiconosciuto indirizzoRiconosciuto;
+	        GeocodedAddressType                                     geocodedAddress;
+	        PointType                                               point;
+	        Pos                                                     pos;
+	        List<Double>                                            coordinates;
+	        // DatiGeoreferenziazioneInd datiGeoreferenziazioneInd;
+	        AddressType                                             returnAddress;
+	        
+	        
+	        solrParams.set("q", "");
+	        PositionType positionType = input.getPosition();
+	        if(positionType == null){
+	            throw new OLSException("No match Position Type");
+	        }
+	        PointType pointType = positionType.getPoint();
+	        if(pointType == null){
+	            throw new OLSException("Point missing in reverse geocode request");
+	        }
+	        pos = pointType.getPos();
+	        coordinates = pos.getValues();
+
+	        SolrQuery query = new SolrQuery("bounding_box:\"Intersects("+coordinates.get(0)+","+coordinates.get(1)+")\"");
+	        
+	        try {
+	            //CAll Solr
+	            solrResponse = solrServer.query(query);
+	        } catch (SolrServerException e) {
+	            throw new OLSException("SOLR error: " + e.getLocalizedMessage(), e);
+	        }
+	        
 		System.out.println("---- Da Implementare il geocode per ReverseGeorouting");
 		return null;
 	}
