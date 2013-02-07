@@ -10,7 +10,7 @@ How to load data into SOLR
 
 4. extract features from ways:
         create table features as 
-        select 'OSM_' || coalesce(codcom, 'OUTSIDE') || '_' || osm_id id, name::character varying, st_collect(the_geom) centerline, st_pointonsurface(st_collect(the_geom)) centroid, st_envelope(st_collect(the_geom)) bounding_box,
+        select 'OSM_' || coalesce(codcom, 'OUTSIDE') || '_' || osm_id id, trim(replace(replace(replace(name, '&', '&amp;'), '>', '&gt;'), '<', '&lt;'))::character varying, st_collect(the_geom) centerline, st_pointonsurface(st_collect(the_geom)) centroid, st_envelope(st_collect(the_geom)) bounding_box,
         c.nome municipality, CASE 
             WHEN codprov = '045' THEN 'MS'
             WHEN codprov = '046' THEN 'LU'
