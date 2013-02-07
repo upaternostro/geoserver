@@ -1,5 +1,10 @@
 package it.phoops.geoserver.ols.geocoding;
 
+import it.phoops.geoserver.ols.OLSException;
+import it.phoops.geoserver.ols.OLSHandler;
+import it.phoops.geoserver.ols.OLSService;
+import it.phoops.geoserver.ols.OLSServiceProvider;
+
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBElement;
 import javax.xml.bind.JAXBException;
@@ -9,14 +14,8 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
-import it.phoops.geoserver.ols.OLSException;
-import it.phoops.geoserver.ols.OLSHandler;
-import it.phoops.geoserver.ols.OLSService;
-import it.phoops.geoserver.ols.OLSServiceProvider;
-
-import net.opengis.www.xls.GeocodeRequestType;
-import net.opengis.www.xls.GeocodeResponseType;
 import net.opengis.www.xls.ReverseGeocodeRequestType;
+import net.opengis.www.xls.ReverseGeocodeResponseType;
 
 import org.w3c.dom.Document;
 
@@ -39,7 +38,7 @@ public class ReverseGeocodingHandler implements OLSHandler {
             throw new OLSException("JAXB error", e);
         }
         
-        JAXBElement<ReverseGeocodeRequestType>      output = provider.geocode(input);
+        JAXBElement<ReverseGeocodeResponseType>      output = provider.geocode(input);
         Document                                	domResponse = null;
         
         try {
