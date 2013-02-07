@@ -6,6 +6,7 @@ import it.phoops.geoserver.ols.OLSService;
 import it.phoops.geoserver.ols.geocoding.GeocodingServiceProvider;
 import it.phoops.geoserver.ols.geocoding.solr.component.SOLRTab;
 import it.phoops.geoserver.ols.geocoding.solr.component.SOLRTabFactory;
+import it.phoops.geoserver.ols.solr.utils.SolrPager;
 
 import java.io.StringReader;
 import java.math.BigInteger;
@@ -126,7 +127,6 @@ public class SOLRServiceProvider extends OLSAbstractServiceProvider implements G
         JAXBElement<GeocodeResponseType>                        retval = of.createGeocodeResponse(output);
         SolrServer                                              solrServer = new HttpSolrServer(getEndpointAddress());
         ModifiableSolrParams                                    solrParams = new ModifiableSolrParams();
-        QueryResponse                                           solrResponse;
         SolrDocumentList                                        solrDocs;
         List<GeocodeResponseList>                               responseList = output.getGeocodeResponseLists();
         GeocodeResponseList                                     listItem;
@@ -252,17 +252,15 @@ public class SOLRServiceProvider extends OLSAbstractServiceProvider implements G
                 }
             }
 
-            solrParams.set("start", 0);
-
             try {
                 // Call SOLR
-                solrResponse = solrServer.query(solrParams);
+                solrDocs = SolrPager.query(solrServer, solrParams);
                 
                 listItem = of.createGeocodeResponseList();
-                listItem.setNumberOfGeocodedAddresses(BigInteger.valueOf(solrResponse.getResults().getNumFound()));
+                listItem.setNumberOfGeocodedAddresses(BigInteger.valueOf(solrDocs.getNumFound()));
                 geocodedAddresses = listItem.getGeocodedAddresses();
                 
-                for (SolrDocument solrDoc : solrResponse.getResults()) {
+                for (SolrDocument solrDoc : solrDocs) {
                     if (wktReader == null) {
                         wktReader = new WKTReader();
                     }
