@@ -7,6 +7,8 @@ import it.phoops.geoserver.ols.geocoding.GeocodingServiceProvider;
 import it.phoops.geoserver.ols.geocoding.solr.component.SOLRTab;
 import it.phoops.geoserver.ols.geocoding.solr.component.SOLRTabFactory;
 
+import java.io.StringReader;
+import java.math.BigInteger;
 import java.util.List;
 import java.util.Properties;
 
@@ -20,6 +22,7 @@ import net.opengis.www.xls.GeocodeRequestType;
 import net.opengis.www.xls.GeocodeResponseList;
 import net.opengis.www.xls.GeocodeResponseType;
 import net.opengis.www.xls.GeocodedAddressType;
+import net.opengis.www.xls.NamedPlaceClassification;
 import net.opengis.www.xls.ObjectFactory;
 import net.opengis.www.xls.Place;
 import net.opengis.www.xls.PointType;
@@ -31,11 +34,17 @@ import org.apache.solr.client.solrj.SolrServer;
 import org.apache.solr.client.solrj.SolrServerException;
 import org.apache.solr.client.solrj.impl.HttpSolrServer;
 import org.apache.solr.client.solrj.response.QueryResponse;
+import org.apache.solr.common.SolrDocument;
+import org.apache.solr.common.SolrDocumentList;
 import org.apache.solr.common.params.ModifiableSolrParams;
 import org.apache.wicket.extensions.markup.html.tabs.ITab;
 import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.ResourceModel;
 import org.geoserver.config.ServiceInfo;
+
+import com.vividsolutions.jts.geom.Geometry;
+import com.vividsolutions.jts.io.ParseException;
+import com.vividsolutions.jts.io.WKTReader;
 
 public class SOLRServiceProvider extends OLSAbstractServiceProvider implements GeocodingServiceProvider {
     public static final String COUNTRY_CODE = "IT";
@@ -118,6 +127,7 @@ public class SOLRServiceProvider extends OLSAbstractServiceProvider implements G
         SolrServer                                              solrServer = new HttpSolrServer(getEndpointAddress());
         ModifiableSolrParams                                    solrParams = new ModifiableSolrParams();
         QueryResponse                                           solrResponse;
+        SolrDocumentList                                        solrDocs;
         List<GeocodeResponseList>                               responseList = output.getGeocodeResponseLists();
         GeocodeResponseList                                     listItem;
         List<Place>                                             places;
@@ -130,18 +140,16 @@ public class SOLRServiceProvider extends OLSAbstractServiceProvider implements G
         String                                                  municipality;
         String                                                  countrySecondarySubdivision;
         List<GeocodedAddressType>                               geocodedAddresses;
-        // IndirizzoRiconosciuto indirizzoRiconosciuto;
         GeocodedAddressType                                     geocodedAddress;
         PointType                                               point;
         Pos                                                     pos;
+        WKTReader                                               wktReader = null;
+        StringReader                                            sr;
+        Geometry                                                geometry;
         List<Double>                                            coordinates;
-        // DatiGeoreferenziazioneInd datiGeoreferenziazioneInd;
+        Place                                                   place;
         AddressType                                             returnAddress;
-        // DatiNormalizzazioneInd datiNormalizzazioneInd;
         GeocodeMatchCode                                        geocodeMatchCode;
-        // DatiNormalizzazioneLoc datiNormalizzazioneLoc;
-
-        solrParams.set("q", "");
 
         for (AddressType address : input.getAddresses()) {
             // We manage only requests regarding Italy (moreover, Tuscany...)
@@ -178,6 +186,7 @@ public class SOLRServiceProvider extends OLSAbstractServiceProvider implements G
                     throw new OLSException("Street missing in geocoding request");
                 }
 
+                // FIXME
                 // Check for street name presence (structured data ignored)
                 if (street.getValue() == null || street.getValue().equals("")) {
                     throw new OLSException("Street name missing in geocoding request");
@@ -186,20 +195,23 @@ public class SOLRServiceProvider extends OLSAbstractServiceProvider implements G
                 solrParams.set("q", "name:" + street.getValue());
             }
 
-            // // Check for building number (optional)
-            // buildingNumber = null;
-            // streetLocator = streetAddress.getStreetLocation();
-            //
-            // if (streetLocator != null) {
-            // if (streetLocator.getValue() instanceof BuildingLocatorType) {
-            // buildingLocator = (BuildingLocatorType)streetLocator.getValue();
-            // buildingNumber = buildingLocator.getNumber();
-            //
-            // if (buildingLocator.getSubdivision() != null && !buildingLocator.getSubdivision().equals("")) {
-            // buildingNumber += "/" + buildingLocator.getSubdivision();
-            // }
-            // }
-            // }
+            // Check for building number (optional)
+            buildingNumber = null;
+            streetLocator = streetAddress.getStreetLocation();
+
+            if (streetLocator != null) {
+                if (streetLocator.getValue() instanceof BuildingLocatorType) {
+                    buildingLocator = (BuildingLocatorType) streetLocator.getValue();
+                    buildingNumber = buildingLocator.getNumber();
+
+                    if (buildingLocator.getSubdivision() != null
+                            && !buildingLocator.getSubdivision().equals("")) {
+                        buildingNumber += "/" + buildingLocator.getSubdivision();
+                    }
+                    
+                    solrParams.add("q", "building_number:" + buildingNumber);
+                }
+            }
 
             // Check places: municipality has to be there (at least) (and once, please)
             places = address.getPlaces();
@@ -211,16 +223,17 @@ public class SOLRServiceProvider extends OLSAbstractServiceProvider implements G
             municipality = null;
             countrySecondarySubdivision = null;
 
-            for (Place place : places) {
-                switch (place.getType()) {
+            for (Place pivot : places) {
+                switch (pivot.getType()) {
                 case MUNICIPALITY:
                     if (municipality != null && !municipality.equals("")) {
                         throw new OLSException(
                                 "Too many municipalities in geocoding request: old one "
-                                        + municipality + " new one: " + place.getValue());
+                                        + municipality + " new one: " + pivot.getValue());
                     }
 
-                    municipality = place.getValue();
+                    municipality = pivot.getValue();
+                    solrParams.add("q", "municipality:" + municipality);
                     break;
                 case COUNTRY_SECONDARY_SUBDIVISION:
                     if (countrySecondarySubdivision != null
@@ -228,251 +241,119 @@ public class SOLRServiceProvider extends OLSAbstractServiceProvider implements G
                         throw new OLSException(
                                 "Too many country secondary subdivisions in geocoding request: old one "
                                         + countrySecondarySubdivision + " new one: "
-                                        + place.getValue());
+                                        + pivot.getValue());
                     }
 
-                    countrySecondarySubdivision = place.getValue();
+                    countrySecondarySubdivision = pivot.getValue();
+                    solrParams.add("q", "country_subdivision:" + countrySecondarySubdivision);
                     break;
                 default:
                     break;
                 }
             }
 
-            if (municipality == null || municipality.equals("")) {
-                throw new OLSException("Municipality missing or empty in geocoding request");
-            }
+            solrParams.set("start", 0);
 
             try {
+                // Call SOLR
                 solrResponse = solrServer.query(solrParams);
+                
+                listItem = of.createGeocodeResponseList();
+                listItem.setNumberOfGeocodedAddresses(BigInteger.valueOf(solrResponse.getResults().getNumFound()));
+                geocodedAddresses = listItem.getGeocodedAddresses();
+                
+                for (SolrDocument solrDoc : solrResponse.getResults()) {
+                    if (wktReader == null) {
+                        wktReader = new WKTReader();
+                    }
+                    
+                    sr = new StringReader(solrDoc.getFieldValue("centroid").toString());
+                    
+                    try {
+                        geometry = wktReader.read(sr);
+                        
+                        geocodedAddress = of.createGeocodedAddressType();
+                        point = of.createPointType();
+                        pos = of.createPos();
+                        
+                        pos.setDimension(BigInteger.valueOf(2));
+                        
+                        coordinates = pos.getValues();
+                        
+                        coordinates.add(Double.valueOf(geometry.getCoordinate().getOrdinate(0)));
+                        coordinates.add(Double.valueOf(geometry.getCoordinate().getOrdinate(1)));
+                        // pos.setSrsName(value);
+                        
+                        point.setPos(pos);
+                        // point.setSrsName(value);
+                        // point.setId(value);
+                        geocodedAddress.setPoint(point);
+                    } catch (ParseException e) {
+                        throw new OLSException("WKT parse error: " + e.getLocalizedMessage(), e);
+                    }
+                    
+                    returnAddress = of.createAddressType();
+                    
+                    returnAddress.setCountryCode(COUNTRY_CODE);
+                    places = returnAddress.getPlaces();
+                    
+                    if (solrDoc.getFieldValue("municipality") != null) {
+                        place = of.createPlace();
+                        
+                        place.setType(NamedPlaceClassification.MUNICIPALITY);
+                        place.setValue(solrDoc.getFieldValue("municipality").toString());
+                        
+                        places.add(place);
+                    }
+                    
+                    if (solrDoc.getFieldValue("country_subdivision") != null) {
+                        place = of.createPlace();
+                        
+                        place.setType(NamedPlaceClassification.COUNTRY_SECONDARY_SUBDIVISION);
+                        place.setValue(solrDoc.getFieldValue("country_subdivision").toString());
+                        
+                        places.add(place);
+                    }
+                    
+                    place = of.createPlace();
+                    
+                    place.setType(NamedPlaceClassification.COUNTRY_SUBDIVISION);
+                    place.setValue("Toscana");
+                    
+                    places.add(place);
+                    
+                    // Manca
+                    // returnAddress.setPostalCode(datiNormalizzazioneInd.getCap());
+                    
+                    streetAddress = of.createStreetAddress();
+                    street = of.createStreet();
+                    
+                    // if (datiNormalizzazioneInd.getCivico() != null && !datiNormalizzazioneInd.getCivico().equals("") &&
+                    // !datiNormalizzazioneInd.getCivico().equals("0")) {
+                    // street.setValue(datiNormalizzazioneInd.getDug() + " " + datiNormalizzazioneInd.getToponimo() + ", " +
+                    // datiNormalizzazioneInd.getCivico());
+                    // } else {
+                    street.setValue(solrDoc.getFieldValue("name").toString());
+                    // }
+                    
+                    streetAddress.getStreets().add(street);
+                    
+                    returnAddress.setStreetAddress(streetAddress);
+                    
+                    geocodedAddress.setAddress(returnAddress);
+                    
+                    geocodeMatchCode = of.createGeocodeMatchCode();
+                    geocodeMatchCode.setMatchType("SOLR");
+                    geocodeMatchCode.setAccuracy(new Float(1));
+                    
+                    geocodedAddress.setGeocodeMatchCode(geocodeMatchCode);
+                    geocodedAddresses.add(geocodedAddress);
+                }
+
+                responseList.add(listItem);
             } catch (SolrServerException e) {
                 throw new OLSException("SOLR error: " + e.getLocalizedMessage(), e);
             }
-
-            // Lazy bind to web service
-            // if (binding == null) {
-            // try {
-            // binding = (MusumeSoapBindingStub) new MusumeServiceLocator().getMusume(new URL(getEndpointAddress()));
-            // // Time out after a minute
-            // binding.setTimeout(Integer.valueOf(getTimeout()));
-            // } catch (ServiceException e) {
-            // throw new OLSException("JAX-RPC error: " + e.getLocalizedMessage(), e);
-            // } catch (MalformedURLException e) {
-            // throw new OLSException("Malformed URL error: " + e.getLocalizedMessage(), e);
-            // }
-            // }
-            //
-            // try {
-            // // Call RFC59 web service
-            // rispostaNormalizzata = binding.richiesta(Algorithm.get(getAlgorithm()).toString(),
-            // street.getValue() + (buildingNumber == null ? "" : ", " + buildingNumber), municipality, countrySecondarySubdivision,
-            // address.getPostalCode(), DATA_SOURCE.toString());
-            //
-            // listItem = of.createGeocodeResponseList();
-            // listItem.setNumberOfGeocodedAddresses(BigInteger.ZERO);
-            // geocodedAddresses = listItem.getGeocodedAddresses();
-            //
-            // switch (ResponseType.get(rispostaNormalizzata.getTipoRispostaNorm())) {
-            // case GEOCODING_OK:
-            // listItem.setNumberOfGeocodedAddresses(BigInteger.ONE);
-            // indirizzoRiconosciuto = rispostaNormalizzata.getIndirizzoRiconosciuto();
-            //
-            // geocodedAddress = of.createGeocodedAddressType();
-            // point = of.createPointType();
-            // pos = of.createPos();
-            //
-            // pos.setDimension(BigInteger.valueOf(2));
-            //
-            // coordinates = pos.getValues();
-            // datiGeoreferenziazioneInd = indirizzoRiconosciuto.getDatiGeoreferenziazioneInd();
-            // coordinates.add(Double.valueOf(datiGeoreferenziazioneInd.getLongitudine()));
-            // coordinates.add(Double.valueOf(datiGeoreferenziazioneInd.getLatitudine()));
-            //
-            // // pos.setSrsName(value);
-            //
-            // point.setPos(pos);
-            // // point.setSrsName(value);
-            // // point.setId(value);
-            // geocodedAddress.setPoint(point);
-            // returnAddress = of.createAddressType();
-            // datiNormalizzazioneInd = indirizzoRiconosciuto.getDatiNormalizzazioneInd();
-            //
-            // returnAddress.setCountryCode(COUNTRY_CODE);
-            // places = returnAddress.getPlaces();
-            //
-            // Place place = of.createPlace();
-            //
-            // place.setType(NamedPlaceClassification.MUNICIPALITY);
-            // place.setValue(datiNormalizzazioneInd.getLocalita());
-            //
-            // places.add(place);
-            //
-            // place = of.createPlace();
-            //
-            // place.setType(NamedPlaceClassification.COUNTRY_SECONDARY_SUBDIVISION);
-            // place.setValue(datiNormalizzazioneInd.getProvincia());
-            //
-            // places.add(place);
-            //
-            // place = of.createPlace();
-            //
-            // place.setType(NamedPlaceClassification.COUNTRY_SUBDIVISION);
-            // place.setValue("Toscana");
-            //
-            // places.add(place);
-            //
-            // returnAddress.setPostalCode(datiNormalizzazioneInd.getCap());
-            //
-            // streetAddress = of.createStreetAddress();
-            // street = of.createStreet();
-            //
-            // if (datiNormalizzazioneInd.getCivico() != null && !datiNormalizzazioneInd.getCivico().equals("") &&
-            // !datiNormalizzazioneInd.getCivico().equals("0")) {
-            // street.setValue(datiNormalizzazioneInd.getDug() + " " + datiNormalizzazioneInd.getToponimo() + ", " +
-            // datiNormalizzazioneInd.getCivico());
-            // } else {
-            // street.setValue(datiNormalizzazioneInd.getDug() + " " + datiNormalizzazioneInd.getToponimo());
-            // }
-            //
-            // streetAddress.getStreets().add(street);
-            //
-            // returnAddress.setStreetAddress(streetAddress);
-            //
-            // geocodedAddress.setAddress(returnAddress);
-            //
-            // geocodeMatchCode = of.createGeocodeMatchCode();
-            // geocodeMatchCode.setMatchType("RFC59-" + getAlgorithm());
-            // geocodeMatchCode.setAccuracy(new Float(1));
-            //
-            // geocodedAddress.setGeocodeMatchCode(geocodeMatchCode);
-            // geocodedAddresses.add(geocodedAddress);
-            // break;
-            // case UNKNOWN_ADDRESS:
-            // break;
-            // case UNKNOWN_MUNICIPALITY:
-            // break;
-            // case INPUT_PARAMETER_ERROR:
-            // throw new OLSException("Parameter error");
-            // case AMBIGUOUS_MUNICIPALITY:
-            // // rispostaNormalizzata.getLocalitaAmbigua().getAmbiguitaLoc().getAmbiguitaLocItem()[0].get;
-            // break;
-            // case AMBIGUOUS_ADDRESS:
-            // listItem.setNumberOfGeocodedAddresses(BigInteger.valueOf(rispostaNormalizzata.getIndirizzoAmbiguo().getAmbiguitaInd().getAmbiguitaIndItemCount()));
-            //
-            // for (AmbiguitaIndItem ambiguitaInd : rispostaNormalizzata.getIndirizzoAmbiguo().getAmbiguitaInd().getAmbiguitaIndItem()) {
-            // geocodedAddress = of.createGeocodedAddressType();
-            // point = of.createPointType();
-            // pos = of.createPos();
-            //
-            // pos.setDimension(BigInteger.valueOf(2));
-            //
-            // coordinates = pos.getValues();
-            // coordinates.add(Double.valueOf(ambiguitaInd.getX()));
-            // coordinates.add(Double.valueOf(ambiguitaInd.getY()));
-            //
-            // // pos.setSrsName(value);
-            //
-            // point.setPos(pos);
-            // // point.setSrsName(value);
-            // // point.setId(value);
-            // geocodedAddress.setPoint(point);
-            // returnAddress = of.createAddressType();
-            //
-            // returnAddress.setCountryCode(COUNTRY_CODE);
-            //
-            // streetAddress = of.createStreetAddress();
-            // street = of.createStreet();
-            //
-            // if (ambiguitaInd.getCivico() != null && !ambiguitaInd.getCivico().equals("")) {
-            // street.setValue(ambiguitaInd.getIndirizzo() + ", " + ambiguitaInd.getCivico());
-            // } else {
-            // street.setValue(ambiguitaInd.getIndirizzo());
-            // }
-            //
-            // streetAddress.getStreets().add(street);
-            //
-            // returnAddress.setStreetAddress(streetAddress);
-            //
-            // geocodedAddress.setAddress(returnAddress);
-            //
-            // geocodeMatchCode = of.createGeocodeMatchCode();
-            // geocodeMatchCode.setMatchType("RFC59-" + getAlgorithm());
-            // geocodeMatchCode.setAccuracy(new Float(0));
-            //
-            // geocodedAddress.setGeocodeMatchCode(geocodeMatchCode);
-            // geocodedAddresses.add(geocodedAddress);
-            // }
-            // break;
-            // case MUNICIPALITY_DATA_ONLY:
-            // datiNormalizzazioneLoc = rispostaNormalizzata.getLocalitaNormalizzata().getDatiNormalizzazioneLoc();
-            // listItem.setNumberOfGeocodedAddresses(BigInteger.ONE);
-            // geocodedAddress = of.createGeocodedAddressType();
-            // point = of.createPointType();
-            // pos = of.createPos();
-            //
-            // pos.setDimension(BigInteger.valueOf(2));
-            //
-            // coordinates = pos.getValues();
-            // coordinates.add(Double.valueOf(datiNormalizzazioneLoc.getXSezioneIstat()));
-            // coordinates.add(Double.valueOf(datiNormalizzazioneLoc.getYSezioneIstat()));
-            //
-            // // pos.setSrsName(value);
-            //
-            // point.setPos(pos);
-            // // point.setSrsName(value);
-            // // point.setId(value);
-            // geocodedAddress.setPoint(point);
-            // returnAddress = of.createAddressType();
-            //
-            // returnAddress.setCountryCode(COUNTRY_CODE);
-            // places = returnAddress.getPlaces();
-            //
-            // place = of.createPlace();
-            //
-            // place.setType(NamedPlaceClassification.MUNICIPALITY_SUBDIVISION);
-            // place.setValue(datiNormalizzazioneLoc.getFrazione());
-            //
-            // places.add(place);
-            //
-            // place = of.createPlace();
-            //
-            // place.setType(NamedPlaceClassification.MUNICIPALITY);
-            // place.setValue(datiNormalizzazioneLoc.getLocalita());
-            //
-            // places.add(place);
-            //
-            // place = of.createPlace();
-            //
-            // place.setType(NamedPlaceClassification.COUNTRY_SECONDARY_SUBDIVISION);
-            // place.setValue(datiNormalizzazioneLoc.getProvincia());
-            //
-            // places.add(place);
-            //
-            // place = of.createPlace();
-            //
-            // place.setType(NamedPlaceClassification.COUNTRY_SUBDIVISION);
-            // place.setValue("Toscana");
-            //
-            // places.add(place);
-            //
-            // returnAddress.setPostalCode(datiNormalizzazioneLoc.getCap());
-            //
-            // geocodedAddress.setAddress(returnAddress);
-            //
-            // geocodeMatchCode = of.createGeocodeMatchCode();
-            // geocodeMatchCode.setMatchType("RFC59-" + getAlgorithm());
-            // geocodeMatchCode.setAccuracy(new Float(1));
-            //
-            // geocodedAddress.setGeocodeMatchCode(geocodeMatchCode);
-            // geocodedAddresses.add(geocodedAddress);
-            // break;
-            // case DATA_ACCESS_ERROR:
-            // throw new OLSException("Data access error");
-            // }
-            //
-            // responseList.add(listItem);
-            // } catch (RemoteException e) {
-            // throw new OLSException("Remote error: " + e.getLocalizedMessage(), e);
-            // }
         }
 
         return retval;
