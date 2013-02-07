@@ -158,6 +158,7 @@ public class RFC59ServiceProvider extends OLSAbstractServiceProvider implements 
         StreetAddress                                           streetAddress;
         List<Street>                                            streets;
         Street                                                  street;
+        String                                                  streetName;
         JAXBElement<? extends AbstractStreetLocatorType>        streetLocator;
         BuildingLocatorType                                     buildingLocator;
         String                                                  buildingNumber;
@@ -211,9 +212,25 @@ public class RFC59ServiceProvider extends OLSAbstractServiceProvider implements 
                 throw new OLSException("Street missing in geocoding request");
             }
             
-            // Check for street name presence (structured data ignored)
+            // Check for street name presence
             if (street.getValue() == null || street.getValue().equals("")) {
-                throw new OLSException("Street name missing in geocoding request");
+                // Use structured data
+                if (street.getOfficialName() == null || street.getOfficialName().equals("")) {
+                    throw new OLSException("Street name missing in geocoding request");
+                }
+                
+                streetName = street.getOfficialName();
+                
+                if (street.getTypePrefix() != null && !street.getTypePrefix().equals("")) {
+                    streetName = street.getTypePrefix() + " " + streetName;
+                }
+                
+                if (street.getTypeSuffix() != null && !street.getTypeSuffix().equals("")) {
+                    streetName += street.getTypeSuffix();
+                }
+            } else {
+                // Use free form data
+                streetName = street.getValue();
             }
             
             // Check for building number (optional)
@@ -282,7 +299,7 @@ public class RFC59ServiceProvider extends OLSAbstractServiceProvider implements 
             try {
                 // Call RFC59 web service
                 rispostaNormalizzata = binding.richiesta(Algorithm.get(getAlgorithm()).toString(),
-                        street.getValue() + (buildingNumber == null ? "" : ", " + buildingNumber), municipality, countrySecondarySubdivision,
+                        streetName + (buildingNumber == null ? "" : ", " + buildingNumber), municipality, countrySecondarySubdivision,
                         address.getPostalCode(), DATA_SOURCE.toString());
 
                 listItem = of.createGeocodeResponseList();
