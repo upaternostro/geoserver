@@ -10,24 +10,27 @@ How to load data into SOLR
 
 4. extract features from ways:
         create table features as 
-        select 'OSM_' || coalesce(codcom, 'OUTSIDE') || '_' || osm_id id, trim(replace(replace(replace(name, '&', '&amp;'), '>', '&gt;'), '<', '&lt;'))::character varying, st_collect(the_geom) centerline, st_pointonsurface(st_collect(the_geom)) centroid, st_envelope(st_collect(the_geom)) bounding_box,
-        c.nome municipality, CASE 
-            WHEN codprov = '045' THEN 'MS'
-            WHEN codprov = '046' THEN 'LU'
-            WHEN codprov = '048' THEN 'FI'
-            WHEN codprov = '047' THEN 'PT'
-            WHEN codprov = '100' THEN 'PO'
-            WHEN codprov = '051' THEN 'AR'
-            WHEN codprov = '050' THEN 'PI'
-            WHEN codprov = '052' THEN 'SI'
-            WHEN codprov = '049' THEN 'LI'
-            WHEN codprov = '053' THEN 'GR'
-            ELSE 'XX'
-        END country_subdivision
+        select 'OSM_' || coalesce(codcom, 'OUTSIDE') || '_' || osm_id id, 
+            trim(replace(replace(replace(name, '&', '&amp;'), '>', '&gt;'), '<', '&lt;'))::character varying as name, 
+            st_collect(the_geom) centerline, 
+            st_pointonsurface(st_collect(the_geom)) centroid, 
+            st_envelope(st_collect(the_geom)) bounding_box,
+            coalesce(c.nome, 'UNKNOWN') municipality, CASE 
+                WHEN codprov = '045' THEN 'MS'
+                WHEN codprov = '046' THEN 'LU'
+                WHEN codprov = '048' THEN 'FI'
+                WHEN codprov = '047' THEN 'PT'
+                WHEN codprov = '100' THEN 'PO'
+                WHEN codprov = '051' THEN 'AR'
+                WHEN codprov = '050' THEN 'PI'
+                WHEN codprov = '052' THEN 'SI'
+                WHEN codprov = '049' THEN 'LI'
+                WHEN codprov = '053' THEN 'GR'
+                ELSE 'XX'
+            END country_subdivision
         from ways w LEFT JOIN am_com_region_am_com c ON w.the_geom && c.geom and st_intersects(w.the_geom, c.geom) = 't'
         where name is not null and name <> ''
-        group by id, name, municipality, country_subdivision;        
-        create index features_idx on features(name, municipality);
+        group by id, name, municipality, country_subdivision;
         
         create table dug (text character varying(50));
         INSERT INTO dug (text) VALUES ('NUOVA');
@@ -141,7 +144,7 @@ How to load data into SOLR
         INSERT INTO dug (text) VALUES ('LUNGOMARE');
         
         alter table features add column street_type character varying(200);
-        alter table features add column  street_name character varying(200);
+        alter table features add column street_name character varying(200);
         
         CREATE OR REPLACE FUNCTION normalize()
           RETURNS void AS
@@ -166,14 +169,16 @@ How to load data into SOLR
         
         select '<doc><field name="id">' || id || '</field><field name="is_building">false</field><field name="name">' || 
                 name || '</field><field name="street_type">' || street_type || '</field><field name="street_name">' || 
-                street_name || '</field><field name="centerline">' || st_astext(centerline) || '</field><field name="centroid">' ||
+                street_name || '</field><field name="municipality">' || municipality || '</field><field name="country_subdivision">' || 
+                country_subdivision || '</field><field name="centerline">' || st_astext(centerline) || '</field><field name="centroid">' ||
                 st_astext(centroid) || '</field><field name="bounding_box">' ||
                 st_xmin(bounding_box) || ' ' || st_ymin(bounding_box) || ' ' || st_xmax(bounding_box) || ' ' || st_ymax(bounding_box) ||
             '</field></doc>' doc
         from features where street_type is not null and street_name is not null
         union all
         select '<doc><field name="id">' || id || '</field><field name="is_building">false</field><field name="name">' || 
-                name || '</field><field name="centerline">' || st_astext(centerline) || '</field><field name="centroid">' ||
+                name || '</field><field name="municipality">' || municipality || '</field><field name="country_subdivision">' || 
+                country_subdivision || '</field><field name="centerline">' || st_astext(centerline) || '</field><field name="centroid">' ||
                 st_astext(centroid) || '</field><field name="bounding_box">' ||
                 st_xmin(bounding_box) || ' ' || st_ymin(bounding_box) || ' ' || st_xmax(bounding_box) || ' ' || st_ymax(bounding_box) ||
             '</field></doc>'

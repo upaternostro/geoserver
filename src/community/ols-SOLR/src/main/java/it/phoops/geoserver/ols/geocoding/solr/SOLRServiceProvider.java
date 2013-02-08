@@ -34,7 +34,7 @@ import net.opengis.www.xls.StreetAddress;
 import org.apache.solr.client.solrj.SolrServer;
 import org.apache.solr.client.solrj.SolrServerException;
 import org.apache.solr.client.solrj.impl.HttpSolrServer;
-import org.apache.solr.client.solrj.response.QueryResponse;
+import org.apache.solr.client.solrj.util.ClientUtils;
 import org.apache.solr.common.SolrDocument;
 import org.apache.solr.common.SolrDocumentList;
 import org.apache.solr.common.params.ModifiableSolrParams;
@@ -125,6 +125,7 @@ public class SOLRServiceProvider extends OLSAbstractServiceProvider implements G
         ObjectFactory                                           of = new ObjectFactory();
         GeocodeResponseType                                     output = of.createGeocodeResponseType();
         JAXBElement<GeocodeResponseType>                        retval = of.createGeocodeResponse(output);
+        String                                                  solrQuery;
         SolrServer                                              solrServer = new HttpSolrServer(getEndpointAddress());
         ModifiableSolrParams                                    solrParams = new ModifiableSolrParams();
         SolrDocumentList                                        solrDocs;
@@ -150,7 +151,7 @@ public class SOLRServiceProvider extends OLSAbstractServiceProvider implements G
         Place                                                   place;
         AddressType                                             returnAddress;
         GeocodeMatchCode                                        geocodeMatchCode;
-
+        
         for (AddressType address : input.getAddresses()) {
             // We manage only requests regarding Italy (moreover, Tuscany...)
             if (!COUNTRY_CODE.equalsIgnoreCase(address.getCountryCode())) {
@@ -161,7 +162,7 @@ public class SOLRServiceProvider extends OLSAbstractServiceProvider implements G
 
             // Pass freeform requests to SOLR
             if (address.getFreeFormAddress() != null && !address.getFreeFormAddress().equals("")) {
-                solrParams.set("q", "name:" + address.getFreeFormAddress());
+                solrQuery = "name:\"" + ClientUtils.escapeQueryChars(address.getFreeFormAddress()) + "\"";
             } else {
                 // check for structured address presence
                 if (streetAddress == null) {
@@ -186,13 +187,22 @@ public class SOLRServiceProvider extends OLSAbstractServiceProvider implements G
                     throw new OLSException("Street missing in geocoding request");
                 }
 
-                // FIXME
-                // Check for street name presence (structured data ignored)
+                // Check for street name presence
                 if (street.getValue() == null || street.getValue().equals("")) {
-                    throw new OLSException("Street name missing in geocoding request");
+                    // Use structured data
+                    if (street.getOfficialName() == null || street.getOfficialName().equals("")) {
+                        throw new OLSException("Street name missing in geocoding request");
+                    }
+                    
+                    solrQuery = "street_name:\"" + ClientUtils.escapeQueryChars(street.getOfficialName()) + "\"";
+                    
+                    if (street.getTypePrefix() != null && !street.getTypePrefix().equals("")) {
+                        solrQuery += " AND street_type:\"" + ClientUtils.escapeQueryChars(street.getTypePrefix()) + "\"";
+                    }
+                } else {
+                    // Use free form data
+                    solrQuery = "name:\"" + ClientUtils.escapeQueryChars(street.getValue()) + "\"";
                 }
-
-                solrParams.set("q", "name:" + street.getValue());
             }
 
             // Check for building number (optional)
@@ -209,7 +219,7 @@ public class SOLRServiceProvider extends OLSAbstractServiceProvider implements G
                         buildingNumber += "/" + buildingLocator.getSubdivision();
                     }
                     
-                    solrParams.add("q", "building_number:" + buildingNumber);
+                    solrQuery += " AND building_number:\"" + ClientUtils.escapeQueryChars(buildingNumber) + "\"";
                 }
             }
 
@@ -233,7 +243,7 @@ public class SOLRServiceProvider extends OLSAbstractServiceProvider implements G
                     }
 
                     municipality = pivot.getValue();
-                    solrParams.add("q", "municipality:" + municipality);
+                    solrQuery += " AND municipality:\"" + ClientUtils.escapeQueryChars(municipality) + "\"";
                     break;
                 case COUNTRY_SECONDARY_SUBDIVISION:
                     if (countrySecondarySubdivision != null
@@ -245,12 +255,14 @@ public class SOLRServiceProvider extends OLSAbstractServiceProvider implements G
                     }
 
                     countrySecondarySubdivision = pivot.getValue();
-                    solrParams.add("q", "country_subdivision:" + countrySecondarySubdivision);
+                    solrQuery += " AND country_subdivision:\"" + ClientUtils.escapeQueryChars(countrySecondarySubdivision) + "\"";
                     break;
                 default:
                     break;
                 }
             }
+            
+            solrParams.set("q", solrQuery);
 
             try {
                 // Call SOLR
@@ -280,11 +292,11 @@ public class SOLRServiceProvider extends OLSAbstractServiceProvider implements G
                         
                         coordinates.add(Double.valueOf(geometry.getCoordinate().getOrdinate(0)));
                         coordinates.add(Double.valueOf(geometry.getCoordinate().getOrdinate(1)));
-                        // pos.setSrsName(value);
+//                        pos.setSrsName(value);
                         
                         point.setPos(pos);
-                        // point.setSrsName(value);
-                        // point.setId(value);
+//                        point.setSrsName(value);
+//                        point.setId(value);
                         geocodedAddress.setPoint(point);
                     } catch (ParseException e) {
                         throw new OLSException("WKT parse error: " + e.getLocalizedMessage(), e);
@@ -320,19 +332,18 @@ public class SOLRServiceProvider extends OLSAbstractServiceProvider implements G
                     
                     places.add(place);
                     
-                    // Manca
-                    // returnAddress.setPostalCode(datiNormalizzazioneInd.getCap());
+                    // FIXME Manca, aggiungere a schema.xml?
+//                  returnAddress.setPostalCode(datiNormalizzazioneInd.getCap());
                     
                     streetAddress = of.createStreetAddress();
                     street = of.createStreet();
                     
-                    // if (datiNormalizzazioneInd.getCivico() != null && !datiNormalizzazioneInd.getCivico().equals("") &&
-                    // !datiNormalizzazioneInd.getCivico().equals("0")) {
-                    // street.setValue(datiNormalizzazioneInd.getDug() + " " + datiNormalizzazioneInd.getToponimo() + ", " +
-                    // datiNormalizzazioneInd.getCivico());
-                    // } else {
-                    street.setValue(solrDoc.getFieldValue("name").toString());
-                    // }
+                    // building_number
+                    if (solrDoc.getFieldValue("building_number") != null && !solrDoc.getFieldValue("building_number").equals("") && !solrDoc.getFieldValue("building_number").equals("0")) {
+                        street.setValue(solrDoc.getFieldValue("name") + ", " + solrDoc.getFieldValue("building_number"));
+                    } else {
+                        street.setValue(solrDoc.getFieldValue("name").toString());
+                    }
                     
                     streetAddress.getStreets().add(street);
                     
