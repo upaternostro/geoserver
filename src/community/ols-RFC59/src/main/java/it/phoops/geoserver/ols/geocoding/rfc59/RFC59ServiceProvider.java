@@ -415,7 +415,7 @@ public class RFC59ServiceProvider extends OLSAbstractServiceProvider implements 
                         streetAddress = of.createStreetAddress();
                         street = of.createStreet();
                         
-                        if (ambiguitaInd.getCivico() != null && !ambiguitaInd.getCivico().equals("")) {
+                        if (ambiguitaInd.getCivico() != null && !ambiguitaInd.getCivico().equals("") && !ambiguitaInd.getCivico().equals("0")) {
                             street.setValue(ambiguitaInd.getIndirizzo() + ", " + ambiguitaInd.getCivico());
                         } else {
                             street.setValue(ambiguitaInd.getIndirizzo());
