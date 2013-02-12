@@ -1,6 +1,7 @@
 package it.phoops.geoserver.ols.routing.otp;
 
 import it.phoops.geoserver.ols.OLSAbstractServiceProvider;
+import it.phoops.geoserver.ols.OLSException;
 import it.phoops.geoserver.ols.OLSService;
 import it.phoops.geoserver.ols.routing.RoutingServiceProvider;
 import it.phoops.geoserver.ols.routing.otp.component.OTPTab;
@@ -8,6 +9,11 @@ import it.phoops.geoserver.ols.routing.otp.component.OTPTabFactory;
 
 import java.util.List;
 import java.util.Properties;
+
+import javax.xml.bind.JAXBElement;
+
+import net.opengis.www.xls.DetermineRouteRequestType;
+import net.opengis.www.xls.DetermineRouteResponseType;
 
 import org.apache.wicket.extensions.markup.html.tabs.ITab;
 import org.apache.wicket.model.IModel;
@@ -98,4 +104,13 @@ public class OTPServiceProvider extends OLSAbstractServiceProvider implements Ro
         ((OTPTab)otpTab).setPortOTP(this.getPortNumber());
     }
 
+    @Override
+    public JAXBElement<DetermineRouteResponseType> geocode(
+            DetermineRouteRequestType input) throws OLSException {
+        System.out.println("-- Chiamato servizio OpenTripPlanner");
+        // TODO Auto-generated method stub
+        return null;
+    }
+    
+    
 }

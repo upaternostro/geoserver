@@ -1,6 +1,7 @@
 package it.phoops.geoserver.ols.routing.pgrouting;
 
 import it.phoops.geoserver.ols.OLSAbstractServiceProvider;
+import it.phoops.geoserver.ols.OLSException;
 import it.phoops.geoserver.ols.OLSService;
 import it.phoops.geoserver.ols.routing.RoutingServiceProvider;
 import it.phoops.geoserver.ols.routing.pgrouting.component.PgRoutingTab;
@@ -8,6 +9,11 @@ import it.phoops.geoserver.ols.routing.pgrouting.component.PgRoutingTabFactory;
 
 import java.util.List;
 import java.util.Properties;
+
+import javax.xml.bind.JAXBElement;
+
+import net.opengis.www.xls.DetermineRouteRequestType;
+import net.opengis.www.xls.DetermineRouteResponseType;
 
 import org.apache.wicket.extensions.markup.html.tabs.ITab;
 import org.apache.wicket.model.IModel;
@@ -154,5 +160,13 @@ public class PgRoutingServiceProvider extends OLSAbstractServiceProvider impleme
         ((PgRoutingTab)pgRoutingTab).setPswPgRouting(this.getPassword());
         Algorithm algorithm = Algorithm.get(this.getAlgorithm());
         ((PgRoutingTab)pgRoutingTab).setCodeAlgorithmSelected(Integer.parseInt(algorithm.getCode()));
+    }
+
+    @Override
+    public JAXBElement<DetermineRouteResponseType> geocode(
+            DetermineRouteRequestType input) throws OLSException {
+        // TODO Auto-generated method stub
+        System.out.println("-- Chiamato servizio pgRouting");
+        return null;
     }
 }
