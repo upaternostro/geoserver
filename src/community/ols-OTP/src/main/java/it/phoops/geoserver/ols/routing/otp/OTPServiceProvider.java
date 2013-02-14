@@ -108,6 +108,7 @@ public class OTPServiceProvider extends OLSAbstractServiceProvider implements Ro
     public JAXBElement<DetermineRouteResponseType> geocode(
             DetermineRouteRequestType input) throws OLSException {
         System.out.println("-- Chiamato servizio OpenTripPlanner");
+        
         // TODO Auto-generated method stub
         return null;
     }
