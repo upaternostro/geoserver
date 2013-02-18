@@ -225,6 +225,7 @@ How to load iter.net data into SOLR
     from loadshp.toponimi_stradali ts 
     join loadshp.comuni c on ts.cod_com = c.cod_com
     join loadshp.elementi_stradali es on ts.cod_top = es.cod_top or ts.cod_top = es.cod_top2
+    where ts.cod_dug <> 'SENZA' or ts.den_uff <> 'STRADA SENZA NOME'
     group by id, name, street_type, street_name, municipality, country_subdivision;
     
     select '<doc><field name="id">' || id || '</field><field name="is_building">false</field><field name="name">' || 
