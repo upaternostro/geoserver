@@ -1,7 +1,7 @@
-How to load data into SOLR
-~~~~~~~~~~~~~~~~~~~~~~~~~~
+How to load OSM data into SOLR
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-1. start with OSM data, so download them and place themo somewhere
+1. start with OSM data, so download them and place them somewhere
 
 2. load those data to PostgreSQL using osm2pgrouting
 
@@ -166,6 +166,13 @@ How to load data into SOLR
         LANGUAGE plpgsql;
         
         select normalize();
+
+        create table features2 as 
+        select min(id) id, name, st_union(centerline) centerline, 
+        st_centroid(st_union(centerline)) centroid, st_envelope(st_collect(centerline)) bounding_box, 
+        municipality, country_subdivision, street_type, street_name 
+        from features 
+        group by name, municipality, country_subdivision, street_type, street_name;
         
         select '<doc><field name="id">' || id || '</field><field name="is_building">false</field><field name="name">' || 
                 name || '</field><field name="street_type">' || street_type || '</field><field name="street_name">' || 
@@ -174,7 +181,7 @@ How to load data into SOLR
                 st_astext(centroid) || '</field><field name="bounding_box">' ||
                 st_xmin(bounding_box) || ' ' || st_ymin(bounding_box) || ' ' || st_xmax(bounding_box) || ' ' || st_ymax(bounding_box) ||
             '</field></doc>' doc
-        from features where street_type is not null and street_name is not null
+        from features2 where street_type is not null and street_name is not null
         union all
         select '<doc><field name="id">' || id || '</field><field name="is_building">false</field><field name="name">' || 
                 name || '</field><field name="municipality">' || municipality || '</field><field name="country_subdivision">' || 
@@ -182,6 +189,100 @@ How to load data into SOLR
                 st_astext(centroid) || '</field><field name="bounding_box">' ||
                 st_xmin(bounding_box) || ' ' || st_ymin(bounding_box) || ' ' || st_xmax(bounding_box) || ' ' || st_ymax(bounding_box) ||
             '</field></doc>'
-        from features where street_type is null and street_name is null
-                
-        
+        from features2 where street_type is null and street_name is null
+
+How to load iter.net data into SOLR
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+1. load iter.net data into loadshp schema of iter.GIS
+
+2. create feature table:
+    create index el_st_cod_top_idx on loadshp.elementi_stradali(cod_top);
+    create index el_st_cod_top2_idx on loadshp.elementi_stradali(cod_top2);
+    
+    create table features as
+    select 'INET_' || c.cod_istat || '_' || ts.cod_top id, 
+        trim(replace(replace(replace(ts.cod_dug || ' ' || ts.den_uff, '&', '&amp;'), '>', '&gt;'), '<', '&lt;'))::character varying as name, 
+        trim(replace(replace(replace(ts.cod_dug , '&', '&amp;'), '>', '&gt;'), '<', '&lt;'))::character varying as street_type, 
+        trim(replace(replace(replace(ts.den_uff , '&', '&amp;'), '>', '&gt;'), '<', '&lt;'))::character varying as street_name, 
+        ST_Transform(st_linemerge(st_union(es.the_geom)), 4326) centerline, 
+            ST_Transform(st_pointonsurface(st_collect(es.the_geom)), 4326) centroid, 
+            ST_Transform(st_envelope(st_collect(es.the_geom)), 4326) bounding_box,
+            c.den_uff municipality, 
+        CASE 
+            WHEN id_prov = 4 THEN 'MS'
+            WHEN id_prov = 5 THEN 'LU'
+            WHEN id_prov = 6 THEN 'FI'
+            WHEN id_prov = 8 THEN 'PT'
+            WHEN id_prov = 9 THEN 'PO'
+            WHEN id_prov = 10 THEN 'AR'
+            WHEN id_prov = 11 THEN 'PI'
+            WHEN id_prov = 12 THEN 'SI'
+            WHEN id_prov = 13 THEN 'LI'
+            WHEN id_prov = 14 THEN 'GR'
+            ELSE 'XX'
+            END country_subdivision 
+    from loadshp.toponimi_stradali ts 
+    join loadshp.comuni c on ts.cod_com = c.cod_com
+    join loadshp.elementi_stradali es on ts.cod_top = es.cod_top or ts.cod_top = es.cod_top2
+    group by id, name, street_type, street_name, municipality, country_subdivision;
+    
+    select '<doc><field name="id">' || id || '</field><field name="is_building">false</field><field name="name">' || 
+                name || '</field><field name="street_type">' || street_type || '</field><field name="street_name">' || 
+                street_name || '</field><field name="municipality">' || municipality || '</field><field name="country_subdivision">' || 
+                country_subdivision || '</field><field name="centerline">' || st_astext(centerline) || '</field><field name="centroid">' ||
+                st_astext(centroid) || '</field><field name="bounding_box">' ||
+                st_xmin(bounding_box) || ' ' || st_ymin(bounding_box) || ' ' || st_xmax(bounding_box) || ' ' || st_ymax(bounding_box) ||
+            '</field></doc>' doc
+        from features;
+    
+    create table features_cv as
+    select 'INET_' || c.cod_istat || '_' || nc.cod_civ id, 
+        trim(replace(replace(replace(ts.cod_dug || ' ' || ts.den_uff, '&', '&amp;'), '>', '&gt;'), '<', '&lt;'))::character varying as name, 
+        trim(replace(replace(replace(ts.cod_dug , '&', '&amp;'), '>', '&gt;'), '<', '&lt;'))::character varying as street_type, 
+        trim(replace(replace(replace(ts.den_uff , '&', '&amp;'), '>', '&gt;'), '<', '&lt;'))::character varying as street_name, 
+        ST_Transform(a.the_geom, 4326) centroid,
+        c.den_uff municipality, 
+        CASE 
+            WHEN id_prov = 4 THEN 'MS'
+            WHEN id_prov = 5 THEN 'LU'
+            WHEN id_prov = 6 THEN 'FI'
+            WHEN id_prov = 8 THEN 'PT'
+            WHEN id_prov = 9 THEN 'PO'
+            WHEN id_prov = 10 THEN 'AR'
+            WHEN id_prov = 11 THEN 'PI'
+            WHEN id_prov = 12 THEN 'SI'
+            WHEN id_prov = 13 THEN 'LI'
+            WHEN id_prov = 14 THEN 'GR'
+            ELSE 'XX'
+        END country_subdivision,
+        CASE
+            WHEN esp_civ is not null THEN num_civ || '/' || esp_civ
+            ELSE trim(to_char(num_civ, '999999'))
+        END building_number,
+        num_civ number,
+        esp_civ number_extension
+        from loadshp.numeri_civici nc
+        join loadshp.accessi a on coalesce(nc.cod_acc_in, nc.cod_acc_es) = a.cod_acc
+        join loadshp.toponimi_stradali ts on nc.cod_top = ts.cod_top
+        join loadshp.comuni c on ts.cod_com = c.cod_com;
+    
+    select '<doc><field name="id">' || id || '</field><field name="is_building">true</field><field name="name">' || 
+                name || '</field><field name="street_type">' || street_type || '</field><field name="street_name">' || 
+                street_name || '</field><field name="municipality">' || municipality || '</field><field name="country_subdivision">' || 
+                country_subdivision || '</field><field name="building_number">' || building_number || 
+                '</field><field name="number">' || number || 
+                '</field><field name="centroid">' ||
+                st_astext(centroid) || '</field></doc>' doc
+        from features_cv where number_extension is null
+    union all
+    select '<doc><field name="id">' || id || '</field><field name="is_building">true</field><field name="name">' || 
+                name || '</field><field name="street_type">' || street_type || '</field><field name="street_name">' || 
+                street_name || '</field><field name="municipality">' || municipality || '</field><field name="country_subdivision">' || 
+                country_subdivision || '</field><field name="building_number">' || building_number || 
+                '</field><field name="number">' || number || 
+                '</field><field name="number_extension">' || number_extension || 
+                '</field><field name="centroid">' ||
+                st_astext(centroid) || '</field></doc>' doc
+        from features_cv where number_extension is not null;
+    
