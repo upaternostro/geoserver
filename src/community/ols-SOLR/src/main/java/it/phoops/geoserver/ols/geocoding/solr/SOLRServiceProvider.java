@@ -201,7 +201,19 @@ public class SOLRServiceProvider extends OLSAbstractServiceProvider implements G
                     }
                 } else {
                     // Use free form data
-                    solrQuery = "name:\"" + ClientUtils.escapeQueryChars(street.getValue()) + "\"";
+                    //check if the street contains a number
+                    String[] stgStreet = street.getValue().split(",");
+                    if(stgStreet.length > 1){
+                        String stgNumeber = stgStreet[1];
+                        try{
+                            Integer.parseInt(stgNumeber.trim());
+                        }catch(NumberFormatException e){
+                            throw new OLSException("Cannot manage street number");
+                        }
+                        solrQuery = "name:\"" + ClientUtils.escapeQueryChars(stgStreet[0]) +"\"" + " AND number: \""+ ClientUtils.escapeQueryChars(stgNumeber.trim()) +"\"";
+                    }else{
+                        solrQuery = "name:\"" + ClientUtils.escapeQueryChars(street.getValue()) + "\"";
+                    }
                 }
             }
 
