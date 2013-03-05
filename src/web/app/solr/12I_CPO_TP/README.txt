@@ -239,7 +239,10 @@ How to load iter.net data into SOLR
     
     create table features_cv as
     select 'INET_' || c.cod_istat || '_' || nc.cod_civ id, 
-        trim(replace(replace(replace(ts.cod_dug || ' ' || ts.den_uff, '&', '&amp;'), '>', '&gt;'), '<', '&lt;'))::character varying as name, 
+        trim(replace(replace(replace(ts.cod_dug || ' ' || ts.den_uff, '&', '&amp;'), '>', '&gt;'), '<', '&lt;'))::character varying || ', ' || CASE
+            WHEN esp_civ is not null THEN num_civ || '/' || esp_civ
+            ELSE trim(to_char(num_civ, '999999'))
+        END as name, 
         trim(replace(replace(replace(ts.cod_dug , '&', '&amp;'), '>', '&gt;'), '<', '&lt;'))::character varying as street_type, 
         trim(replace(replace(replace(ts.den_uff , '&', '&amp;'), '>', '&gt;'), '<', '&lt;'))::character varying as street_name, 
         ST_Transform(a.the_geom, 4326) centroid,
@@ -263,10 +266,13 @@ How to load iter.net data into SOLR
         END building_number,
         num_civ number,
         esp_civ number_extension
-        from loadshp.numeri_civici nc
-        join loadshp.accessi a on coalesce(nc.cod_acc_in, nc.cod_acc_es) = a.cod_acc
-        join loadshp.toponimi_stradali ts on nc.cod_top = ts.cod_top
-        join loadshp.comuni c on ts.cod_com = c.cod_com;
+    from loadshp.numeri_civici nc
+    join loadshp.accessi a on coalesce(nc.cod_acc_in, nc.cod_acc_es) = a.cod_acc
+    join loadshp.toponimi_stradali ts on nc.cod_top = ts.cod_top
+    join loadshp.comuni c on ts.cod_com = c.cod_com
+    where (ts.cod_dug <> 'SENZA' or ts.den_uff <> 'STRADA SENZA NOME')
+    and num_civ <> 0;
+
     
     select '<doc><field name="id">' || id || '</field><field name="is_building">true</field><field name="name">' || 
                 name || '</field><field name="street_type">' || street_type || '</field><field name="street_name">' || 
