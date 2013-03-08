@@ -4,16 +4,26 @@ import it.phoops.geoserver.ols.OLSAbstractServiceProvider;
 import it.phoops.geoserver.ols.OLSException;
 import it.phoops.geoserver.ols.OLSService;
 import it.phoops.geoserver.ols.routing.RoutingServiceProvider;
+import it.phoops.geoserver.ols.routing.otp.client.OpentripplannerApiWebapp;
+import it.phoops.geoserver.ols.routing.otp.client.OpentripplannerApiWebapp.WsPlan;
+import it.phoops.geoserver.ols.routing.otp.client.ns0.Response;
 import it.phoops.geoserver.ols.routing.otp.component.OTPTab;
 import it.phoops.geoserver.ols.routing.otp.component.OTPTabFactory;
 
+import java.text.DateFormat;
 import java.util.List;
 import java.util.Properties;
 
 import javax.xml.bind.JAXBElement;
+import javax.xml.datatype.XMLGregorianCalendar;
 
+import net.opengis.www.xls.AbstractLocationType;
 import net.opengis.www.xls.DetermineRouteRequestType;
 import net.opengis.www.xls.DetermineRouteResponseType;
+import net.opengis.www.xls.PositionType;
+import net.opengis.www.xls.RoutePlan;
+import net.opengis.www.xls.WayPointList;
+import net.opengis.www.xls.WayPointType;
 
 import org.apache.wicket.extensions.markup.html.tabs.ITab;
 import org.apache.wicket.model.IModel;
@@ -107,11 +117,93 @@ public class OTPServiceProvider extends OLSAbstractServiceProvider implements Ro
     @Override
     public JAXBElement<DetermineRouteResponseType> geocode(
             DetermineRouteRequestType input) throws OLSException {
-        System.out.println("-- Chiamato servizio OpenTripPlanner");
+        RoutePlan plan = input.getRoutePlan();
         
-        // TODO Auto-generated method stub
+        if (plan == null) {
+            throw new OLSException("Route plan is missing");
+        }
+        
+        WayPointList                                    wpList = plan.getWayPointList();
+        WayPointType                                    startPoint = wpList.getStartPoint();
+        JAXBElement<? extends AbstractLocationType>     startLocation = startPoint.getLocation();
+        
+        if (!(startLocation.getValue() instanceof PositionType)) {
+            throw new OLSException("Unsupported start point location");
+        }
+        
+        PositionType                                    startPosition = (PositionType)startLocation.getValue();
+        WayPointType                                    endPoint = wpList.getEndPoint();
+        JAXBElement<? extends AbstractLocationType>     endLocation = endPoint.getLocation();
+        
+        if (!(endLocation.getValue() instanceof PositionType)) {
+            throw new OLSException("Unsupported end point location");
+        }
+        
+        PositionType    endPosition = (PositionType)endLocation.getValue();
+        
+        XMLGregorianCalendar    cal = plan.getExpectedEndTime();
+        boolean                 endTime = true;
+        
+        if (cal == null) {
+            cal = plan.getExpectedStartTime();
+            endTime = false;
+        }
+
+        DateFormat dateFormat = DateFormat.getDateInstance(DateFormat.SHORT);
+        DateFormat timeFormat = DateFormat.getTimeInstance(DateFormat.SHORT);
+
+        WsPlan planner = OpentripplannerApiWebapp.wsPlan();
+        
+        Response r = planner.getResponseAsTextXml(
+                formatPosition(startPosition), // fromplace, 
+                formatPosition(endPosition), // toplace, 
+                "", // intermediateplaces, 
+                "", // intermediateplacesordered, 
+                cal == null ? "" : dateFormat.format(cal.toGregorianCalendar().getTime()), // date, 
+                cal == null ? "" : timeFormat.format(cal.toGregorianCalendar().getTime()), // time, 
+                "", // routerid, 
+                cal == null ? "" : Boolean.toString(endTime), // arriveby, 
+                "", // wheelchair, 
+                "", // maxwalkdistance, 
+                "", // walkspeed, 
+                "", // bikespeed, 
+                "", // trianglesafetyfactor, 
+                "", // triangleslopefactor, 
+                "", // triangletimefactor, 
+                "", // optimize, 
+                "", // mode, 
+                "", // mintransfertime, 
+                "", // numitineraries, 
+                "", // preferredroutes, 
+                "", // unpreferredroutes, 
+                "", // showintermediatestops, 
+                "", // bannedroutes, 
+                "", // transferpenalty, 
+                "", // maxtransfers, 
+                "", // batch, 
+                "", // starttransitstopid, 
+                "", // clampinitialwait, 
+                "", // reverseoptimizeonthefly, 
+                "", // boardslack, 
+                "", // alightslack, 
+                "" // locale
+        );
+        
         return null;
     }
     
-    
+    private String formatPosition(PositionType position)
+    {
+        StringBuffer    sb = new StringBuffer();
+        
+        for (Double coord : position.getPoint().getPos().getValues()) {
+            if (sb.length() != 0) {
+                sb.append(" ");
+            }
+            
+            sb.append(coord);
+        }
+        
+        return sb.toString();
+    }
 }
