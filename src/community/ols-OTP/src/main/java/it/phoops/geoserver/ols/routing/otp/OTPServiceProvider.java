@@ -4,17 +4,21 @@ import it.phoops.geoserver.ols.OLSAbstractServiceProvider;
 import it.phoops.geoserver.ols.OLSException;
 import it.phoops.geoserver.ols.OLSService;
 import it.phoops.geoserver.ols.routing.RoutingServiceProvider;
+import it.phoops.geoserver.ols.routing.otp.client.ns0.EncodedPolylineBean;
 import it.phoops.geoserver.ols.routing.otp.client.ns0.Itinerary;
 import it.phoops.geoserver.ols.routing.otp.client.ns0.Leg;
+import it.phoops.geoserver.ols.routing.otp.client.ns0.Leg.Steps;
 import it.phoops.geoserver.ols.routing.otp.client.ns0.PlannerError;
 import it.phoops.geoserver.ols.routing.otp.client.ns0.Response;
 import it.phoops.geoserver.ols.routing.otp.client.ns0.TripPlan;
 import it.phoops.geoserver.ols.routing.otp.client.ns0.TripPlan.Itineraries;
+import it.phoops.geoserver.ols.routing.otp.client.ns0.WalkStep;
 import it.phoops.geoserver.ols.routing.otp.component.OTPTab;
 import it.phoops.geoserver.ols.routing.otp.component.OTPTabFactory;
 
 import java.math.BigDecimal;
 import java.text.DateFormat;
+import java.util.ArrayList;
 import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.Properties;
@@ -31,9 +35,14 @@ import net.opengis.www.xls.DetermineRouteRequestType;
 import net.opengis.www.xls.DetermineRouteResponseType;
 import net.opengis.www.xls.DistanceType;
 import net.opengis.www.xls.DistanceUnitType;
+import net.opengis.www.xls.EnvelopeType;
+import net.opengis.www.xls.LineStringType;
 import net.opengis.www.xls.ObjectFactory;
+import net.opengis.www.xls.Pos;
 import net.opengis.www.xls.PositionType;
 import net.opengis.www.xls.RouteGeometryType;
+import net.opengis.www.xls.RouteInstruction;
+import net.opengis.www.xls.RouteInstructionsListType;
 import net.opengis.www.xls.RoutePlan;
 import net.opengis.www.xls.RoutePreferenceType;
 import net.opengis.www.xls.RouteSummaryType;
@@ -44,10 +53,14 @@ import org.apache.wicket.extensions.markup.html.tabs.ITab;
 import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.ResourceModel;
 import org.geoserver.config.ServiceInfo;
+import org.opentripplanner.util.PolylineEncoder;
 
 import com.sun.jersey.api.client.Client;
 import com.sun.jersey.api.client.WebResource;
 import com.sun.jersey.core.util.MultivaluedMapImpl;
+import com.vividsolutions.jts.geom.Coordinate;
+import com.vividsolutions.jts.geom.Geometry;
+import com.vividsolutions.jts.geom.GeometryFactory;
 
 public class OTPServiceProvider extends OLSAbstractServiceProvider implements RoutingServiceProvider {
     //Properties Name
@@ -220,7 +233,7 @@ public class OTPServiceProvider extends OLSAbstractServiceProvider implements Ro
             break;
         }
 
-        WebResource     resource = client.resource(getEndpointAddress() + "ws/plan");
+        WebResource     resource = client.resource(getEndpointAddress() + "/ws/plan");
         
         Response        response = resource.queryParams(queryParams).accept(MediaType.TEXT_XML).get(Response.class);
 
@@ -258,29 +271,101 @@ public class OTPServiceProvider extends OLSAbstractServiceProvider implements Ro
         ObjectFactory                   of = new ObjectFactory();
         DetermineRouteResponseType      determineRouteResponse = of.createDetermineRouteResponseType();
         RouteSummaryType                routeSummary = of.createRouteSummaryType();
+        RouteInstructionsListType       routeInstructions = of.createRouteInstructionsListType();
         
         routeSummary.setTotalTime(df.newDuration(itinerary.getDuration()));
         
-        double  totalDistance = 0.0;
+        double                  totalDistance = 0.0;
+        EncodedPolylineBean     legGeometry;
+        Geometry                geometry = null;
+        GeometryFactory         gf = new GeometryFactory();
+        Steps                   legSteps;
+        RouteInstruction        routeInstruction;
+        DistanceType            distance;
         
         for (Leg leg : itinerary.getLegs().getLeg()) {
             totalDistance += leg.getDistance();
-            leg.get
+            legGeometry = leg.getLegGeometry();
+            
+            if (geometry == null) {
+                geometry = gf.createLineString(decode(legGeometry).toArray(new Coordinate[0]));
+            } else {
+                geometry = geometry.union(gf.createLineString(decode(legGeometry).toArray(new Coordinate[0])));
+            }
+            
+            legSteps = leg.getSteps();
+            
+            for (WalkStep walkStep : legSteps.getWalkSteps()) {
+                routeInstruction = of.createRouteInstruction();
+                distance = of.createDistanceType();
+                distance.setValue(BigDecimal.valueOf(walkStep.getDistance()));
+                routeInstruction.setDistance(distance);
+                routeInstruction.setInstruction("Procedi in direzione " + walkStep.getAbsoluteDirection() + " per " + walkStep.getDistance() + " su " + walkStep.getStreetName()); // FIXME: i18n
+                routeInstructions.getRouteInstructions().add(routeInstruction);
+            }
         }
         
-        DistanceType    distance = of.createDistanceType();
-        
+        distance = of.createDistanceType();
         distance.setValue(BigDecimal.valueOf(totalDistance));
         distance.setAccuracy(BigDecimal.ONE); // FIXME
         distance.setUom(DistanceUnitType.M); // FIXME ???
         routeSummary.setTotalDistance(distance);
-        determineRouteResponse.setRouteSummary(routeSummary);
         
         RouteGeometryType       routeGeometry = of.createRouteGeometryType();
+        LineStringType          lineString = of.createLineStringType();
+        List<Pos>               posList = lineString.getPos();
+        Pos                     pos;
+        List<Double>            posValues;
+        double                  minX = 360;
+        double                  maxX = -360;
+        double                  minY = 360;
+        double                  maxY = -360;
         
-        routeGeometry.
+        for (Coordinate coord : geometry.getCoordinates()) {
+            pos = new Pos();
+            posValues = pos.getValues();
+            posValues.add(coord.x);
+            posValues.add(coord.y);
+            posList.add(pos);
+            
+            // Bounding box extraction:
+            if (coord.x < minX) {
+                minX = coord.x;
+            }
+            if (coord.y < minY) {
+                minY = coord.y;
+            }
+            if (coord.x > maxX) {
+                maxX = coord.x;
+            }
+            if (coord.y > maxY) {
+                maxY = coord.y;
+            }
+        }
         
+        routeGeometry.setLineString(lineString);
+        
+        EnvelopeType    boundingBox = of.createEnvelopeType();
+        
+        posList = boundingBox.getPos();
+        
+        pos = new Pos();
+        posValues = pos.getValues();
+        posValues.add(minX);
+        posValues.add(minY);
+        posList.add(pos);
+        
+        pos = new Pos();
+        posValues = pos.getValues();
+        posValues.add(maxX);
+        posValues.add(maxY);
+        posList.add(pos);
+        
+        routeSummary.setBoundingBox(boundingBox);
+        
+        determineRouteResponse.setRouteSummary(routeSummary);
         determineRouteResponse.setRouteGeometry(routeGeometry);
+        determineRouteResponse.setRouteInstructionsList(routeInstructions);
         
         retval = of.createDetermineRouteResponse(determineRouteResponse);
         
@@ -300,5 +385,30 @@ public class OTPServiceProvider extends OLSAbstractServiceProvider implements Ro
         }
         
         return sb.toString();
+    }
+    
+    private static List<Coordinate> decode(EncodedPolylineBean polyline)
+    {
+        String pointString = polyline.getPoints();
+
+        double lat = 0;
+        double lon = 0;
+
+        int strIndex = 0;
+        List<Coordinate> points = new ArrayList<Coordinate>();
+
+        while (strIndex < pointString.length()) {
+            int[] rLat = PolylineEncoder.decodeSignedNumberWithIndex(pointString, strIndex);
+            lat = lat + rLat[0] * 1e-5;
+            strIndex = rLat[1];
+
+            int[] rLon = PolylineEncoder.decodeSignedNumberWithIndex(pointString, strIndex);
+            lon = lon + rLon[0] * 1e-5;
+            strIndex = rLon[1];
+
+            points.add(new Coordinate(lat, lon));
+        }
+
+        return points;
     }
 }
