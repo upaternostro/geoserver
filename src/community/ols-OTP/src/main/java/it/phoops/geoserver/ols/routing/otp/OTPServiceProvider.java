@@ -221,11 +221,13 @@ public class OTPServiceProvider extends OLSAbstractServiceProvider implements Ro
         switch (preference) {
         case FASTEST:
             queryParams.add("optimize", "QUICK");
-            queryParams.add("mode",     "CAR,CUSTOM_MOTOR_VEHICLE");
+//            queryParams.add("mode",     "CAR,CUSTOM_MOTOR_VEHICLE"); -> non funziona con la versione 0.9.2-SNAPSHOT
+            queryParams.add("mode",     "CAR");
             break;
         case SHORTEST:
             queryParams.add("optimize", "QUICK"); // FIXME ???
-            queryParams.add("mode",     "CAR,CUSTOM_MOTOR_VEHICLE");
+//            queryParams.add("mode",     "CAR,CUSTOM_MOTOR_VEHICLE"); -> non funziona con la versione 0.9.2-SNAPSHOT
+            queryParams.add("mode",     "CAR");
             break;
         case PEDESTRIAN:
             queryParams.add("optimize", "QUICK"); // FIXME ???
