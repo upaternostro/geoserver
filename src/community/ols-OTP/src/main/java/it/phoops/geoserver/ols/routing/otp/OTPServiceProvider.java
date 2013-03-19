@@ -8,9 +8,9 @@ import it.phoops.geoserver.ols.routing.otp.client.ns0.AbsoluteDirection;
 import it.phoops.geoserver.ols.routing.otp.client.ns0.EncodedPolylineBean;
 import it.phoops.geoserver.ols.routing.otp.client.ns0.Itinerary;
 import it.phoops.geoserver.ols.routing.otp.client.ns0.Leg;
-import it.phoops.geoserver.ols.routing.otp.client.ns0.RelativeDirection;
 import it.phoops.geoserver.ols.routing.otp.client.ns0.Leg.Steps;
 import it.phoops.geoserver.ols.routing.otp.client.ns0.PlannerError;
+import it.phoops.geoserver.ols.routing.otp.client.ns0.RelativeDirection;
 import it.phoops.geoserver.ols.routing.otp.client.ns0.Response;
 import it.phoops.geoserver.ols.routing.otp.client.ns0.TripPlan;
 import it.phoops.geoserver.ols.routing.otp.client.ns0.TripPlan.Itineraries;
@@ -18,12 +18,16 @@ import it.phoops.geoserver.ols.routing.otp.client.ns0.WalkStep;
 import it.phoops.geoserver.ols.routing.otp.component.OTPTab;
 import it.phoops.geoserver.ols.routing.otp.component.OTPTabFactory;
 
+import java.io.FileInputStream;
 import java.math.BigDecimal;
 import java.text.DateFormat;
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.GregorianCalendar;
 import java.util.List;
+import java.util.Locale;
 import java.util.Properties;
+import java.util.ResourceBundle;
 
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
@@ -54,26 +58,28 @@ import net.opengis.www.xls.WayPointType;
 import org.apache.wicket.extensions.markup.html.tabs.ITab;
 import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.ResourceModel;
+import org.apache.wicket.model.StringResourceModel;
+import org.apache.wicket.util.resource.StringResourceStream;
 import org.geoserver.config.ServiceInfo;
-import org.opentripplanner.common.geometry.DirectionUtils;
+import org.geotools.data.property.PropertyDataStoreFactory;
 import org.opentripplanner.util.PolylineEncoder;
 
 import com.sun.jersey.api.client.Client;
 import com.sun.jersey.api.client.WebResource;
 import com.sun.jersey.core.util.MultivaluedMapImpl;
 import com.vividsolutions.jts.geom.Coordinate;
-import com.vividsolutions.jts.geom.CoordinateSequence;
-import com.vividsolutions.jts.geom.CoordinateSequenceFactory;
-import com.vividsolutions.jts.geom.CoordinateSequences;
 import com.vividsolutions.jts.geom.Geometry;
 import com.vividsolutions.jts.geom.GeometryFactory;
-import com.vividsolutions.jts.geom.LineString;
 
 public class OTPServiceProvider extends OLSAbstractServiceProvider implements RoutingServiceProvider {
     //Properties Name
-    private static final String  PN_ENDPOINT_ADDRESS = "OLS.serviceProvider.geocoding.otp.service.endpointAddress";
-    private static final String  PN_PORT_NUMBER = "OLS.serviceProvider.geocoding.otp.service.portNumber";
-    private static final String  PN_ACTIVE_SERVICE = "OLS.serviceProvider.service.active";
+    private static final String  PN_ENDPOINT_ADDRESS    = "OLS.serviceProvider.geocoding.otp.service.endpointAddress";
+    private static final String  PN_NAVIGATION_INFO     = "OLS.serviceProvider.geocoding.otp.service.navigationInfo";
+    private static final String  PN_NAVIGATION_S_INFO   = "OLS.serviceProvider.geocoding.otp.service.navigationShortInfo";
+    private static final String  PN_NAVIGATION_REL      = "OLS.serviceProvider.geocoding.otp.service.navigationInfo.relative";
+    private static final String  PN_LANGUAGE_INFO       = "OLS.serviceProvider.geocoding.otp.service.languageInfo";
+    private static final String  PN_ACTIVE_SERVICE      = "OLS.serviceProvider.service.active";
+    
     
     private String      descriptionKey;
     private Properties  properties = new Properties();
@@ -95,12 +101,28 @@ public class OTPServiceProvider extends OLSAbstractServiceProvider implements Ro
         properties.setProperty(PN_ENDPOINT_ADDRESS, endpointAddress);
     }
     
-    public String getPortNumber() {
-        return properties.getProperty(PN_PORT_NUMBER);
+    public String getNavigationInfo() {
+        return properties.getProperty(PN_NAVIGATION_INFO);
     }
 
-    public void setPortNumber(String portNumber) {
-        properties.setProperty(PN_PORT_NUMBER, portNumber);
+    public void setNavigationInfo(String navigationInfo) {
+        properties.setProperty(PN_NAVIGATION_INFO, navigationInfo);
+    }
+    
+    public String getNavigationInfoShort() {
+        return properties.getProperty(PN_NAVIGATION_S_INFO);
+    }
+    
+    public void setNavigationInfoShort(String navigationInfoShort){
+        properties.setProperty(PN_NAVIGATION_S_INFO, navigationInfoShort);
+    }
+    
+    public String getNavigationInfoRel(){
+        return properties.getProperty(PN_NAVIGATION_REL);
+    }
+    
+    public void setNavigationInfoRel(String navigationInfoRel){
+        properties.setProperty(PN_NAVIGATION_REL, navigationInfoRel);
     }
     
     public String getActive(){
@@ -109,6 +131,14 @@ public class OTPServiceProvider extends OLSAbstractServiceProvider implements Ro
     
     public void setActive(String activeService){
         properties.setProperty(PN_ACTIVE_SERVICE, activeService);
+    }
+    
+    public String getLanguage(){
+        return properties.getProperty(PN_LANGUAGE_INFO);
+    }
+    
+    public void setLanguage(String language){
+        properties.setProperty(PN_LANGUAGE_INFO, language);
     }
     
     @Override
@@ -131,12 +161,18 @@ public class OTPServiceProvider extends OLSAbstractServiceProvider implements Ro
     public void handleServiceChange(ServiceInfo service,
             List<String> propertyNames, List<Object> oldValues,
             List<Object> newValues) {
-        String url = ((OTPTab)getTab()).getUrlOTP();
-        String port = ((OTPTab)getTab()).getPortOTP();
-        String active = ((OTPTab)getTab()).getActiveOTP();
+        String url              = ((OTPTab)getTab()).getUrlOTP();
+        String navigation       = ((OTPTab)getTab()).getNavigationInfoOTP();
+        String navigationS      = ((OTPTab)getTab()).getNavigationInfoShortOTP();
+        String navigationR      = ((OTPTab)getTab()).getNavigationInfoRelOTP();
+        String language         = ((OTPTab)getTab()).getSelectedLanguage().getCode();
+        String active           = ((OTPTab)getTab()).getActiveOTP();
         
         setEndpointAddress(url);
-        setPortNumber(port);
+        setNavigationInfo(navigation);
+        setNavigationInfoShort(navigationS);
+        setNavigationInfoRel(navigationR);
+        setLanguage(language);
         setActive(active);
         
     }
@@ -150,7 +186,15 @@ public class OTPServiceProvider extends OLSAbstractServiceProvider implements Ro
     public void setPropertiesTab(ITab otpTab) {
         ((OTPTab)otpTab).setUrlOTP(this.getEndpointAddress());
         ((OTPTab)otpTab).setActiveOTP(this.getActive());
-        ((OTPTab)otpTab).setPortOTP(this.getPortNumber());
+        ((OTPTab)otpTab).setNavigationInfoOTP(this.getNavigationInfo());
+        ((OTPTab)otpTab).setNavigationInfoShortOTP(this.getNavigationInfoShort());
+        ((OTPTab)otpTab).setNavigationInfoRelOTP(this.getNavigationInfoRel());
+        Language language = Language.get(this.getLanguage());
+        if(language == null){
+            ((OTPTab)otpTab).setCodeLanguageSelected(1);
+        }else{
+            ((OTPTab)otpTab).setCodeLanguageSelected(Integer.parseInt(language.getCode()));
+        }
     }
 
     @Override
@@ -259,7 +303,18 @@ public class OTPServiceProvider extends OLSAbstractServiceProvider implements Ro
             queryParams.add("mode",     "WALK");
             break;
         }
-
+        
+        String languageInfo = properties.getProperty(PN_LANGUAGE_INFO);
+        
+        if(languageInfo.equals("1")){
+            Locale.setDefault(Locale.ITALIAN);
+        } else if(languageInfo.equals("2")){
+            Locale.setDefault(Locale.ENGLISH);
+        }
+        
+        Locale locale = Locale.getDefault();
+        ResourceBundle messages = ResourceBundle.getBundle("GeoServerApplication", locale);
+            
         WebResource     resource = client.resource(getEndpointAddress() + "/ws/plan");
         
         
@@ -332,7 +387,33 @@ public class OTPServiceProvider extends OLSAbstractServiceProvider implements Ro
                 
                 distance.setValue(bdValue);
                 routeInstruction.setDistance(distance);
-                routeInstruction.setInstruction("Procedi in direzione " + walkStep.getAbsoluteDirection() + " per " + bdValue + "km su " + walkStep.getStreetName()); // FIXME: i18n
+                
+                String relativeDirection = null;
+                String absoluteDirection = null;
+                if(walkStep.getRelativeDirection() != null){
+                    relativeDirection = messages.getString(walkStep.getRelativeDirection().toString());
+                }else{
+                    absoluteDirection = messages.getString(walkStep.getAbsoluteDirection().toString());
+                }
+                
+                String resultFormatter = "";
+                if(walkStep.getStreetName() != null
+                        || !walkStep.getStreetName().equalsIgnoreCase("")){
+                    if(relativeDirection != null){
+                        resultFormatter = MessageFormat.format(properties.getProperty(PN_NAVIGATION_REL), relativeDirection, walkStep.getStreetName(), bdValue);
+                        String imgRel = walkStep.getRelativeDirection().toString().toLowerCase();
+                        resultFormatter = "<IMG SRC='../resources/img/navigation/"+imgRel+".png' ALIGN='absmiddle'> "+resultFormatter;
+                    }else
+                        resultFormatter = MessageFormat.format(properties.getProperty(PN_NAVIGATION_INFO), absoluteDirection, bdValue, walkStep.getStreetName());
+                }else{
+                    if(relativeDirection != null){
+                        resultFormatter = MessageFormat.format(properties.getProperty(PN_NAVIGATION_REL), relativeDirection, walkStep.getStreetName(), bdValue);
+                        String imgRel = walkStep.getRelativeDirection().toString().toLowerCase();
+                        resultFormatter = "<IMG SRC='../resources/img/navigation/"+imgRel+".png' ALIGN='absmiddle'> "+resultFormatter;
+                    }else
+                        resultFormatter = MessageFormat.format(properties.getProperty(PN_NAVIGATION_S_INFO), absoluteDirection, bdValue);
+                }
+                routeInstruction.setInstruction(resultFormatter);
                 routeInstructions.getRouteInstructions().add(routeInstruction);
                 
             }
