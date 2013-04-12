@@ -6,8 +6,10 @@ package org.geoserver.wcs2_0.response;
 
 import java.awt.image.DataBuffer;
 import java.awt.image.RenderedImage;
+import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import java.util.TreeSet;
 
 import javax.measure.unit.Unit;
 import javax.measure.unit.UnitFormat;
@@ -15,6 +17,7 @@ import javax.media.jai.PlanarImage;
 import javax.media.jai.iterator.RectIter;
 import javax.media.jai.iterator.RectIterFactory;
 
+import org.geoserver.catalog.DimensionPresentation;
 import org.geoserver.wcs2_0.GetCoverage;
 import org.geoserver.wcs2_0.util.EnvelopeAxesLabelsMapper;
 import org.geotools.coverage.GridSampleDimension;
@@ -27,6 +30,7 @@ import org.geotools.referencing.CRS;
 import org.geotools.referencing.CRS.AxisOrder;
 import org.geotools.referencing.operation.transform.AffineTransform2D;
 import org.geotools.resources.coverage.CoverageUtilities;
+import org.geotools.util.DateRange;
 import org.geotools.util.NumberRange;
 import org.geotools.xml.transform.TransformerBase;
 import org.geotools.xml.transform.Translator;
@@ -82,6 +86,8 @@ class GMLTransformer extends TransformerBase {
             final GridCoverage2D gc2d = (GridCoverage2D) o;
             // we are going to use this name as an ID
             final String gcName = gc2d.getName().toString(Locale.getDefault());
+            
+
 
             // get the crs and look for an EPSG code
             final CoordinateReferenceSystem crs = gc2d.getCoordinateReferenceSystem2D();
@@ -126,7 +132,7 @@ class GMLTransformer extends TransformerBase {
                 builder.append(axisName).append(" ");
             }
             String axesLabel = builder.substring(0, builder.length() - 1);
-            handleBoundedBy(gc2d, axisSwap, srsName, axesLabel);
+            handleBoundedBy(gc2d, axisSwap, srsName, axesLabel, null);
 
             // handle domain
             builder.setLength(0);
@@ -148,7 +154,7 @@ class GMLTransformer extends TransformerBase {
             handleRange(gc2d);
 
             // handle metadata OPTIONAL
-            handleMetadata(gc2d);
+            handleMetadata(gc2d, null);
 
             end("gml:RectifiedGridCoverage");
 
@@ -198,14 +204,52 @@ class GMLTransformer extends TransformerBase {
          * 
          * @param gc2d
          */
-        public void handleMetadata(GridCoverage2D gc2d) {
+        public void handleMetadata(GridCoverage2D gc2d, TimeDimensionHelper timeHelper) {
             start("gmlcov:metadata");
             start("gmlcov:Extension");
-            // encode properties of coverage
+         
+            // handle time if necessary
+            if(timeHelper != null) {
+                start("wcsgs:TimeDomain");
+                DimensionPresentation presentation = timeHelper.getPresentation();
+                switch(presentation) {
+                    case CONTINUOUS_INTERVAL:
+                        String id0 = timeHelper.getCoverageId() + "_tp_0";
+                        encodeTimePeriod(timeHelper.getBeginPosition(), timeHelper.getEndPosition(), id0, null, null);
+                        break;
+                    case DISCRETE_INTERVAL:
+                        String id1 = timeHelper.getCoverageId() + "_tp_0";
+                        encodeTimePeriod(timeHelper.getBeginPosition(), timeHelper.getEndPosition(), id1, 
+                                timeHelper.getResolutionUnit(), timeHelper.getResolutionValue());
 
-            // start("myNS:metadata");
-            //
-            // end("myNS:metadata");
+                        break;
+                    default:
+                        // TODO: check if we are in the list of instants case, or in the list of periods case
+                        
+                        // list case
+                        TreeSet<Object> domain = timeHelper.getTimeDomain();
+                        int i = 0;
+                        for (Object item : domain) {
+                            // gml:id is mandatory for time instant...
+                            final AttributesImpl atts = new AttributesImpl();
+                            atts.addAttribute("", "gml:id", "gml:id", "", timeHelper.getCoverageId() + "_td_" + i);
+                            if(item instanceof Date) {
+                                start("gml:TimeInstant", atts);
+                                element("gml:timePosition", timeHelper.format((Date) item));
+                                end("gml:TimeInstant");
+                            } else if(item instanceof DateRange) {
+                                DateRange range = (DateRange) item;
+                                start("gml:TimePeriod", atts);
+                                element("gml:beginPosition", timeHelper.format(range.getMinValue()));
+                                element("gml:endPosition", timeHelper.format(range.getMaxValue()));
+                                end("gml:TimePeriod");
+                            }
+                            i++;
+                        }
+                        break;
+                }
+                end("wcsgs:TimeDomain");
+            }
 
             end("gmlcov:Extension");
             end("gmlcov:metadata");
@@ -226,7 +270,7 @@ class GMLTransformer extends TransformerBase {
          * </gml:boundedBy>
          * }
          * </pre>
-         * 
+         * @param ci 
          * @param gc2d
          * @param ePSGCode
          * @param axisSwap
@@ -234,16 +278,17 @@ class GMLTransformer extends TransformerBase {
          * @param axesNames
          * @param axisLabels
          */
-        public void handleBoundedBy(GridCoverage2D gc2d, boolean axisSwap, String srsName,
-                String axisLabels) {
-
+        public void handleBoundedBy(GridCoverage2D gc2d, boolean axisSwap, String srsName, String axisLabels, TimeDimensionHelper timeHelper) {
             final GeneralEnvelope envelope = new GeneralEnvelope(gc2d.getEnvelope());
             final CoordinateReferenceSystem crs = gc2d.getCoordinateReferenceSystem2D();
             final CoordinateSystem cs = crs.getCoordinateSystem();
 
             // TODO time
-            final String uomLabels = extractUoM(crs, cs.getAxis(axisSwap ? 1 : 0).getUnit()) + " "
+            String uomLabels = extractUoM(crs, cs.getAxis(axisSwap ? 1 : 0).getUnit()) + " "
                     + extractUoM(crs, cs.getAxis(axisSwap ? 0 : 1).getUnit());
+            if(timeHelper != null) {
+                uomLabels = uomLabels + " s";
+            }
             final int srsDimension = cs.getDimension();
 
             final String lower = new StringBuilder()
@@ -262,12 +307,23 @@ class GMLTransformer extends TransformerBase {
             envelopeAttrs.addAttribute("", "srsDimension", "srsDimension", "",
                     String.valueOf(srsDimension));
             start("gml:boundedBy");
-            start("gml:Envelope", envelopeAttrs);
+            String envelopeName;
+            if(timeHelper != null) {
+                envelopeName = "gml:EnvelopeWithTimePeriod";
+            } else {
+                envelopeName = "gml:Envelope";
+            }
+            start(envelopeName, envelopeAttrs);
 
             element("gml:lowerCorner", lower);
             element("gml:upperCorner", upper);
+            
+            if(timeHelper != null) {
+                element("gml:beginPosition", timeHelper.getBeginPosition());
+                element("gml:endPosition", timeHelper.getEndPosition());
+            }
 
-            end("gml:Envelope");
+            end(envelopeName);
             end("gml:boundedBy");
 
         }
@@ -624,6 +680,20 @@ class GMLTransformer extends TransformerBase {
             end("gml:RectifiedGrid");
             end("gml:domainSet");
 
+        }
+
+        private void encodeTimePeriod(String beginPosition, String endPosition, String timePeriodId, String intervalUnit, Long intervalValue) {
+            AttributesImpl atts = new AttributesImpl();
+            atts.addAttribute("", "gml:id", "gml:id", "", timePeriodId);
+            start("gml:TimePeriod", atts);
+            element("gml:beginPosition", beginPosition);
+            element("gml:endPosition", endPosition);
+            if(intervalUnit != null && intervalValue != null) {
+                atts = new AttributesImpl();
+                atts.addAttribute("", "unit", "unit", "", intervalUnit);
+                element("gml:TimeInterval", intervalValue.toString(), atts);
+            }
+            end("gml:TimePeriod");
         }
 
     }
