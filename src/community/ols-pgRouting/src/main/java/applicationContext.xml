@@ -6,11 +6,11 @@
 	<bean id="pgRoutingServiceProvider" class="it.phoops.geoserver.ols.routing.pgrouting.PgRoutingServiceProvider">
 	   <property name="active" value="false" />
 	   <property name="descriptionKey" value="OLS.serviceProvider.geocoding.pgrouting.description" />
-       <property name="endpointAddress" value="http://lucene.apache.org/solr/" />
-       <property name="portNumber" value="8080" />
-       <property name="user" value="" />
-       <property name="password" value="" />
-       <property name="database" value="dbProva" />
+       <property name="endpointAddress" value="localhost" />
+       <property name="portNumber" value="5432" />
+       <property name="user" value="routing" />
+       <property name="password" value="routing" />
+       <property name="database" value="prova" />
        <property name="algorithm" value="1" />
     </bean>
 </beans>
