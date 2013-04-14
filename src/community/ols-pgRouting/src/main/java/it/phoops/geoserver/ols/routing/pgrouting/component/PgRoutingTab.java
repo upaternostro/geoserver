@@ -98,7 +98,6 @@ public class PgRoutingTab extends AbstractTab implements ValidateCheckboxTab{
         algorithmList = new ArrayList<PgRoutingTab.ShortestPathAlgorithmType>();
         algorithmList.add(new ShortestPathAlgorithmType(Algorithm.DIJKSTRA, "ShortestPathAlgorithmType.dijkstra"));//1
         algorithmList.add(new ShortestPathAlgorithmType(Algorithm.A_STAR, "ShortestPathAlgorithmType.a.star"));//2
-        algorithmList.add(new ShortestPathAlgorithmType(Algorithm.SHOOTING_STAR, "ShortestPathAlgorithmType.shooting.star"));//3
     }
 
     @Override
@@ -248,9 +247,9 @@ public class PgRoutingTab extends AbstractTab implements ValidateCheckboxTab{
         private List<ShortestPathAlgorithmType>                 algorithmList = null;
         private ShortestPathAlgorithmType                       selectedAlgorithm;
         
-        //1 digit, 1 lower, 1 upper, 1 symbol "@#$%", from 6 to 20
-        private final String PASSWORD_PATTERN = "((?=.*\\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%]).{6,20})";
-    
+//        //1 digit, 1 lower, 1 upper, 1 symbol "@#$%", from 6 to 20
+//        private final String PASSWORD_PATTERN = "((?=.*\\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%]).{6,20})";
+//    
         public PgRoutingPanel(String id) {
             super(id);
             checkboxPgRouting = new CheckBox("checkboxPgRouting", Model.of(Boolean.FALSE)){
@@ -299,7 +298,7 @@ public class PgRoutingTab extends AbstractTab implements ValidateCheckboxTab{
             add(new TextField("userPgRouting",new PropertyModel(this,"userPgRouting")));
             //Password field
             password = new PasswordTextField("pswPgRouting",Model.of(""));
-            password.add(new PatternValidator(PASSWORD_PATTERN));
+//            password.add(new PatternValidator(PASSWORD_PATTERN));
             add(password);
         }
 

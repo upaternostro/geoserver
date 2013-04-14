@@ -6,8 +6,7 @@ import java.util.Map;
 
 public enum Algorithm {
     DIJKSTRA("1"),
-    A_STAR("2"),
-    SHOOTING_STAR("3");
+    A_STAR("2");
     
     private static final Map<String,Algorithm> _lookup = new HashMap<String,Algorithm>();
     private String code;
