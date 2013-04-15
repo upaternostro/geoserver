@@ -8,10 +8,12 @@ import it.phoops.geoserver.ols.routing.pgrouting.component.PgRoutingTab;
 import it.phoops.geoserver.ols.routing.pgrouting.component.PgRoutingTabFactory;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.sql.CallableStatement;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -22,11 +24,22 @@ import javax.xml.bind.JAXBElement;
 import net.opengis.www.xls.AbstractLocationType;
 import net.opengis.www.xls.DetermineRouteRequestType;
 import net.opengis.www.xls.DetermineRouteResponseType;
+import net.opengis.www.xls.DistanceType;
+import net.opengis.www.xls.DistanceUnitType;
+import net.opengis.www.xls.EnvelopeType;
+import net.opengis.www.xls.LineStringType;
+import net.opengis.www.xls.ObjectFactory;
+import net.opengis.www.xls.Pos;
 import net.opengis.www.xls.PositionType;
+import net.opengis.www.xls.RouteGeometryType;
+import net.opengis.www.xls.RouteInstruction;
+import net.opengis.www.xls.RouteInstructionsListType;
 import net.opengis.www.xls.RoutePlan;
+import net.opengis.www.xls.RouteSummaryType;
 import net.opengis.www.xls.WayPointList;
 import net.opengis.www.xls.WayPointType;
 
+import org.apache.log4j.Logger;
 import org.apache.wicket.extensions.markup.html.tabs.ITab;
 import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.ResourceModel;
@@ -40,6 +53,7 @@ import org.geotools.factory.CommonFactoryFinder;
 import org.geotools.feature.FeatureIterator;
 import org.geotools.jdbc.JDBCDataStore;
 import org.opengis.feature.Feature;
+import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.type.FeatureType;
 import org.opengis.feature.type.GeometryDescriptor;
 import org.opengis.filter.Filter;
@@ -49,8 +63,18 @@ import org.opengis.referencing.crs.CoordinateReferenceSystem;
 import com.vividsolutions.jts.geom.Coordinate;
 import com.vividsolutions.jts.geom.Geometry;
 import com.vividsolutions.jts.geom.GeometryFactory;
+import com.vividsolutions.jts.geom.LineString;
+import com.vividsolutions.jts.geom.Point;
 
-public class PgRoutingServiceProvider extends OLSAbstractServiceProvider implements RoutingServiceProvider {
+public class PgRoutingServiceProvider extends OLSAbstractServiceProvider implements RoutingServiceProvider
+{
+    private static final Logger logger = Logger.getLogger(PgRoutingServiceProvider.class);
+            
+    
+    public static final double  DEGREES_TO_RADIANS_FACTOR = Math.PI / 180.0;
+    public static final double  EARTH_RADIUS = 6378137.0;
+    public static final double  DEGREES_TO_METERS_FACTOR = DEGREES_TO_RADIANS_FACTOR * EARTH_RADIUS;
+    
     //Properties Name
     private static final String  PN_ENDPOINT_ADDRESS = "OLS.serviceProvider.geocoding.pgrouting.service.endpointAddress";
     private static final String  PN_PORT_NUMBER = "OLS.serviceProvider.geocoding.pgrouting.service.portNumber";
@@ -195,6 +219,8 @@ public class PgRoutingServiceProvider extends OLSAbstractServiceProvider impleme
     @Override
     public JAXBElement<DetermineRouteResponseType> geocode(
             DetermineRouteRequestType input) throws OLSException {
+        JAXBElement<DetermineRouteResponseType> retval = null;
+        
         // Parse request parameters
         RoutePlan routePlan = input.getRoutePlan();
         
@@ -236,12 +262,9 @@ public class PgRoutingServiceProvider extends OLSAbstractServiceProvider impleme
         try {
             pgDatastore = DataStoreFinder.getDataStore(params); // org.geotools.jdbc.JDBCDataStore
             
-//            select AddGeometryColumn('nodes', 'the_geom', 4326, 'POINT', 2);
-//            update nodes set the_geom=ST_SetSRID(ST_MakePoint(lon, lat), 4326);
-//            CREATE INDEX idx_nodes_geom ON nodes USING GIST ( the_geom );
-//            VACUUM ANALYZE nodes (the_geom);
+//            alter table vertices_tmp add primary key(id);
             
-            SimpleFeatureSource nodes = pgDatastore.getFeatureSource("nodes"); // @@@ FIXME
+            SimpleFeatureSource nodes = pgDatastore.getFeatureSource("vertices_tmp"); // @@@ FIXME
             Feature             startNode = findNearestNode(nodes, startPosition);
             Feature             endNode = findNearestNode(nodes, endPosition);
             String              startId = startNode.getIdentifier().getID();
@@ -251,22 +274,141 @@ public class PgRoutingServiceProvider extends OLSAbstractServiceProvider impleme
             // shortest_path -- SELECT id, source, target, cost FROM edge_table
             // shortest_path_astar -- SELECT id, source, target, cost, x1, y1, x2, y2 FROM edge_table
             statement = connection.prepareCall("{call shortest_path(?, ?, ?, ?, ?)}");
-            statement.setString(1, "SELECT gid as id, source, target, length as cost, reverse_cost FROM ways ");                                         // SQL
-            statement.setInt(2, Integer.parseInt(startId.substring(6)));        // source id
-            statement.setInt(3, Integer.parseInt(endId.substring(6)));          // target id
-            statement.setBoolean(4, true);                                      // directed
-            statement.setBoolean(5, true);                                      // has reverse cost
+            
+            statement.setString(1, "SELECT gid as id, source, target, length as cost, reverse_cost FROM ways ");        // SQL
+            statement.setInt(2, extractNodeId(nodes, startId));                                                         // source id
+            statement.setInt(3, extractNodeId(nodes, endId));                                                           // target id
+            statement.setBoolean(4, true);                                                                              // directed
+            statement.setBoolean(5, true);                                                                              // has reverse cost
+            
             rs = statement.executeQuery();
+            
+            SimpleFeatureSource         edges = pgDatastore.getFeatureSource("ways"); // @@@ FIXME
+            FilterFactory               ff = CommonFactoryFinder.getFilterFactory();
+            Filter                      filter;
+            SimpleFeatureCollection     sfc;
+            SimpleFeature               edge;
+            LineString                  edgeGeometry;
+            Geometry                    routeGeometry = null;
+            Point                       edgeCentroid;
+            ObjectFactory               of = new ObjectFactory();
+            DetermineRouteResponseType  determineRouteResponse = of.createDetermineRouteResponseType();
+            RouteSummaryType            routeSummary = of.createRouteSummaryType();
+            RouteInstructionsListType   routeInstructions = of.createRouteInstructionsListType();
+            double                      totalDistance = 0.0;
+            RouteInstruction            routeInstruction;
+            DistanceType                distance;
+            BigDecimal                  bdValue; 
             
             int         v;
             int         e;
             double      c;
+            double      d;
             
             while (rs.next()) {
-                v = rs.getInt(1);
-                e = rs.getInt(2);
-                c = rs.getDouble(3);
+                v = rs.getInt(1);       // vertex
+                e = rs.getInt(2);       // edge
+                c = rs.getDouble(3);    // cost
+                
+                if (e != -1) {
+                    logger.fatal("Vertex: " + v + " - Edge: " + e + " - Cost: " + c);
+                    
+                    filter = ff.id(Collections.singleton(ff.featureId("ways." + e)));
+                    sfc = edges.getFeatures(filter);
+                    edge = (SimpleFeature)sfc.toArray()[0];
+                    edgeGeometry = (LineString)edge.getDefaultGeometryProperty().getValue();
+                    edgeCentroid = edgeGeometry.getCentroid();
+                    d = edgeGeometry.getLength() * DEGREES_TO_METERS_FACTOR * Math.cos(edgeCentroid.getY() * DEGREES_TO_RADIANS_FACTOR);
+                    
+                    if (!Integer.valueOf(v).equals(edge.getAttribute("source"))) {
+                        // reverse edge direction
+                        edgeGeometry = (LineString)edgeGeometry.reverse();
+                    }
+                    
+                    if (routeGeometry == null) {
+                        routeGeometry = edgeGeometry;
+                    } else {
+                        routeGeometry = routeGeometry.union(edgeGeometry);
+                    }
+                    
+                    routeInstruction = of.createRouteInstruction();
+                    
+                    distance = of.createDistanceType();
+                    bdValue = BigDecimal.valueOf(d * 0.001);
+                    bdValue = bdValue.setScale(2, BigDecimal.ROUND_DOWN);
+                    distance.setValue(bdValue);
+                    routeInstruction.setDistance(distance);
+                    
+                    totalDistance += d;
+                    
+                    routeInstruction.setInstruction(edge.getAttribute("name").toString()); // FIXME
+                    routeInstructions.getRouteInstructions().add(routeInstruction);
+                }
             }
+            
+            distance = of.createDistanceType();
+            distance.setValue(BigDecimal.valueOf(totalDistance));
+            distance.setAccuracy(BigDecimal.ONE); // FIXME
+            distance.setUom(DistanceUnitType.M); // FIXME ???
+            routeSummary.setTotalDistance(distance);
+            
+            RouteGeometryType       routeGeometryXLS = of.createRouteGeometryType();
+            LineStringType          lineString = of.createLineStringType();
+            List<Pos>               posList = lineString.getPos();
+            Pos                     pos;
+            List<Double>            posValues;
+            double                  minX = 360;
+            double                  maxX = -360;
+            double                  minY = 360;
+            double                  maxY = -360;
+            
+            for (Coordinate coord : routeGeometry.getCoordinates()) {
+                pos = new Pos();
+                posValues = pos.getValues();
+                posValues.add(coord.y);
+                posValues.add(coord.x);
+                posList.add(pos);
+                
+                // Bounding box extraction:
+                if (coord.x < minX) {
+                    minX = coord.x;
+                }
+                if (coord.y < minY) {
+                    minY = coord.y;
+                }
+                if (coord.x > maxX) {
+                    maxX = coord.x;
+                }
+                if (coord.y > maxY) {
+                    maxY = coord.y;
+                }
+            }
+            
+            routeGeometryXLS.setLineString(lineString);
+            
+            EnvelopeType    boundingBox = of.createEnvelopeType();
+            
+            posList = boundingBox.getPos();
+            
+            pos = new Pos();
+            posValues = pos.getValues();
+            posValues.add(minY);
+            posValues.add(minX);
+            posList.add(pos);
+            
+            pos = new Pos();
+            posValues = pos.getValues();
+            posValues.add(maxY);
+            posValues.add(maxX);
+            posList.add(pos);
+            
+            routeSummary.setBoundingBox(boundingBox);
+            
+            determineRouteResponse.setRouteSummary(routeSummary);
+            determineRouteResponse.setRouteGeometry(routeGeometryXLS);
+            determineRouteResponse.setRouteInstructionsList(routeInstructions);
+            
+            retval = of.createDetermineRouteResponse(determineRouteResponse);
         } catch (IOException e) {
             throw new OLSException("Error accessing pgDatastore", e);
         } catch (SQLException e) {
@@ -289,7 +431,7 @@ public class PgRoutingServiceProvider extends OLSAbstractServiceProvider impleme
             }
         }
         
-        return null;
+        return retval;
     }
     
     private Feature findNearestNode(SimpleFeatureSource nodes, PositionType position) throws IOException
@@ -336,5 +478,12 @@ public class PgRoutingServiceProvider extends OLSAbstractServiceProvider impleme
         fi.close();
         
         return nearestNode;
+    }
+    
+    private int extractNodeId(SimpleFeatureSource featureSource, String fid)
+    {
+        String  name = featureSource.getName().getLocalPart();
+        
+        return Integer.valueOf(fid.substring(name.length() + 1));
     }
 }
