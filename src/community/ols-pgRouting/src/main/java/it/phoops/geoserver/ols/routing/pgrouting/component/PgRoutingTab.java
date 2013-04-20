@@ -24,7 +24,6 @@ import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.Model;
 import org.apache.wicket.model.PropertyModel;
-import org.apache.wicket.validation.validator.PatternValidator;
 import org.geoserver.config.GeoServer;
 
 public class PgRoutingTab extends AbstractTab implements ValidateCheckboxTab{
@@ -34,6 +33,9 @@ public class PgRoutingTab extends AbstractTab implements ValidateCheckboxTab{
     private String                              pswPgRouting;
     private String                              dbPgRouting;
     private String                              userPgRouting;
+    private String                              nodeTableRouting;
+    private String                              edgeTableRouting;
+    private String                              edgeQueryRouting;
     private int                                 codeAlgorithmSelected;
     private PgRoutingPanel                      instancePanel;
     private List<ShortestPathAlgorithmType>     algorithmList = null;
@@ -130,6 +132,9 @@ public class PgRoutingTab extends AbstractTab implements ValidateCheckboxTab{
         instancePanel.setPswPgRouting(pswPgRouting);
         instancePanel.setDbPgRouting(dbPgRouting);
         instancePanel.setUserPgRouting(userPgRouting);
+        instancePanel.setNodeTableRouting(nodeTableRouting);
+        instancePanel.setEdgeTableRouting(edgeTableRouting);
+        instancePanel.setEdgeQueryRouting(edgeQueryRouting);
         instancePanel.setAlgorithmList(this.algorithmList);
         instancePanel.setSelectedAlgorithm(this.algorithmList.get(getCodeAlgorithmSelected()-1));
         return instancePanel;
@@ -206,7 +211,43 @@ public class PgRoutingTab extends AbstractTab implements ValidateCheckboxTab{
             instancePanel.setUserPgRouting(userPgRouting);
         this.userPgRouting = userPgRouting;
     }
+    
+    public String getNodeTableRouting() {
+        if (instancePanel != null)
+            return instancePanel.getNodeTableRouting();
+        return nodeTableRouting;
+    }
 
+    public void setNodeTableRouting(String nodeTableRouting) {
+        if(instancePanel != null)
+            instancePanel.setNodeTableRouting(nodeTableRouting);
+        this.nodeTableRouting = nodeTableRouting;
+    }
+    
+    public String getEdgeTableRouting() {
+        if (instancePanel != null)
+            return instancePanel.getEdgeTableRouting();
+        return edgeTableRouting;
+    }
+
+    public void setEdgeTableRouting(String edgeTableRouting) {
+        if(instancePanel != null)
+            instancePanel.setEdgeTableRouting(edgeTableRouting);
+        this.edgeTableRouting = edgeTableRouting;
+    }
+    
+    public String getEdgeQueryRouting() {
+        if (instancePanel != null)
+            return instancePanel.getEdgeQueryRouting();
+        return edgeQueryRouting;
+    }
+
+    public void setEdgeQueryRouting(String edgeQueryRouting) {
+        if(instancePanel != null)
+            instancePanel.setEdgeQueryRouting(edgeQueryRouting);
+        this.edgeQueryRouting = edgeQueryRouting;
+    }
+    
     public ShortestPathAlgorithmType getSelectedAlgorithm() {
         if(instancePanel != null)
             return instancePanel.getSelectedAlgorithm();
@@ -242,6 +283,9 @@ public class PgRoutingTab extends AbstractTab implements ValidateCheckboxTab{
         private String                                          userPgRouting;
         private String                                          dbPgRouting;
         private String                                          pswPgRouting;
+        private String                                          nodeTableRouting;
+        private String                                          edgeTableRouting;
+        private String                                          edgeQueryRouting;
         private CheckBox                                        checkboxPgRouting;
         private PasswordTextField                               password;
         private List<ShortestPathAlgorithmType>                 algorithmList = null;
@@ -298,8 +342,13 @@ public class PgRoutingTab extends AbstractTab implements ValidateCheckboxTab{
             add(new TextField("userPgRouting",new PropertyModel(this,"userPgRouting")));
             //Password field
             password = new PasswordTextField("pswPgRouting",Model.of(""));
-//            password.add(new PatternValidator(PASSWORD_PATTERN));
             add(password);
+            //Node table
+            add(new TextField("nodeTableRouting",new PropertyModel(this,"nodeTableRouting")));
+            //Edge table
+            add(new TextField("edgeTableRouting",new PropertyModel(this,"edgeTableRouting")));
+            //Edge query
+            add(new TextField("edgeQueryRouting",new PropertyModel(this,"edgeQueryRouting")));
         }
 
         public String getActivePgRouting() {
@@ -353,7 +402,31 @@ public class PgRoutingTab extends AbstractTab implements ValidateCheckboxTab{
         public void setUserPgRouting(String userPgRouting) {
             this.userPgRouting = userPgRouting;
         }
-        
+
+        public String getNodeTableRouting() {
+            return nodeTableRouting;
+        }
+
+        public void setNodeTableRouting(String nodeTableRouting) {
+            this.nodeTableRouting = nodeTableRouting;
+        }
+
+        public String getEdgeTableRouting() {
+            return edgeTableRouting;
+        }
+
+        public void setEdgeTableRouting(String edgeTableRouting) {
+            this.edgeTableRouting = edgeTableRouting;
+        }
+
+        public String getEdgeQueryRouting() {
+            return edgeQueryRouting;
+        }
+
+        public void setEdgeQueryRouting(String edgeQueryRouting) {
+            this.edgeQueryRouting = edgeQueryRouting;
+        }
+
         public ShortestPathAlgorithmType getSelectedAlgorithm() {
             return selectedAlgorithm;
         }

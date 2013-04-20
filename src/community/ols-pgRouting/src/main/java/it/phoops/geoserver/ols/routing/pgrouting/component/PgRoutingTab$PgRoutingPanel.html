@@ -14,8 +14,16 @@
 		<label> Password </label>
 			 <input value="" type="password" wicket:id="pswPgRouting" name="pswPgRouting" class="field text" />
 		<br />
-		<label> Shortest Algotihm </label>
+		<label> Algotihm </label>
 			<select wicket:id="algorithm"></select>
+        <label> Node table name </label>
+             <input value="" type="text" wicket:id="nodeTableRouting" name="nodeTableRouting" class="field text" />
+        <label> Edge table name </label>
+             <input value="" type="text" wicket:id="edgeTableRouting" name="edgeTableRouting" class="field text" />
+        <label> Edge SQL query </label>
+             <input value="" type="text" wicket:id="edgeQueryRouting" name="edgeQueryRouting" class="field text" />
+             for Dijkstra: <pre>SELECT id, source, target, cost, reverse_cost FROM edge_table</pre>
+             for A*: <pre>SELECT id, source, target, cost, x1, y1, x2, y2, reverse_cost FROM edge_table</pre>
 		<hr>
 	</wicket:panel>
 </html>

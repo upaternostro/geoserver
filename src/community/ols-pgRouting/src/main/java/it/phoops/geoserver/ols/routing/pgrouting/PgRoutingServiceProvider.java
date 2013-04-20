@@ -83,6 +83,9 @@ public class PgRoutingServiceProvider extends OLSAbstractServiceProvider impleme
     private static final String  PN_PASSWORD = "OLS.serviceProvider.geocoding.pgrouting.service.password";
     private static final String  PN_ACTIVE_SERVICE = "OLS.serviceProvider.service.active";
     private static final String  PN_PGROUTING_ALGORITHM ="OLS.serviceProvider.geocoding.pgrouting.service.shortest.algorithm";
+    private static final String  PN_PGROUTING_NODE_TABLE ="OLS.serviceProvider.geocoding.pgrouting.service.node.table";
+    private static final String  PN_PGROUTING_EDGE_TABLE ="OLS.serviceProvider.geocoding.pgrouting.service.edge.table";
+    private static final String  PN_PGROUTING_EDGE_QUERY ="OLS.serviceProvider.geocoding.pgrouting.service.edge.query";
     
     private String      descriptionKey;
     private Properties  properties = new Properties();
@@ -133,6 +136,30 @@ public class PgRoutingServiceProvider extends OLSAbstractServiceProvider impleme
 
     public void setAlgorithm(String algorithm) {
         properties.setProperty(PN_PGROUTING_ALGORITHM, algorithm);
+    }
+    
+    public String getNodeTable() {
+        return properties.getProperty(PN_PGROUTING_NODE_TABLE);
+    }
+
+    public void setNodeTable(String nodeTable) {
+        properties.setProperty(PN_PGROUTING_NODE_TABLE, nodeTable);
+    }
+    
+    public String getEdgeTable() {
+        return properties.getProperty(PN_PGROUTING_EDGE_TABLE);
+    }
+
+    public void setEdgeTable(String edgeTable) {
+        properties.setProperty(PN_PGROUTING_EDGE_TABLE, edgeTable);
+    }
+    
+    public String getEdgeQuery() {
+        return properties.getProperty(PN_PGROUTING_EDGE_QUERY);
+    }
+
+    public void setEdgeQuery(String edgeQuery) {
+        properties.setProperty(PN_PGROUTING_EDGE_QUERY, edgeQuery);
     }
     
     public String getActive(){
@@ -189,6 +216,15 @@ public class PgRoutingServiceProvider extends OLSAbstractServiceProvider impleme
         
         String algorithm = ((PgRoutingTab)getTab()).getSelectedAlgorithm().getCode();
         
+        String nodeTable = ((PgRoutingTab)getTab()).getNodeTableRouting();
+        if(nodeTable == null)
+            nodeTable = "";
+        String edgeTable = ((PgRoutingTab)getTab()).getEdgeTableRouting();
+        if(edgeTable == null)
+            edgeTable = "";
+        String edgeQuery = ((PgRoutingTab)getTab()).getEdgeQueryRouting();
+        if(edgeQuery == null)
+            edgeQuery = "";
         
         setActive(active);
         setEndpointAddress(host);
@@ -197,6 +233,9 @@ public class PgRoutingServiceProvider extends OLSAbstractServiceProvider impleme
         setUser(user);
         setPassword(psw);
         setAlgorithm(algorithm);
+        setNodeTable(nodeTable);
+        setEdgeTable(edgeTable);
+        setEdgeQuery(edgeQuery);
         
     }
     
@@ -264,7 +303,7 @@ public class PgRoutingServiceProvider extends OLSAbstractServiceProvider impleme
             
 //            alter table vertices_tmp add primary key(id);
             
-            SimpleFeatureSource nodes = pgDatastore.getFeatureSource("vertices_tmp"); // @@@ FIXME
+            SimpleFeatureSource nodes = pgDatastore.getFeatureSource(getNodeTable());
             Feature             startNode = findNearestNode(nodes, startPosition);
             Feature             endNode = findNearestNode(nodes, endPosition);
             String              startId = startNode.getIdentifier().getID();
@@ -273,17 +312,21 @@ public class PgRoutingServiceProvider extends OLSAbstractServiceProvider impleme
             connection = ((JDBCDataStore)pgDatastore).getConnection(Transaction.AUTO_COMMIT);
             // shortest_path -- SELECT id, source, target, cost FROM edge_table
             // shortest_path_astar -- SELECT id, source, target, cost, x1, y1, x2, y2 FROM edge_table
-            statement = connection.prepareCall("{call shortest_path(?, ?, ?, ?, ?)}");
+            if (Algorithm.DIJKSTRA.toString().equals(getAlgorithm())) {
+                statement = connection.prepareCall("{call shortest_path(?, ?, ?, ?, ?)}");
+            } else {
+                statement = connection.prepareCall("{call shortest_path_astar(?, ?, ?, ?, ?)}");
+            }
             
-            statement.setString(1, "SELECT gid as id, source, target, length as cost, reverse_cost FROM ways ");        // SQL
-            statement.setInt(2, extractNodeId(nodes, startId));                                                         // source id
-            statement.setInt(3, extractNodeId(nodes, endId));                                                           // target id
-            statement.setBoolean(4, true);                                                                              // directed
-            statement.setBoolean(5, true);                                                                              // has reverse cost
+            statement.setString(1, getEdgeQuery());             // SQL
+            statement.setInt(2, extractNodeId(nodes, startId)); // source id
+            statement.setInt(3, extractNodeId(nodes, endId));   // target id
+            statement.setBoolean(4, true);                      // directed
+            statement.setBoolean(5, true);                      // has reverse cost
             
             rs = statement.executeQuery();
             
-            SimpleFeatureSource         edges = pgDatastore.getFeatureSource("ways"); // @@@ FIXME
+            SimpleFeatureSource         edges = pgDatastore.getFeatureSource(getEdgeTable());
             FilterFactory               ff = CommonFactoryFinder.getFilterFactory();
             Filter                      filter;
             SimpleFeatureCollection     sfc;
@@ -311,9 +354,7 @@ public class PgRoutingServiceProvider extends OLSAbstractServiceProvider impleme
                 c = rs.getDouble(3);    // cost
                 
                 if (e != -1) {
-                    logger.fatal("Vertex: " + v + " - Edge: " + e + " - Cost: " + c);
-                    
-                    filter = ff.id(Collections.singleton(ff.featureId("ways." + e)));
+                    filter = ff.id(Collections.singleton(ff.featureId(getEdgeTable() + "." + e)));
                     sfc = edges.getFeatures(filter);
                     edge = (SimpleFeature)sfc.toArray()[0];
                     edgeGeometry = (LineString)edge.getDefaultGeometryProperty().getValue();
