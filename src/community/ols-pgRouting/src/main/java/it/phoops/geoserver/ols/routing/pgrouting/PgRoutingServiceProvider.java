@@ -69,7 +69,6 @@ import com.vividsolutions.jts.geom.Point;
 public class PgRoutingServiceProvider extends OLSAbstractServiceProvider implements RoutingServiceProvider
 {
     private static final Logger logger = Logger.getLogger(PgRoutingServiceProvider.class);
-            
     
     public static final double  DEGREES_TO_RADIANS_FACTOR = Math.PI / 180.0;
     public static final double  EARTH_RADIUS = 6378137.0;
@@ -343,46 +342,70 @@ public class PgRoutingServiceProvider extends OLSAbstractServiceProvider impleme
             DistanceType                distance;
             BigDecimal                  bdValue; 
             
-            int         v;
-            int         e;
-            double      c;
-            double      d;
+            int         vertexId;
+            int         edgeId;
+            double      cost;
+            double      length;
+            double      bearing;
+            double      startingBearing;
+            double      endingBearing = 0.0;
+            
+            Coordinate  startCoordinate;
+            Coordinate  secondCoordinate;
+            Coordinate  preLastCoordinate;
+            Coordinate  endCoordinate;
+            
+            AbsoluteDirection   absoluteDirection;
+            RelativeDirection   relativeDirection;
             
             while (rs.next()) {
-                v = rs.getInt(1);       // vertex
-                e = rs.getInt(2);       // edge
-                c = rs.getDouble(3);    // cost
+                vertexId = rs.getInt(1);
+                edgeId = rs.getInt(2);
+                cost = rs.getDouble(3);
                 
-                if (e != -1) {
-                    filter = ff.id(Collections.singleton(ff.featureId(getEdgeTable() + "." + e)));
+                if (edgeId != -1) {
+                    filter = ff.id(Collections.singleton(ff.featureId(getEdgeTable() + "." + edgeId)));
                     sfc = edges.getFeatures(filter);
                     edge = (SimpleFeature)sfc.toArray()[0];
                     edgeGeometry = (LineString)edge.getDefaultGeometryProperty().getValue();
                     edgeCentroid = edgeGeometry.getCentroid();
-                    d = edgeGeometry.getLength() * DEGREES_TO_METERS_FACTOR * Math.cos(edgeCentroid.getY() * DEGREES_TO_RADIANS_FACTOR);
+                    length = edgeGeometry.getLength() * DEGREES_TO_METERS_FACTOR * Math.cos(edgeCentroid.getY() * DEGREES_TO_RADIANS_FACTOR);
                     
-                    if (!Integer.valueOf(v).equals(edge.getAttribute("source"))) {
+                    if (!Integer.valueOf(vertexId).equals(edge.getAttribute("source"))) {
                         // reverse edge direction
                         edgeGeometry = (LineString)edgeGeometry.reverse();
                     }
                     
+                    startCoordinate = edgeGeometry.getStartPoint().getCoordinate();
+                    endCoordinate = edgeGeometry.getEndPoint().getCoordinate();
+                    bearing = Math.atan((endCoordinate.y - startCoordinate.y)/(endCoordinate.x - startCoordinate.x));
+                    absoluteDirection = AbsoluteDirection.getDirectionFromBearing(bearing);
+                    
+                    secondCoordinate = edgeGeometry.getCoordinateN(1);
+                    startingBearing = Math.atan((secondCoordinate.y - startCoordinate.y)/(secondCoordinate.x - startCoordinate.x));
+                    
                     if (routeGeometry == null) {
                         routeGeometry = edgeGeometry;
+                        relativeDirection = null;
                     } else {
                         routeGeometry = routeGeometry.union(edgeGeometry);
+                        relativeDirection = RelativeDirection.getDirectionFromBearing(Math.PI / 2.0 - endingBearing + startingBearing);
                     }
+                    
+                    preLastCoordinate = edgeGeometry.getCoordinateN(edgeGeometry.getNumGeometries() - 1);
+                    endingBearing = Math.atan((endCoordinate.y - preLastCoordinate.y)/(endCoordinate.x - preLastCoordinate.x));
                     
                     routeInstruction = of.createRouteInstruction();
                     
                     distance = of.createDistanceType();
-                    bdValue = BigDecimal.valueOf(d * 0.001);
+                    bdValue = BigDecimal.valueOf(length * 0.001);
                     bdValue = bdValue.setScale(2, BigDecimal.ROUND_DOWN);
                     distance.setValue(bdValue);
                     routeInstruction.setDistance(distance);
                     
-                    totalDistance += d;
+                    totalDistance += length;
                     
-                    routeInstruction.setInstruction(edge.getAttribute("name").toString()); // FIXME
+                    routeInstruction.setInstruction(relativeDirection + " - " + edge.getAttribute("name").toString() + " - " + length + " - " + absoluteDirection); // FIXME
                     routeInstructions.getRouteInstructions().add(routeInstruction);
                 }
             }
@@ -526,5 +549,115 @@ public class PgRoutingServiceProvider extends OLSAbstractServiceProvider impleme
         String  name = featureSource.getName().getLocalPart();
         
         return Integer.valueOf(fid.substring(name.length() + 1));
+    }
+}
+
+enum AbsoluteDirection {
+    NORTH,
+    NORTHEAST,
+    EAST,
+    SOUTHEAST,
+    SOUTH,
+    SOUTHWEST,
+    WEST,
+    NORTHWEST;
+    
+    public static final double  EAST_NORTH_EAST = 22.5 * PgRoutingServiceProvider.DEGREES_TO_RADIANS_FACTOR;
+    public static final double  NORTH_NORTH_EAST = 67.5 * PgRoutingServiceProvider.DEGREES_TO_RADIANS_FACTOR;
+    public static final double  NORTH_NORTH_WEST = 112.5 * PgRoutingServiceProvider.DEGREES_TO_RADIANS_FACTOR;
+    public static final double  WEST_NORTH_WEST = 157.5 * PgRoutingServiceProvider.DEGREES_TO_RADIANS_FACTOR;
+    public static final double  WEST_SOUTH_WEST = 202.5 * PgRoutingServiceProvider.DEGREES_TO_RADIANS_FACTOR;
+    public static final double  SOUTH_SOUTH_WEST = 247.5 * PgRoutingServiceProvider.DEGREES_TO_RADIANS_FACTOR;
+    public static final double  SOUTH_SOUTH_EAST = 292.5 * PgRoutingServiceProvider.DEGREES_TO_RADIANS_FACTOR;
+    public static final double  EAST_SOUTH_EAST = 337.5 * PgRoutingServiceProvider.DEGREES_TO_RADIANS_FACTOR;
+    
+    public static AbsoluteDirection getDirectionFromBearing(double bearing)
+    {
+        AbsoluteDirection   retval;
+        
+        while (bearing < 0) {
+            bearing += 2*Math.PI;
+        }
+        
+        while (bearing > 2*Math.PI) {
+            bearing -= 2*Math.PI;
+        }
+        
+        if (bearing > EAST_SOUTH_EAST) {
+            retval = AbsoluteDirection.EAST;
+        } else if (bearing > SOUTH_SOUTH_EAST) {
+            retval = AbsoluteDirection.SOUTHEAST;
+        } else if (bearing > SOUTH_SOUTH_WEST) {
+            retval = AbsoluteDirection.SOUTH;
+        } else if (bearing > WEST_SOUTH_WEST) {
+            retval = AbsoluteDirection.SOUTHWEST;
+        } else if (bearing > WEST_NORTH_WEST) {
+            retval = AbsoluteDirection.WEST;
+        } else if (bearing > NORTH_NORTH_WEST) {
+            retval = AbsoluteDirection.NORTHWEST;
+        } else if (bearing > NORTH_NORTH_EAST) {
+            retval = AbsoluteDirection.NORTH;
+        } else if (bearing > EAST_NORTH_EAST) {
+            retval = AbsoluteDirection.NORTHEAST;
+        } else { // BETWEEN 0 AND EAST_NORTH_EAST
+            retval = AbsoluteDirection.EAST;
+        }
+        
+        return retval;
+    }
+}
+
+enum RelativeDirection {
+    CONTINUE,
+    SLIGHTLY_RIGHT,
+    RIGHT,
+    HARD_RIGHT,
+    UTURN,
+    HARD_LEFT,
+    LEFT,
+    SLIGHTLY_LEFT;
+    
+    public static final double  EAST_NORTH_EAST = 22.5 * PgRoutingServiceProvider.DEGREES_TO_RADIANS_FACTOR;
+    public static final double  NORTH_NORTH_EAST = 67.5 * PgRoutingServiceProvider.DEGREES_TO_RADIANS_FACTOR;
+    public static final double  NORTH_NORTH_WEST = 112.5 * PgRoutingServiceProvider.DEGREES_TO_RADIANS_FACTOR;
+    public static final double  WEST_NORTH_WEST = 157.5 * PgRoutingServiceProvider.DEGREES_TO_RADIANS_FACTOR;
+    public static final double  WEST_SOUTH_WEST = 202.5 * PgRoutingServiceProvider.DEGREES_TO_RADIANS_FACTOR;
+    public static final double  SOUTH_SOUTH_WEST = 247.5 * PgRoutingServiceProvider.DEGREES_TO_RADIANS_FACTOR;
+    public static final double  SOUTH_SOUTH_EAST = 292.5 * PgRoutingServiceProvider.DEGREES_TO_RADIANS_FACTOR;
+    public static final double  EAST_SOUTH_EAST = 337.5 * PgRoutingServiceProvider.DEGREES_TO_RADIANS_FACTOR;
+    
+    public static RelativeDirection getDirectionFromBearing(double bearing)
+    {
+        RelativeDirection   retval;
+        
+        while (bearing < 0) {
+            bearing += 2*Math.PI;
+        }
+        
+        while (bearing > 2*Math.PI) {
+            bearing -= 2*Math.PI;
+        }
+        
+        if (bearing > EAST_SOUTH_EAST) {
+            retval = RelativeDirection.RIGHT;
+        } else if (bearing > SOUTH_SOUTH_EAST) {
+            retval = RelativeDirection.HARD_RIGHT;
+        } else if (bearing > SOUTH_SOUTH_WEST) {
+            retval = RelativeDirection.UTURN;
+        } else if (bearing > WEST_SOUTH_WEST) {
+            retval = RelativeDirection.HARD_LEFT;
+        } else if (bearing > WEST_NORTH_WEST) {
+            retval = RelativeDirection.LEFT;
+        } else if (bearing > NORTH_NORTH_WEST) {
+            retval = RelativeDirection.SLIGHTLY_LEFT;
+        } else if (bearing > NORTH_NORTH_EAST) {
+            retval = RelativeDirection.CONTINUE;
+        } else if (bearing > EAST_NORTH_EAST) {
+            retval = RelativeDirection.SLIGHTLY_RIGHT;
+        } else { // BETWEEN 0 AND EAST_NORTH_EAST
+            retval = RelativeDirection.RIGHT;
+        }
+        
+        return retval;
     }
 }
