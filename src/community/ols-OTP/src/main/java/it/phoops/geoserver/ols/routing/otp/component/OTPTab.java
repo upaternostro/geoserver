@@ -5,7 +5,9 @@ import it.phoops.geoserver.ols.OLSInfo;
 import it.phoops.geoserver.ols.OLSService;
 import it.phoops.geoserver.ols.OLSServiceProvider;
 import it.phoops.geoserver.ols.OLSServiceProviderGUI;
-import it.phoops.geoserver.ols.routing.otp.Language;
+import it.phoops.geoserver.ols.routing.Language;
+import it.phoops.geoserver.ols.routing.LanguageDropDownChoice;
+import it.phoops.geoserver.ols.routing.LanguageType;
 import it.phoops.geoserver.ols.routing.otp.OTPServiceProvider;
 import it.phoops.geoserver.ols.web.validator.ValidateCheckboxTab;
 
@@ -162,61 +164,6 @@ public class OTPTab extends AbstractTab implements ValidateCheckboxTab{
         instancePanel.setSelectedLanguage(this.languageList.get(getCodeLanguageSelected()-1));
         
         return instancePanel;
-    }
-    
-    public class LanguageType implements Serializable {
-        private Language                    language;
-        private String                      code;
-        private String                      descriptionKey;
-        private Component                   component;
-        
-            
-        public LanguageType() {}
-            
-        public LanguageType(Language language, String descriptionKey) {
-            super();
-            this.language = language;
-            this.code = language.toString();
-            this.descriptionKey = descriptionKey;
-        }
-            
-        public Language getService() {
-            return language;
-        }
-    
-        public void setService(Language language) {
-            this.language = language;
-        }
-    
-        public String getCode() {
-            return code;
-        }
-    
-        public void setCode(String code) {
-            this.code = code;
-        }
-    
-        public String getDescriptionKey() {
-            return descriptionKey;
-        }
-    
-        public void setDescriptionKey(String descriptionKey) {
-            this.descriptionKey = descriptionKey;
-        }
-        
-        public Component getComponent() {
-            return component;
-        }
-    
-        public void setComponent(Component component) {
-            this.component = component;
-        }
-    
-        @Override
-        public String toString() {
-            Localizer localizer = Application.get().getResourceSettings().getLocalizer();
-            return localizer.getString(descriptionKey, component);
-        }
     }
     
     private static class OTPPanel extends Panel{

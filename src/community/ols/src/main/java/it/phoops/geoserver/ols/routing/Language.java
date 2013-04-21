@@ -1,4 +1,4 @@
-package it.phoops.geoserver.ols.routing.otp;
+package it.phoops.geoserver.ols.routing;
 
 import java.util.EnumSet;
 import java.util.HashMap;

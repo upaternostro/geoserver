@@ -1,8 +1,7 @@
-package it.phoops.geoserver.ols.routing.otp.component;
+package it.phoops.geoserver.ols.routing;
+
 
 import java.util.List;
-
-import it.phoops.geoserver.ols.routing.otp.component.OTPTab.LanguageType;
 
 import org.apache.wicket.markup.html.form.DropDownChoice;
 import org.apache.wicket.model.PropertyModel;

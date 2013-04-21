@@ -3,6 +3,7 @@ package it.phoops.geoserver.ols.routing.pgrouting;
 import it.phoops.geoserver.ols.OLSAbstractServiceProvider;
 import it.phoops.geoserver.ols.OLSException;
 import it.phoops.geoserver.ols.OLSService;
+import it.phoops.geoserver.ols.routing.Language;
 import it.phoops.geoserver.ols.routing.RoutingServiceProvider;
 import it.phoops.geoserver.ols.routing.pgrouting.component.PgRoutingTab;
 import it.phoops.geoserver.ols.routing.pgrouting.component.PgRoutingTabFactory;
@@ -13,11 +14,14 @@ import java.sql.CallableStatement;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.text.MessageFormat;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
+import java.util.ResourceBundle;
 
 import javax.xml.bind.JAXBElement;
 
@@ -35,6 +39,7 @@ import net.opengis.www.xls.RouteGeometryType;
 import net.opengis.www.xls.RouteInstruction;
 import net.opengis.www.xls.RouteInstructionsListType;
 import net.opengis.www.xls.RoutePlan;
+import net.opengis.www.xls.RoutePreferenceType;
 import net.opengis.www.xls.RouteSummaryType;
 import net.opengis.www.xls.WayPointList;
 import net.opengis.www.xls.WayPointType;
@@ -85,6 +90,10 @@ public class PgRoutingServiceProvider extends OLSAbstractServiceProvider impleme
     private static final String  PN_PGROUTING_NODE_TABLE ="OLS.serviceProvider.geocoding.pgrouting.service.node.table";
     private static final String  PN_PGROUTING_EDGE_TABLE ="OLS.serviceProvider.geocoding.pgrouting.service.edge.table";
     private static final String  PN_PGROUTING_EDGE_QUERY ="OLS.serviceProvider.geocoding.pgrouting.service.edge.query";
+    private static final String  PN_NAVIGATION_INFO     = "OLS.serviceProvider.geocoding.pgrouting.service.navigationInfo";
+    private static final String  PN_NAVIGATION_S_INFO   = "OLS.serviceProvider.geocoding.pgrouting.service.navigationShortInfo";
+    private static final String  PN_NAVIGATION_REL      = "OLS.serviceProvider.geocoding.pgrouting.service.navigationInfo.relative";
+    private static final String  PN_LANGUAGE_INFO       = "OLS.serviceProvider.geocoding.pgrouting.service.languageInfo";
     
     private String      descriptionKey;
     private Properties  properties = new Properties();
@@ -161,6 +170,38 @@ public class PgRoutingServiceProvider extends OLSAbstractServiceProvider impleme
         properties.setProperty(PN_PGROUTING_EDGE_QUERY, edgeQuery);
     }
     
+    public String getNavigationInfo() {
+        return properties.getProperty(PN_NAVIGATION_INFO);
+    }
+
+    public void setNavigationInfo(String navigationInfo) {
+        properties.setProperty(PN_NAVIGATION_INFO, navigationInfo);
+    }
+    
+    public String getNavigationInfoShort() {
+        return properties.getProperty(PN_NAVIGATION_S_INFO);
+    }
+    
+    public void setNavigationInfoShort(String navigationInfoShort){
+        properties.setProperty(PN_NAVIGATION_S_INFO, navigationInfoShort);
+    }
+    
+    public String getNavigationInfoRel(){
+        return properties.getProperty(PN_NAVIGATION_REL);
+    }
+    
+    public void setNavigationInfoRel(String navigationInfoRel){
+        properties.setProperty(PN_NAVIGATION_REL, navigationInfoRel);
+    }
+    
+    public String getLanguage(){
+        return properties.getProperty(PN_LANGUAGE_INFO);
+    }
+    
+    public void setLanguage(String language){
+        properties.setProperty(PN_LANGUAGE_INFO, language);
+    }
+    
     public String getActive(){
         return properties.getProperty(PN_ACTIVE_SERVICE);
     }
@@ -224,6 +265,10 @@ public class PgRoutingServiceProvider extends OLSAbstractServiceProvider impleme
         String edgeQuery = ((PgRoutingTab)getTab()).getEdgeQueryRouting();
         if(edgeQuery == null)
             edgeQuery = "";
+        String navigation       = ((PgRoutingTab)getTab()).getNavigationInfo();
+        String navigationS      = ((PgRoutingTab)getTab()).getNavigationInfoShort();
+        String navigationR      = ((PgRoutingTab)getTab()).getNavigationInfoRel();
+        String language         = ((PgRoutingTab)getTab()).getSelectedLanguage().getCode();
         
         setActive(active);
         setEndpointAddress(host);
@@ -235,7 +280,10 @@ public class PgRoutingServiceProvider extends OLSAbstractServiceProvider impleme
         setNodeTable(nodeTable);
         setEdgeTable(edgeTable);
         setEdgeQuery(edgeQuery);
-        
+        setNavigationInfo(navigation);
+        setNavigationInfoShort(navigationS);
+        setNavigationInfoRel(navigationR);
+        setLanguage(language);
     }
     
     @Override
@@ -252,6 +300,18 @@ public class PgRoutingServiceProvider extends OLSAbstractServiceProvider impleme
         ((PgRoutingTab)pgRoutingTab).setPswPgRouting(this.getPassword());
         Algorithm algorithm = Algorithm.get(this.getAlgorithm());
         ((PgRoutingTab)pgRoutingTab).setCodeAlgorithmSelected(Integer.parseInt(algorithm.getCode()));
+        ((PgRoutingTab)pgRoutingTab).setNodeTableRouting(this.getNodeTable());
+        ((PgRoutingTab)pgRoutingTab).setEdgeTableRouting(this.getEdgeTable());
+        ((PgRoutingTab)pgRoutingTab).setEdgeQueryRouting(this.getEdgeQuery());
+        ((PgRoutingTab)pgRoutingTab).setNavigationInfo(this.getNavigationInfo());
+        ((PgRoutingTab)pgRoutingTab).setNavigationInfoShort(this.getNavigationInfoShort());
+        ((PgRoutingTab)pgRoutingTab).setNavigationInfoRel(this.getNavigationInfoRel());
+        Language language = Language.get(this.getLanguage());
+        if(language == null){
+            ((PgRoutingTab)pgRoutingTab).setCodeLanguageSelected(1);
+        }else{
+            ((PgRoutingTab)pgRoutingTab).setCodeLanguageSelected(Integer.parseInt(language.getCode()));
+        }
     }
 
     @Override
@@ -280,6 +340,18 @@ public class PgRoutingServiceProvider extends OLSAbstractServiceProvider impleme
         
         if (!(endLocation.getValue() instanceof PositionType)) {
             throw new OLSException("Unsupported end point location");
+        }
+        
+        RoutePreferenceType     preference = routePlan.getRoutePreference();
+        boolean                 directed;
+        
+        switch (preference) {
+        case PEDESTRIAN:
+            directed = false;
+            break;
+        default:
+            directed = true;
+            break;
         }
 
         PositionType            endPosition = (PositionType)endLocation.getValue();
@@ -320,8 +392,8 @@ public class PgRoutingServiceProvider extends OLSAbstractServiceProvider impleme
             statement.setString(1, getEdgeQuery());             // SQL
             statement.setInt(2, extractNodeId(nodes, startId)); // source id
             statement.setInt(3, extractNodeId(nodes, endId));   // target id
-            statement.setBoolean(4, true);                      // directed
-            statement.setBoolean(5, true);                      // has reverse cost
+            statement.setBoolean(4, directed);                  // directed
+            statement.setBoolean(5, directed);                  // has reverse cost
             
             rs = statement.executeQuery();
             
@@ -341,23 +413,32 @@ public class PgRoutingServiceProvider extends OLSAbstractServiceProvider impleme
             RouteInstruction            routeInstruction;
             DistanceType                distance;
             BigDecimal                  bdValue; 
+            int                         vertexId;
+            int                         edgeId;
+            double                      cost;
+            double                      length;
+            double                      bearing;
+            double                      startingBearing;
+            double                      endingBearing = 0.0;
+            Coordinate                  startCoordinate;
+            Coordinate                  secondCoordinate;
+            Coordinate                  preLastCoordinate;
+            Coordinate                  endCoordinate;
+            AbsoluteDirection           absoluteDirection;
+            RelativeDirection           relativeDirection;
+            String                      resultFormatter;
             
-            int         vertexId;
-            int         edgeId;
-            double      cost;
-            double      length;
-            double      bearing;
-            double      startingBearing;
-            double      endingBearing = 0.0;
+            String languageInfo = getLanguage();
             
-            Coordinate  startCoordinate;
-            Coordinate  secondCoordinate;
-            Coordinate  preLastCoordinate;
-            Coordinate  endCoordinate;
+            if(languageInfo.equals("1")){
+                Locale.setDefault(Locale.ITALIAN);
+            } else if(languageInfo.equals("2")){
+                Locale.setDefault(Locale.ENGLISH);
+            }
             
-            AbsoluteDirection   absoluteDirection;
-            RelativeDirection   relativeDirection;
-            
+            Locale locale = Locale.getDefault();
+            ResourceBundle messages = ResourceBundle.getBundle("GeoServerApplication", locale);
+                
             while (rs.next()) {
                 vertexId = rs.getInt(1);
                 edgeId = rs.getInt(2);
@@ -405,7 +486,24 @@ public class PgRoutingServiceProvider extends OLSAbstractServiceProvider impleme
                     
                     totalDistance += length;
                     
-                    routeInstruction.setInstruction(relativeDirection + " - " + edge.getAttribute("name").toString() + " - " + length + " - " + absoluteDirection); // FIXME
+                    resultFormatter = "";
+                    
+                    if (edge.getAttribute("name") != null && !edge.getAttribute("name").equals("")) {
+                        if (relativeDirection != null) {
+                            resultFormatter = "<IMG SRC='../resources/img/navigation/" + (relativeDirection.toString().toLowerCase()) + ".png' ALIGN='absmiddle'> " + MessageFormat.format(getNavigationInfoRel(), edge.getAttribute("name"), bdValue);
+                        } else {
+                            resultFormatter = MessageFormat.format(getNavigationInfo(), messages.getString(absoluteDirection.toString()), bdValue, edge.getAttribute("name"));
+                        }
+                    } else {
+                        if (relativeDirection != null) {
+                            resultFormatter = "<IMG SRC='../resources/img/navigation/" + (relativeDirection.toString().toLowerCase()) + ".png' ALIGN='absmiddle'> " + MessageFormat.format(getNavigationInfoRel(), edge.getAttribute("name"), bdValue);
+                        } else {
+                            resultFormatter = MessageFormat.format(getNavigationInfoShort(), messages.getString(absoluteDirection.toString()), bdValue);
+                        }
+                    }
+                    
+//                    routeInstruction.setInstruction(relativeDirection + " - " + edge.getAttribute("name").toString() + " - " + length + " - " + absoluteDirection); // FIXME
+                    routeInstruction.setInstruction(resultFormatter);
                     routeInstructions.getRouteInstructions().add(routeInstruction);
                 }
             }

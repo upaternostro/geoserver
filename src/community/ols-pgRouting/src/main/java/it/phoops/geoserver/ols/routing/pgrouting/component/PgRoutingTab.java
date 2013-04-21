@@ -5,6 +5,9 @@ import it.phoops.geoserver.ols.OLSInfo;
 import it.phoops.geoserver.ols.OLSService;
 import it.phoops.geoserver.ols.OLSServiceProvider;
 import it.phoops.geoserver.ols.OLSServiceProviderGUI;
+import it.phoops.geoserver.ols.routing.Language;
+import it.phoops.geoserver.ols.routing.LanguageDropDownChoice;
+import it.phoops.geoserver.ols.routing.LanguageType;
 import it.phoops.geoserver.ols.routing.pgrouting.Algorithm;
 import it.phoops.geoserver.ols.routing.pgrouting.PgRoutingServiceProvider;
 import it.phoops.geoserver.ols.web.validator.ValidateCheckboxTab;
@@ -40,6 +43,12 @@ public class PgRoutingTab extends AbstractTab implements ValidateCheckboxTab{
     private PgRoutingPanel                      instancePanel;
     private List<ShortestPathAlgorithmType>     algorithmList = null;
     private ShortestPathAlgorithmType           selectedAlgorithm;
+    private LanguageType                        selectedLanguage;
+    private String                              navigationInfo;
+    private String                              navigationInfoShort;
+    private String                              navigationInfoRel;
+    private List<LanguageType>                  languageList = null;
+    private int                                 codeLanguageSelected;
     
     public class ShortestPathAlgorithmType implements Serializable{
         private Algorithm               algorithm;
@@ -100,6 +109,9 @@ public class PgRoutingTab extends AbstractTab implements ValidateCheckboxTab{
         algorithmList = new ArrayList<PgRoutingTab.ShortestPathAlgorithmType>();
         algorithmList.add(new ShortestPathAlgorithmType(Algorithm.DIJKSTRA, "ShortestPathAlgorithmType.dijkstra"));//1
         algorithmList.add(new ShortestPathAlgorithmType(Algorithm.A_STAR, "ShortestPathAlgorithmType.a.star"));//2
+        languageList = new ArrayList<LanguageType>();
+        languageList.add(new LanguageType(Language.ITA, "ols.navigation.ita"));//1
+        languageList.add(new LanguageType(Language.ENG, "ols.navigation.eng"));//2
     }
 
     @Override
@@ -137,6 +149,11 @@ public class PgRoutingTab extends AbstractTab implements ValidateCheckboxTab{
         instancePanel.setEdgeQueryRouting(edgeQueryRouting);
         instancePanel.setAlgorithmList(this.algorithmList);
         instancePanel.setSelectedAlgorithm(this.algorithmList.get(getCodeAlgorithmSelected()-1));
+        instancePanel.setNavigationInfo(navigationInfo);
+        instancePanel.setNavigationInfoShort(navigationInfoShort);
+        instancePanel.setNavigationInfoRel(navigationInfoRel);
+        instancePanel.add(new LanguageDropDownChoice("language", new PropertyModel<LanguageType>(this, "selectedLanguage"), languageList));
+        instancePanel.setSelectedLanguage(this.languageList.get(getCodeLanguageSelected()-1));
         return instancePanel;
     }
     
@@ -248,6 +265,54 @@ public class PgRoutingTab extends AbstractTab implements ValidateCheckboxTab{
         this.edgeQueryRouting = edgeQueryRouting;
     }
     
+    public String getNavigationInfo() {
+        if(instancePanel != null)
+            return instancePanel.getNavigationInfo();
+        return navigationInfo;
+    }
+
+    public void setNavigationInfo(String navigationInfo) {
+        if(instancePanel != null)
+            instancePanel.setNavigationInfo(navigationInfo);
+        this.navigationInfo = navigationInfo;
+    }
+
+    public String getNavigationInfoShort() {
+        if(instancePanel != null)
+            return instancePanel.getNavigationInfoShort();
+        return navigationInfoShort;
+    }
+
+    public void setNavigationInfoShort(String navigationInfoShort) {
+        if(instancePanel != null)
+            instancePanel.setNavigationInfoShort(navigationInfoShort);
+        this.navigationInfoShort = navigationInfoShort;
+    }
+
+    public String getNavigationInfoRel() {
+        if(instancePanel != null)
+            return instancePanel.getNavigationInfoRel();
+        return navigationInfoRel;
+    }
+
+    public void setNavigationInfoRel(String navigationInfoRel) {
+        if(instancePanel != null)
+            instancePanel.setNavigationInfoRel(navigationInfoRel);
+        this.navigationInfoRel = navigationInfoRel;
+    }
+
+    public LanguageType getSelectedLanguage() {
+        if(instancePanel != null)
+            return instancePanel.getSelectedLanguage();
+        return selectedLanguage;
+    }
+
+    public void setSelectedLanguage(LanguageType selectedLanguage) {
+        if(instancePanel != null)
+            instancePanel.setSelectedLanguage(selectedLanguage);
+        this.selectedLanguage = selectedLanguage;
+    }
+
     public ShortestPathAlgorithmType getSelectedAlgorithm() {
         if(instancePanel != null)
             return instancePanel.getSelectedAlgorithm();
@@ -276,6 +341,14 @@ public class PgRoutingTab extends AbstractTab implements ValidateCheckboxTab{
         this.instancePanel = instancePanel;
     }
 
+    public int getCodeLanguageSelected() {
+        return codeLanguageSelected;
+    }
+
+    public void setCodeLanguageSelected(int codeLanguageSelected) {
+        this.codeLanguageSelected = codeLanguageSelected;
+    }
+
     private static class PgRoutingPanel extends Panel{
         private String                                          activePgRouting;
         private String                                          hostPgRouting;
@@ -286,6 +359,11 @@ public class PgRoutingTab extends AbstractTab implements ValidateCheckboxTab{
         private String                                          nodeTableRouting;
         private String                                          edgeTableRouting;
         private String                                          edgeQueryRouting;
+        private String                                          navigationInfo;
+        private String                                          navigationInfoShort;
+        private String                                          navigationInfoRel;
+        private LanguageType                                    selectedLanguage;
+        private List<LanguageType>                              languageList = null;
         private CheckBox                                        checkboxPgRouting;
         private PasswordTextField                               password;
         private List<ShortestPathAlgorithmType>                 algorithmList = null;
@@ -349,6 +427,10 @@ public class PgRoutingTab extends AbstractTab implements ValidateCheckboxTab{
             add(new TextField("edgeTableRouting",new PropertyModel(this,"edgeTableRouting")));
             //Edge query
             add(new TextField("edgeQueryRouting",new PropertyModel(this,"edgeQueryRouting")));
+            
+            add(new TextField("navigationInfo",new PropertyModel(this,"navigationInfo")));
+            add(new TextField("navigationInfoShort",new PropertyModel(this,"navigationInfoShort")));
+            add(new TextField("navigationInfoRel",new PropertyModel(this,"navigationInfoRel")));
         }
 
         public String getActivePgRouting() {
@@ -427,6 +509,46 @@ public class PgRoutingTab extends AbstractTab implements ValidateCheckboxTab{
             this.edgeQueryRouting = edgeQueryRouting;
         }
 
+        public String getNavigationInfo() {
+            return navigationInfo;
+        }
+
+        public void setNavigationInfo(String navigationInfo) {
+            this.navigationInfo = navigationInfo;
+        }
+
+        public String getNavigationInfoShort() {
+            return navigationInfoShort;
+        }
+
+        public void setNavigationInfoShort(String navigationInfoShort) {
+            this.navigationInfoShort = navigationInfoShort;
+        }
+
+        public String getNavigationInfoRel() {
+            return navigationInfoRel;
+        }
+
+        public void setNavigationInfoRel(String navigationInfoRel) {
+            this.navigationInfoRel = navigationInfoRel;
+        }
+
+        public List<LanguageType> getLanguageList() {
+            return languageList;
+        }
+
+        public void setLanguageList(List<LanguageType> languageList) {
+            this.languageList = languageList;
+        }
+
+        public LanguageType getSelectedLanguage() {
+            return selectedLanguage;
+        }
+
+        public void setSelectedLanguage(LanguageType selectedLanguage) {
+            this.selectedLanguage = selectedLanguage;
+        }
+        
         public ShortestPathAlgorithmType getSelectedAlgorithm() {
             return selectedAlgorithm;
         }
