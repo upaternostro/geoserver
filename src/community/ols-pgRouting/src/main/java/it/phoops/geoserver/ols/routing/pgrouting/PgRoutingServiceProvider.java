@@ -15,6 +15,7 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.MessageFormat;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -328,7 +329,7 @@ public class PgRoutingServiceProvider extends OLSAbstractServiceProvider impleme
         
         WayPointList                                    wpList = routePlan.getWayPointList();
         WayPointType                                    startPoint = wpList.getStartPoint();
-        JAXBElement<? extends AbstractLocationType>    startLocation = startPoint.getLocation();
+        JAXBElement<? extends AbstractLocationType>     startLocation = startPoint.getLocation();
         
         if (!(startLocation.getValue() instanceof PositionType)) {
             throw new OLSException("Unsupported start point location");
@@ -336,11 +337,30 @@ public class PgRoutingServiceProvider extends OLSAbstractServiceProvider impleme
         
         PositionType                                    startPosition = (PositionType)startLocation.getValue();
         WayPointType                                    endPoint = wpList.getEndPoint();
-        JAXBElement<? extends AbstractLocationType>    endLocation = endPoint.getLocation();
+        JAXBElement<? extends AbstractLocationType>     endLocation = endPoint.getLocation();
         
         if (!(endLocation.getValue() instanceof PositionType)) {
             throw new OLSException("Unsupported end point location");
         }
+        
+        PositionType                                    endPosition = (PositionType)endLocation.getValue();
+        List<WayPointType>                              viaPointsList = wpList.getViaPoints();
+        List<PositionType>                              viaPosition = new ArrayList<PositionType>();
+        JAXBElement<? extends AbstractLocationType>     viaLocation;
+        
+        if(viaPointsList.size() != 0){
+            for (WayPointType viaPoint : viaPointsList) {
+                viaLocation = viaPoint.getLocation();
+                
+                if (!(viaLocation.getValue() instanceof PositionType)) {
+                    throw new OLSException("Unsupported via point location");
+                }
+                
+                viaPosition.add((PositionType)viaLocation.getValue());
+            }
+        }
+        
+        viaPosition.add(endPosition);
         
         RoutePreferenceType     preference = routePlan.getRoutePreference();
         boolean                 directed;
@@ -354,7 +374,6 @@ public class PgRoutingServiceProvider extends OLSAbstractServiceProvider impleme
             break;
         }
 
-        PositionType            endPosition = (PositionType)endLocation.getValue();
         Map<String, Object>     params = new HashMap<String, Object>();
         
         params.put("dbtype",    "postgis");
@@ -372,142 +391,147 @@ public class PgRoutingServiceProvider extends OLSAbstractServiceProvider impleme
         try {
             pgDatastore = DataStoreFinder.getDataStore(params); // org.geotools.jdbc.JDBCDataStore
             
-//            alter table vertices_tmp add primary key(id);
-            
-            SimpleFeatureSource nodes = pgDatastore.getFeatureSource(getNodeTable());
-            Feature             startNode = findNearestNode(nodes, startPosition);
-            Feature             endNode = findNearestNode(nodes, endPosition);
-            String              startId = startNode.getIdentifier().getID();
-            String              endId = endNode.getIdentifier().getID();
-            
-            connection = ((JDBCDataStore)pgDatastore).getConnection(Transaction.AUTO_COMMIT);
-            // shortest_path -- SELECT id, source, target, cost FROM edge_table
-            // shortest_path_astar -- SELECT id, source, target, cost, x1, y1, x2, y2 FROM edge_table
-            if (Algorithm.DIJKSTRA.toString().equals(getAlgorithm())) {
-                statement = connection.prepareCall("{call shortest_path(?, ?, ?, ?, ?)}");
-            } else {
-                statement = connection.prepareCall("{call shortest_path_astar(?, ?, ?, ?, ?)}");
-            }
-            
-            statement.setString(1, getEdgeQuery());             // SQL
-            statement.setInt(2, extractNodeId(nodes, startId)); // source id
-            statement.setInt(3, extractNodeId(nodes, endId));   // target id
-            statement.setBoolean(4, directed);                  // directed
-            statement.setBoolean(5, directed);                  // has reverse cost
-            
-            rs = statement.executeQuery();
-            
-            SimpleFeatureSource         edges = pgDatastore.getFeatureSource(getEdgeTable());
-            FilterFactory               ff = CommonFactoryFinder.getFilterFactory();
-            Filter                      filter;
-            SimpleFeatureCollection     sfc;
-            SimpleFeature               edge;
-            LineString                  edgeGeometry;
-            Geometry                    routeGeometry = null;
-            Point                       edgeCentroid;
+            SimpleFeatureSource         nodes = pgDatastore.getFeatureSource(getNodeTable());
             ObjectFactory               of = new ObjectFactory();
             DetermineRouteResponseType  determineRouteResponse = of.createDetermineRouteResponseType();
             RouteSummaryType            routeSummary = of.createRouteSummaryType();
             RouteInstructionsListType   routeInstructions = of.createRouteInstructionsListType();
             double                      totalDistance = 0.0;
-            RouteInstruction            routeInstruction;
             DistanceType                distance;
-            BigDecimal                  bdValue; 
-            int                         vertexId;
-            int                         edgeId;
-            double                      cost;
-            double                      length;
-            double                      bearing;
-            double                      startingBearing;
-            double                      endingBearing = 0.0;
-            Coordinate                  startCoordinate;
-            Coordinate                  secondCoordinate;
-            Coordinate                  preLastCoordinate;
-            Coordinate                  endCoordinate;
-            AbsoluteDirection           absoluteDirection;
-            RelativeDirection           relativeDirection;
-            String                      resultFormatter;
+            Geometry                    routeGeometry = null;
             
-            String languageInfo = getLanguage();
-            
-            if(languageInfo.equals("1")){
-                Locale.setDefault(Locale.ITALIAN);
-            } else if(languageInfo.equals("2")){
-                Locale.setDefault(Locale.ENGLISH);
-            }
-            
-            Locale locale = Locale.getDefault();
-            ResourceBundle messages = ResourceBundle.getBundle("GeoServerApplication", locale);
+            do {
+                endPosition = viaPosition.remove(0);
                 
-            while (rs.next()) {
-                vertexId = rs.getInt(1);
-                edgeId = rs.getInt(2);
-                cost = rs.getDouble(3);
+                Feature             startNode = findNearestNode(nodes, startPosition);
+                Feature             endNode = findNearestNode(nodes, endPosition);
+                String              startId = startNode.getIdentifier().getID();
+                String              endId = endNode.getIdentifier().getID();
                 
-                if (edgeId != -1) {
-                    filter = ff.id(Collections.singleton(ff.featureId(getEdgeTable() + "." + edgeId)));
-                    sfc = edges.getFeatures(filter);
-                    edge = (SimpleFeature)sfc.toArray()[0];
-                    edgeGeometry = (LineString)edge.getDefaultGeometryProperty().getValue();
-                    edgeCentroid = edgeGeometry.getCentroid();
-                    length = edgeGeometry.getLength() * DEGREES_TO_METERS_FACTOR * Math.cos(edgeCentroid.getY() * DEGREES_TO_RADIANS_FACTOR);
-                    
-                    if (!Integer.valueOf(vertexId).equals(edge.getAttribute("source"))) {
-                        // reverse edge direction
-                        edgeGeometry = (LineString)edgeGeometry.reverse();
-                    }
-                    
-                    startCoordinate = edgeGeometry.getStartPoint().getCoordinate();
-                    endCoordinate = edgeGeometry.getEndPoint().getCoordinate();
-                    bearing = Math.atan((endCoordinate.y - startCoordinate.y)/(endCoordinate.x - startCoordinate.x));
-                    absoluteDirection = AbsoluteDirection.getDirectionFromBearing(bearing);
-                    
-                    secondCoordinate = edgeGeometry.getCoordinateN(1);
-                    startingBearing = Math.atan((secondCoordinate.y - startCoordinate.y)/(secondCoordinate.x - startCoordinate.x));
-                    
-                    if (routeGeometry == null) {
-                        routeGeometry = edgeGeometry;
-                        relativeDirection = null;
-                    } else {
-                        routeGeometry = routeGeometry.union(edgeGeometry);
-                        relativeDirection = RelativeDirection.getDirectionFromBearing(Math.PI / 2.0 - endingBearing + startingBearing);
-                    }
-                    
-                    preLastCoordinate = edgeGeometry.getCoordinateN(edgeGeometry.getNumGeometries() - 1);
-                    endingBearing = Math.atan((endCoordinate.y - preLastCoordinate.y)/(endCoordinate.x - preLastCoordinate.x));
-                    
-                    routeInstruction = of.createRouteInstruction();
-                    
-                    distance = of.createDistanceType();
-                    bdValue = BigDecimal.valueOf(length * 0.001);
-                    bdValue = bdValue.setScale(2, BigDecimal.ROUND_DOWN);
-                    distance.setValue(bdValue);
-                    routeInstruction.setDistance(distance);
-                    
-                    totalDistance += length;
-                    
-                    resultFormatter = "";
-                    
-                    if (edge.getAttribute("name") != null && !edge.getAttribute("name").equals("")) {
-                        if (relativeDirection != null) {
-                            resultFormatter = "<IMG SRC='../resources/img/navigation/" + (relativeDirection.toString().toLowerCase()) + ".png' ALIGN='absmiddle'> " + MessageFormat.format(getNavigationInfoRel(), edge.getAttribute("name"), bdValue);
-                        } else {
-                            resultFormatter = MessageFormat.format(getNavigationInfo(), messages.getString(absoluteDirection.toString()), bdValue, edge.getAttribute("name"));
-                        }
-                    } else {
-                        if (relativeDirection != null) {
-                            resultFormatter = "<IMG SRC='../resources/img/navigation/" + (relativeDirection.toString().toLowerCase()) + ".png' ALIGN='absmiddle'> " + MessageFormat.format(getNavigationInfoRel(), edge.getAttribute("name"), bdValue);
-                        } else {
-                            resultFormatter = MessageFormat.format(getNavigationInfoShort(), messages.getString(absoluteDirection.toString()), bdValue);
-                        }
-                    }
-                    
-//                    routeInstruction.setInstruction(relativeDirection + " - " + edge.getAttribute("name").toString() + " - " + length + " - " + absoluteDirection); // FIXME
-                    routeInstruction.setInstruction(resultFormatter);
-                    routeInstructions.getRouteInstructions().add(routeInstruction);
+                connection = ((JDBCDataStore)pgDatastore).getConnection(Transaction.AUTO_COMMIT);
+                // shortest_path -- SELECT id, source, target, cost FROM edge_table
+                // shortest_path_astar -- SELECT id, source, target, cost, x1, y1, x2, y2 FROM edge_table
+                if (Algorithm.DIJKSTRA.toString().equals(getAlgorithm())) {
+                    statement = connection.prepareCall("{call shortest_path(?, ?, ?, ?, ?)}");
+                } else {
+                    statement = connection.prepareCall("{call shortest_path_astar(?, ?, ?, ?, ?)}");
                 }
-            }
-            
+                
+                statement.setString(1, getEdgeQuery());             // SQL
+                statement.setInt(2, extractNodeId(nodes, startId)); // source id
+                statement.setInt(3, extractNodeId(nodes, endId));   // target id
+                statement.setBoolean(4, directed);                  // directed
+                statement.setBoolean(5, directed);                  // has reverse cost
+                
+                rs = statement.executeQuery();
+                
+                SimpleFeatureSource         edges = pgDatastore.getFeatureSource(getEdgeTable());
+                FilterFactory               ff = CommonFactoryFinder.getFilterFactory();
+                Filter                      filter;
+                SimpleFeatureCollection     sfc;
+                SimpleFeature               edge;
+                LineString                  edgeGeometry;
+                Point                       edgeCentroid;
+                RouteInstruction            routeInstruction;
+                BigDecimal                  bdValue; 
+                int                         vertexId;
+                int                         edgeId;
+                double                      cost;
+                double                      length;
+                double                      bearing;
+                double                      startingBearing;
+                double                      endingBearing = 0.0;
+                Coordinate                  startCoordinate;
+                Coordinate                  secondCoordinate;
+                Coordinate                  preLastCoordinate;
+                Coordinate                  endCoordinate;
+                AbsoluteDirection           absoluteDirection;
+                RelativeDirection           relativeDirection;
+                String                      resultFormatter;
+                
+                String languageInfo = getLanguage();
+                
+                if(languageInfo.equals("1")){
+                    Locale.setDefault(Locale.ITALIAN);
+                } else if(languageInfo.equals("2")){
+                    Locale.setDefault(Locale.ENGLISH);
+                }
+                
+                Locale locale = Locale.getDefault();
+                ResourceBundle messages = ResourceBundle.getBundle("GeoServerApplication", locale);
+                    
+                while (rs.next()) {
+                    vertexId = rs.getInt(1);
+                    edgeId = rs.getInt(2);
+                    cost = rs.getDouble(3);
+                    
+                    if (edgeId != -1) {
+                        filter = ff.id(Collections.singleton(ff.featureId(getEdgeTable() + "." + edgeId)));
+                        sfc = edges.getFeatures(filter);
+                        edge = (SimpleFeature)sfc.toArray()[0];
+                        edgeGeometry = (LineString)edge.getDefaultGeometryProperty().getValue();
+                        edgeCentroid = edgeGeometry.getCentroid();
+                        length = edgeGeometry.getLength() * DEGREES_TO_METERS_FACTOR * Math.cos(edgeCentroid.getY() * DEGREES_TO_RADIANS_FACTOR);
+                        
+                        if (!Integer.valueOf(vertexId).equals(edge.getAttribute("source"))) {
+                            // reverse edge direction
+                            edgeGeometry = (LineString)edgeGeometry.reverse();
+                        }
+                        
+                        startCoordinate = edgeGeometry.getStartPoint().getCoordinate();
+                        endCoordinate = edgeGeometry.getEndPoint().getCoordinate();
+                        bearing = Math.atan((endCoordinate.y - startCoordinate.y)/(endCoordinate.x - startCoordinate.x));
+                        absoluteDirection = AbsoluteDirection.getDirectionFromBearing(bearing);
+                        
+                        secondCoordinate = edgeGeometry.getCoordinateN(1);
+                        startingBearing = Math.atan((secondCoordinate.y - startCoordinate.y)/(secondCoordinate.x - startCoordinate.x));
+                        
+                        if (routeGeometry == null) {
+                            routeGeometry = edgeGeometry;
+                            relativeDirection = null;
+                        } else {
+                            routeGeometry = routeGeometry.union(edgeGeometry);
+                            relativeDirection = RelativeDirection.getDirectionFromBearing(Math.PI / 2.0 - endingBearing + startingBearing);
+                        }
+                        
+                        preLastCoordinate = edgeGeometry.getCoordinateN(edgeGeometry.getNumGeometries() - 1);
+                        endingBearing = Math.atan((endCoordinate.y - preLastCoordinate.y)/(endCoordinate.x - preLastCoordinate.x));
+                        
+                        routeInstruction = of.createRouteInstruction();
+                        
+                        distance = of.createDistanceType();
+                        bdValue = BigDecimal.valueOf(length * 0.001);
+                        bdValue = bdValue.setScale(2, BigDecimal.ROUND_DOWN);
+                        distance.setValue(bdValue);
+                        routeInstruction.setDistance(distance);
+                        
+                        totalDistance += length;
+                        
+                        resultFormatter = "";
+                        
+                        if (edge.getAttribute("name") != null && !edge.getAttribute("name").equals("")) {
+                            if (relativeDirection != null) {
+                                resultFormatter = "<IMG SRC='../resources/img/navigation/" + (relativeDirection.toString().toLowerCase()) + ".png' ALIGN='absmiddle'> " + MessageFormat.format(getNavigationInfoRel(), edge.getAttribute("name"), bdValue);
+                            } else {
+                                resultFormatter = MessageFormat.format(getNavigationInfo(), messages.getString(absoluteDirection.toString()), bdValue, edge.getAttribute("name"));
+                            }
+                        } else {
+                            if (relativeDirection != null) {
+                                resultFormatter = "<IMG SRC='../resources/img/navigation/" + (relativeDirection.toString().toLowerCase()) + ".png' ALIGN='absmiddle'> " + MessageFormat.format(getNavigationInfoRel(), edge.getAttribute("name"), bdValue);
+                            } else {
+                                resultFormatter = MessageFormat.format(getNavigationInfoShort(), messages.getString(absoluteDirection.toString()), bdValue);
+                            }
+                        }
+                        
+    //                    routeInstruction.setInstruction(relativeDirection + " - " + edge.getAttribute("name").toString() + " - " + length + " - " + absoluteDirection); // FIXME
+                        routeInstruction.setInstruction(resultFormatter);
+                        routeInstructions.getRouteInstructions().add(routeInstruction);
+                    }
+                }
+                startPosition = endPosition;
+            } while (viaPosition.size() > 0);
+        
+
             distance = of.createDistanceType();
             distance.setValue(BigDecimal.valueOf(totalDistance));
             distance.setAccuracy(BigDecimal.ONE); // FIXME

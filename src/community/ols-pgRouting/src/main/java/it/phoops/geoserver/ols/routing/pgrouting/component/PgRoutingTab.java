@@ -136,6 +136,7 @@ public class PgRoutingTab extends AbstractTab implements ValidateCheckboxTab{
         if(instancePanel == null){
             instancePanel = new PgRoutingPanel(panelId);
             instancePanel.add(new ShortestPathDropDownChoice("algorithm", new PropertyModel<ShortestPathAlgorithmType>(this, "selectedAlgorithm"), algorithmList));
+            instancePanel.add(new LanguageDropDownChoice("language", new PropertyModel<LanguageType>(this, "selectedLanguage"), languageList));
         }
         instancePanel.setActivePgRouting(activePgRouting);
         instancePanel.getCheckboxPgRouting().setModelObject(Boolean.parseBoolean(activePgRouting));
@@ -152,7 +153,6 @@ public class PgRoutingTab extends AbstractTab implements ValidateCheckboxTab{
         instancePanel.setNavigationInfo(navigationInfo);
         instancePanel.setNavigationInfoShort(navigationInfoShort);
         instancePanel.setNavigationInfoRel(navigationInfoRel);
-        instancePanel.add(new LanguageDropDownChoice("language", new PropertyModel<LanguageType>(this, "selectedLanguage"), languageList));
         instancePanel.setSelectedLanguage(this.languageList.get(getCodeLanguageSelected()-1));
         return instancePanel;
     }
