@@ -5,11 +5,19 @@ import it.phoops.geoserver.ols.OLSInfo;
 import it.phoops.geoserver.ols.OLSService;
 import it.phoops.geoserver.ols.OLSServiceProvider;
 import it.phoops.geoserver.ols.OLSServiceProviderGUI;
+import it.phoops.geoserver.ols.routing.Language;
+import it.phoops.geoserver.ols.routing.LanguageDropDownChoice;
+import it.phoops.geoserver.ols.routing.LanguageType;
 import it.phoops.geoserver.ols.routing.otp.OTPServiceProvider;
 import it.phoops.geoserver.ols.web.validator.ValidateCheckboxTab;
 
+import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.wicket.Application;
+import org.apache.wicket.Component;
+import org.apache.wicket.Localizer;
 import org.apache.wicket.extensions.markup.html.tabs.AbstractTab;
 import org.apache.wicket.markup.html.form.CheckBox;
 import org.apache.wicket.markup.html.form.TextField;
@@ -20,10 +28,15 @@ import org.apache.wicket.model.PropertyModel;
 import org.geoserver.config.GeoServer;
 
 public class OTPTab extends AbstractTab implements ValidateCheckboxTab{
-    private String      urlOTP;
-    private String      activeOTP;
-    private String      portOTP;
-    private OTPPanel    instancePanel;
+    private String                              urlOTP;
+    private String                              activeOTP;
+    private String                              navigationInfoOTP;
+    private String                              navigationInfoShortOTP;
+    private String                              navigationInfoRelOTP;
+    private List<LanguageType>                  languageList = null;
+    private LanguageType                        selectedLanguage;
+    private OTPPanel                            instancePanel;
+    private int                                 codeLanguageSelected;
 
     public String getUrlOTP() {
         if(instancePanel != null)
@@ -49,16 +62,52 @@ public class OTPTab extends AbstractTab implements ValidateCheckboxTab{
         this.activeOTP = activeOTP;
     }
 
-    public String getPortOTP() {
+    public String getNavigationInfoOTP() {
         if(instancePanel != null)
-            return instancePanel.getPortOTP();
-        return portOTP;
+            return instancePanel.getNavigationInfoOTP();
+        return navigationInfoOTP;
     }
 
-    public void setPortOTP(String portOTP) {
+    public void setNavigationInfoOTP(String navigationInfoOTP) {
         if(instancePanel != null)
-            instancePanel.setPortOTP(portOTP);
-        this.portOTP = portOTP;
+            instancePanel.setNavigationInfoOTP(navigationInfoOTP);
+        this.navigationInfoOTP = navigationInfoOTP;
+    }
+
+    public String getNavigationInfoShortOTP() {
+        if(instancePanel != null)
+            return instancePanel.getNavigationInfoShortOTP();
+        return navigationInfoShortOTP;
+    }
+
+    public void setNavigationInfoShortOTP(String navigationInfoShortOTP) {
+        if(instancePanel != null)
+            instancePanel.setNavigationInfoShortOTP(navigationInfoShortOTP);
+        this.navigationInfoShortOTP = navigationInfoShortOTP;
+    }
+
+    public String getNavigationInfoRelOTP() {
+        if(instancePanel != null)
+            return instancePanel.getNavigationInfoRelOTP();
+        return navigationInfoRelOTP;
+    }
+
+    public void setNavigationInfoRelOTP(String navigationInfoRelOTP) {
+        if(instancePanel != null)
+            instancePanel.setNavigationInfoRelOTP(navigationInfoRelOTP);
+        this.navigationInfoRelOTP = navigationInfoRelOTP;
+    }
+
+    public LanguageType getSelectedLanguage() {
+        if(instancePanel != null)
+            return instancePanel.getSelectedLanguage();
+        return selectedLanguage;
+    }
+
+    public void setSelectedLanguage(LanguageType selectedLanguage) {
+        if(instancePanel != null)
+            instancePanel.setSelectedLanguage(selectedLanguage);
+        this.selectedLanguage = selectedLanguage;
     }
 
     public OTPPanel getInstancePanel() {
@@ -69,8 +118,19 @@ public class OTPTab extends AbstractTab implements ValidateCheckboxTab{
         this.instancePanel = instancePanel;
     }
 
+    public int getCodeLanguageSelected() {
+        return codeLanguageSelected;
+    }
+
+    public void setCodeLanguageSelected(int codeLanguageSelected) {
+        this.codeLanguageSelected = codeLanguageSelected;
+    }
+
     public OTPTab(IModel<String> title) {
         super(title);
+        languageList = new ArrayList<LanguageType>();
+        languageList.add(new LanguageType(Language.ITA, "ols.navigation.ita"));//1
+        languageList.add(new LanguageType(Language.ENG, "ols.navigation.eng"));//2
     }
 
     @Override
@@ -92,20 +152,30 @@ public class OTPTab extends AbstractTab implements ValidateCheckboxTab{
 
     @Override
     public Panel getPanel(String panelId) {
-        if(instancePanel == null)
+//        if(instancePanel == null)
             instancePanel = new OTPPanel(panelId);
         instancePanel.setActiveOTP(activeOTP);
         instancePanel.getCheckboxOTP().setModelObject(Boolean.parseBoolean(activeOTP));
         instancePanel.setUrlOTP(urlOTP);
-        instancePanel.setPortOTP(portOTP);
+        instancePanel.setNavigationInfoOTP(navigationInfoOTP);
+        instancePanel.setNavigationInfoShortOTP(navigationInfoShortOTP);
+        instancePanel.setNavigationInfoRelOTP(navigationInfoRelOTP);
+        instancePanel.add(new LanguageDropDownChoice("language", new PropertyModel<LanguageType>(this, "selectedLanguage"), languageList));
+        instancePanel.setSelectedLanguage(this.languageList.get(getCodeLanguageSelected()-1));
+        
         return instancePanel;
     }
     
     private static class OTPPanel extends Panel{
-        private String          urlOTP;
-        private String          activeOTP;
-        private String          portOTP;
-        private CheckBox        checkboxOTP;
+        private String                  urlOTP;
+        private String                  activeOTP;
+        private String                  navigationInfoOTP;
+        private String                  navigationInfoShortOTP;
+        private String                  navigationInfoRelOTP;
+        private CheckBox                checkboxOTP;
+        private LanguageType            selectedLanguage;
+        private List<LanguageType>      languageList = null;
+        
 
         public OTPPanel(String id) {
             super(id);
@@ -145,7 +215,9 @@ public class OTPTab extends AbstractTab implements ValidateCheckboxTab{
             };
             add(checkboxOTP);
             add(new TextField("urlOTP",new PropertyModel(this,"urlOTP")));
-            add(new TextField("portOTP",new PropertyModel(this,"portOTP")));
+            add(new TextField("navigationInfoOTP",new PropertyModel(this,"navigationInfoOTP")));
+            add(new TextField("navigationInfoShortOTP",new PropertyModel(this,"navigationInfoShortOTP")));
+            add(new TextField("navigationInfoRelOTP",new PropertyModel(this,"navigationInfoRelOTP")));
         }
 
         public String getUrlOTP() {
@@ -164,24 +236,53 @@ public class OTPTab extends AbstractTab implements ValidateCheckboxTab{
             this.activeOTP = activeOTP;
         }
 
-        public String getPortOTP() {
-            return portOTP;
+        public String getNavigationInfoOTP() {
+            return navigationInfoOTP;
         }
 
-        public void setPortOTP(String portOTP) {
-            this.portOTP = portOTP;
+        public void setNavigationInfoOTP(String navigationInfoOTP) {
+            this.navigationInfoOTP = navigationInfoOTP;
         }
 
         public CheckBox getCheckboxOTP() {
             return checkboxOTP;
         }
+        
+        public String getNavigationInfoShortOTP() {
+            return navigationInfoShortOTP;
+        }
+
+        public void setNavigationInfoShortOTP(String navigationInfoShortOTP) {
+            this.navigationInfoShortOTP = navigationInfoShortOTP;
+        }
 
         public void setCheckboxOTP(CheckBox checkboxOTP) {
             this.checkboxOTP = checkboxOTP;
         }
-        
-        
-    
+
+        public List<LanguageType> getLanguageList() {
+            return languageList;
+        }
+
+        public void setLanguageList(List<LanguageType> languageList) {
+            this.languageList = languageList;
+        }
+
+        public LanguageType getSelectedLanguage() {
+            return selectedLanguage;
+        }
+
+        public void setSelectedLanguage(LanguageType selectedLanguage) {
+            this.selectedLanguage = selectedLanguage;
+        }
+
+        public String getNavigationInfoRelOTP() {
+            return navigationInfoRelOTP;
+        }
+
+        public void setNavigationInfoRelOTP(String navigationInfoRelOTP) {
+            this.navigationInfoRelOTP = navigationInfoRelOTP;
+        }
     }
 
 }

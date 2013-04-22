@@ -3,12 +3,15 @@ package it.phoops.geoserver.ols.routing.otp;
 import it.phoops.geoserver.ols.OLSAbstractServiceProvider;
 import it.phoops.geoserver.ols.OLSException;
 import it.phoops.geoserver.ols.OLSService;
+import it.phoops.geoserver.ols.routing.Language;
 import it.phoops.geoserver.ols.routing.RoutingServiceProvider;
+import it.phoops.geoserver.ols.routing.otp.client.ns0.AbsoluteDirection;
 import it.phoops.geoserver.ols.routing.otp.client.ns0.EncodedPolylineBean;
 import it.phoops.geoserver.ols.routing.otp.client.ns0.Itinerary;
 import it.phoops.geoserver.ols.routing.otp.client.ns0.Leg;
 import it.phoops.geoserver.ols.routing.otp.client.ns0.Leg.Steps;
 import it.phoops.geoserver.ols.routing.otp.client.ns0.PlannerError;
+import it.phoops.geoserver.ols.routing.otp.client.ns0.RelativeDirection;
 import it.phoops.geoserver.ols.routing.otp.client.ns0.Response;
 import it.phoops.geoserver.ols.routing.otp.client.ns0.TripPlan;
 import it.phoops.geoserver.ols.routing.otp.client.ns0.TripPlan.Itineraries;
@@ -16,12 +19,16 @@ import it.phoops.geoserver.ols.routing.otp.client.ns0.WalkStep;
 import it.phoops.geoserver.ols.routing.otp.component.OTPTab;
 import it.phoops.geoserver.ols.routing.otp.component.OTPTabFactory;
 
+import java.io.FileInputStream;
 import java.math.BigDecimal;
 import java.text.DateFormat;
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.GregorianCalendar;
 import java.util.List;
+import java.util.Locale;
 import java.util.Properties;
+import java.util.ResourceBundle;
 
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
@@ -52,7 +59,10 @@ import net.opengis.www.xls.WayPointType;
 import org.apache.wicket.extensions.markup.html.tabs.ITab;
 import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.ResourceModel;
+import org.apache.wicket.model.StringResourceModel;
+import org.apache.wicket.util.resource.StringResourceStream;
 import org.geoserver.config.ServiceInfo;
+import org.geotools.data.property.PropertyDataStoreFactory;
 import org.opentripplanner.util.PolylineEncoder;
 
 import com.sun.jersey.api.client.Client;
@@ -64,9 +74,13 @@ import com.vividsolutions.jts.geom.GeometryFactory;
 
 public class OTPServiceProvider extends OLSAbstractServiceProvider implements RoutingServiceProvider {
     //Properties Name
-    private static final String  PN_ENDPOINT_ADDRESS = "OLS.serviceProvider.geocoding.otp.service.endpointAddress";
-    private static final String  PN_PORT_NUMBER = "OLS.serviceProvider.geocoding.otp.service.portNumber";
-    private static final String  PN_ACTIVE_SERVICE = "OLS.serviceProvider.service.active";
+    private static final String  PN_ENDPOINT_ADDRESS    = "OLS.serviceProvider.geocoding.otp.service.endpointAddress";
+    private static final String  PN_NAVIGATION_INFO     = "OLS.serviceProvider.geocoding.otp.service.navigationInfo";
+    private static final String  PN_NAVIGATION_S_INFO   = "OLS.serviceProvider.geocoding.otp.service.navigationShortInfo";
+    private static final String  PN_NAVIGATION_REL      = "OLS.serviceProvider.geocoding.otp.service.navigationInfo.relative";
+    private static final String  PN_LANGUAGE_INFO       = "OLS.serviceProvider.geocoding.otp.service.languageInfo";
+    private static final String  PN_ACTIVE_SERVICE      = "OLS.serviceProvider.service.active";
+    
     
     private String      descriptionKey;
     private Properties  properties = new Properties();
@@ -88,12 +102,28 @@ public class OTPServiceProvider extends OLSAbstractServiceProvider implements Ro
         properties.setProperty(PN_ENDPOINT_ADDRESS, endpointAddress);
     }
     
-    public String getPortNumber() {
-        return properties.getProperty(PN_PORT_NUMBER);
+    public String getNavigationInfo() {
+        return properties.getProperty(PN_NAVIGATION_INFO);
     }
 
-    public void setPortNumber(String portNumber) {
-        properties.setProperty(PN_PORT_NUMBER, portNumber);
+    public void setNavigationInfo(String navigationInfo) {
+        properties.setProperty(PN_NAVIGATION_INFO, navigationInfo);
+    }
+    
+    public String getNavigationInfoShort() {
+        return properties.getProperty(PN_NAVIGATION_S_INFO);
+    }
+    
+    public void setNavigationInfoShort(String navigationInfoShort){
+        properties.setProperty(PN_NAVIGATION_S_INFO, navigationInfoShort);
+    }
+    
+    public String getNavigationInfoRel(){
+        return properties.getProperty(PN_NAVIGATION_REL);
+    }
+    
+    public void setNavigationInfoRel(String navigationInfoRel){
+        properties.setProperty(PN_NAVIGATION_REL, navigationInfoRel);
     }
     
     public String getActive(){
@@ -102,6 +132,14 @@ public class OTPServiceProvider extends OLSAbstractServiceProvider implements Ro
     
     public void setActive(String activeService){
         properties.setProperty(PN_ACTIVE_SERVICE, activeService);
+    }
+    
+    public String getLanguage(){
+        return properties.getProperty(PN_LANGUAGE_INFO);
+    }
+    
+    public void setLanguage(String language){
+        properties.setProperty(PN_LANGUAGE_INFO, language);
     }
     
     @Override
@@ -124,12 +162,18 @@ public class OTPServiceProvider extends OLSAbstractServiceProvider implements Ro
     public void handleServiceChange(ServiceInfo service,
             List<String> propertyNames, List<Object> oldValues,
             List<Object> newValues) {
-        String url = ((OTPTab)getTab()).getUrlOTP();
-        String port = ((OTPTab)getTab()).getPortOTP();
-        String active = ((OTPTab)getTab()).getActiveOTP();
+        String url              = ((OTPTab)getTab()).getUrlOTP();
+        String navigation       = ((OTPTab)getTab()).getNavigationInfoOTP();
+        String navigationS      = ((OTPTab)getTab()).getNavigationInfoShortOTP();
+        String navigationR      = ((OTPTab)getTab()).getNavigationInfoRelOTP();
+        String language         = ((OTPTab)getTab()).getSelectedLanguage().getCode();
+        String active           = ((OTPTab)getTab()).getActiveOTP();
         
         setEndpointAddress(url);
-        setPortNumber(port);
+        setNavigationInfo(navigation);
+        setNavigationInfoShort(navigationS);
+        setNavigationInfoRel(navigationR);
+        setLanguage(language);
         setActive(active);
         
     }
@@ -143,7 +187,15 @@ public class OTPServiceProvider extends OLSAbstractServiceProvider implements Ro
     public void setPropertiesTab(ITab otpTab) {
         ((OTPTab)otpTab).setUrlOTP(this.getEndpointAddress());
         ((OTPTab)otpTab).setActiveOTP(this.getActive());
-        ((OTPTab)otpTab).setPortOTP(this.getPortNumber());
+        ((OTPTab)otpTab).setNavigationInfoOTP(this.getNavigationInfo());
+        ((OTPTab)otpTab).setNavigationInfoShortOTP(this.getNavigationInfoShort());
+        ((OTPTab)otpTab).setNavigationInfoRelOTP(this.getNavigationInfoRel());
+        Language language = Language.get(this.getLanguage());
+        if(language == null){
+            ((OTPTab)otpTab).setCodeLanguageSelected(1);
+        }else{
+            ((OTPTab)otpTab).setCodeLanguageSelected(Integer.parseInt(language.getCode()));
+        }
     }
 
     @Override
@@ -167,7 +219,7 @@ public class OTPServiceProvider extends OLSAbstractServiceProvider implements Ro
         
         WayPointList                                    wpList = routePlan.getWayPointList();
         WayPointType                                    startPoint = wpList.getStartPoint();
-        JAXBElement<? extends AbstractLocationType>     startLocation = startPoint.getLocation();
+        JAXBElement<? extends AbstractLocationType>    startLocation = startPoint.getLocation();
         
         if (!(startLocation.getValue() instanceof PositionType)) {
             throw new OLSException("Unsupported start point location");
@@ -175,13 +227,25 @@ public class OTPServiceProvider extends OLSAbstractServiceProvider implements Ro
         
         PositionType                                    startPosition = (PositionType)startLocation.getValue();
         WayPointType                                    endPoint = wpList.getEndPoint();
-        JAXBElement<? extends AbstractLocationType>     endLocation = endPoint.getLocation();
+        JAXBElement<? extends AbstractLocationType>    endLocation = endPoint.getLocation();
         
         if (!(endLocation.getValue() instanceof PositionType)) {
             throw new OLSException("Unsupported end point location");
         }
-        
+
         PositionType    endPosition = (PositionType)endLocation.getValue();
+        
+        
+        List<WayPointType>                                viaPointsList = wpList.getViaPoints();
+        List<PositionType>    viaPosition = new ArrayList<PositionType>();
+        if(viaPointsList.size() != 0){
+            for (WayPointType viaPoint : viaPointsList) {
+                JAXBElement<? extends AbstractLocationType>      viaLocation = viaPoint.getLocation();
+                viaPosition.add((PositionType)viaLocation.getValue());
+            }
+        }
+        
+        
         
         XMLGregorianCalendar    cal = routePlan.getExpectedEndTime();
         boolean                 endTime = true;
@@ -213,6 +277,12 @@ public class OTPServiceProvider extends OLSAbstractServiceProvider implements Ro
         MultivaluedMap<String,String>  queryParams = new MultivaluedMapImpl();
         
         queryParams.add("fromPlace",    formatPosition(startPosition));
+        if(viaPosition != null){
+            queryParams.add("showIntermediateStops", "true");
+            for (PositionType via : viaPosition) {
+                queryParams.add("intermediatePlaces", formatPosition(via));
+            }
+        }
         queryParams.add("toPlace",      formatPosition(endPosition));
         queryParams.add("date",         dateFormat.format(cal.toGregorianCalendar().getTime()));
         queryParams.add("time",         timeFormat.format(cal.toGregorianCalendar().getTime()));
@@ -234,8 +304,20 @@ public class OTPServiceProvider extends OLSAbstractServiceProvider implements Ro
             queryParams.add("mode",     "WALK");
             break;
         }
-
+        
+        String languageInfo = properties.getProperty(PN_LANGUAGE_INFO);
+        
+        if(languageInfo.equals("1")){
+            Locale.setDefault(Locale.ITALIAN);
+        } else if(languageInfo.equals("2")){
+            Locale.setDefault(Locale.ENGLISH);
+        }
+        
+        Locale locale = Locale.getDefault();
+        ResourceBundle messages = ResourceBundle.getBundle("GeoServerApplication", locale);
+            
         WebResource     resource = client.resource(getEndpointAddress() + "/ws/plan");
+        
         
         Response        response = resource.queryParams(queryParams).accept(MediaType.TEXT_XML).get(Response.class);
 
@@ -294,16 +376,47 @@ public class OTPServiceProvider extends OLSAbstractServiceProvider implements Ro
             } else {
                 geometry = geometry.union(gf.createLineString(decode(legGeometry).toArray(new Coordinate[0])));
             }
-            
+
             legSteps = leg.getSteps();
             
             for (WalkStep walkStep : legSteps.getWalkSteps()) {
                 routeInstruction = of.createRouteInstruction();
+                
                 distance = of.createDistanceType();
-                distance.setValue(BigDecimal.valueOf(walkStep.getDistance()));
+                BigDecimal bdValue = BigDecimal.valueOf(walkStep.getDistance()* 0.001);
+                bdValue = bdValue.setScale(2, BigDecimal.ROUND_DOWN);
+                
+                distance.setValue(bdValue);
                 routeInstruction.setDistance(distance);
-                routeInstruction.setInstruction("Procedi in direzione " + walkStep.getAbsoluteDirection() + " per " + walkStep.getDistance() + " su " + walkStep.getStreetName()); // FIXME: i18n
+                
+                String relativeDirection = null;
+                String absoluteDirection = null;
+                if(walkStep.getRelativeDirection() != null){
+                    relativeDirection = messages.getString(walkStep.getRelativeDirection().toString());
+                }else{
+                    absoluteDirection = messages.getString(walkStep.getAbsoluteDirection().toString());
+                }
+                
+                String resultFormatter = "";
+                if(walkStep.getStreetName() != null
+                        || !walkStep.getStreetName().equalsIgnoreCase("")){
+                    if(relativeDirection != null){
+                        resultFormatter = MessageFormat.format(properties.getProperty(PN_NAVIGATION_REL), relativeDirection, walkStep.getStreetName(), bdValue);
+                        String imgRel = walkStep.getRelativeDirection().toString().toLowerCase();
+                        resultFormatter = "<IMG SRC='../resources/img/navigation/"+imgRel+".png' ALIGN='absmiddle'> "+resultFormatter;
+                    }else
+                        resultFormatter = MessageFormat.format(properties.getProperty(PN_NAVIGATION_INFO), absoluteDirection, bdValue, walkStep.getStreetName());
+                }else{
+                    if(relativeDirection != null){
+                        resultFormatter = MessageFormat.format(properties.getProperty(PN_NAVIGATION_REL), relativeDirection, walkStep.getStreetName(), bdValue);
+                        String imgRel = walkStep.getRelativeDirection().toString().toLowerCase();
+                        resultFormatter = "<IMG SRC='../resources/img/navigation/"+imgRel+".png' ALIGN='absmiddle'> "+resultFormatter;
+                    }else
+                        resultFormatter = MessageFormat.format(properties.getProperty(PN_NAVIGATION_S_INFO), absoluteDirection, bdValue);
+                }
+                routeInstruction.setInstruction(resultFormatter);
                 routeInstructions.getRouteInstructions().add(routeInstruction);
+                
             }
         }
         
@@ -412,5 +525,46 @@ public class OTPServiceProvider extends OLSAbstractServiceProvider implements Ro
         }
 
         return points;
+    }
+    
+    public RelativeDirection windRoseInformation(AbsoluteDirection direction1, AbsoluteDirection direction2){
+        
+        
+        return null;
+    }
+    
+    public static RelativeDirection getRelativeDirection(double lastAngle, double thisAngle, boolean roundabout) {
+
+        double angleDiff = thisAngle - lastAngle;
+        if (angleDiff < 0) {
+            angleDiff += Math.PI * 2;
+        }
+        double ccwAngleDiff = Math.PI * 2 - angleDiff;
+
+        if (roundabout) {
+            // roundabout: the direction we turn onto it implies the circling direction
+            if (angleDiff > ccwAngleDiff) {
+                return RelativeDirection.CIRCLE_CLOCKWISE; 
+            } else {
+                return RelativeDirection.CIRCLE_COUNTERCLOCKWISE;
+            }            
+        }
+
+        // less than 0.3 rad counts as straight, to simplify walking instructions
+        if (angleDiff < 0.3 || ccwAngleDiff < 0.3) {
+            return RelativeDirection.CONTINUE;
+        } else if (angleDiff < 0.7) {
+            return RelativeDirection.SLIGHTLY_RIGHT;
+        } else if (ccwAngleDiff < 0.7) {
+            return RelativeDirection.SLIGHTLY_LEFT;
+        } else if (angleDiff < 2) {
+            return RelativeDirection.RIGHT;
+        } else if (ccwAngleDiff < 2) {
+            return RelativeDirection.LEFT;
+        } else if (angleDiff < Math.PI) {
+            return RelativeDirection.HARD_RIGHT;
+        } else {
+            return RelativeDirection.HARD_LEFT;
+        }
     }
 }

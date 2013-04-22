@@ -1,20 +1,20 @@
-package it.phoops.geoserver.ols.routing.pgrouting;
+package it.phoops.geoserver.ols.routing;
 
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
 
-public enum Algorithm {
-    DIJKSTRA("1"),
-    A_STAR("2");
+public enum Language {
+    ITA("1"),
+    ENG("2");
     
-    private static final Map<String,Algorithm> _lookup = new HashMap<String,Algorithm>();
+    private static final Map<String,Language> _lookup = new HashMap<String,Language>();
     private String code;
-
-    Algorithm(String code) {
+    
+    Language(String code) {
         this.code = code;
     }
-
+    
     public String getCode() {
         return code;
     }
@@ -25,12 +25,12 @@ public enum Algorithm {
     }
     
     static {
-        for (Algorithm pivot : EnumSet.allOf(Algorithm.class)) {
+        for (Language pivot : EnumSet.allOf(Language.class)) {
             _lookup.put(pivot.getCode(), pivot);
         }
     }
     
-    public static Algorithm get(String code) {
+    public static Language get(String code) {
         return _lookup.get(code);
     }
 }

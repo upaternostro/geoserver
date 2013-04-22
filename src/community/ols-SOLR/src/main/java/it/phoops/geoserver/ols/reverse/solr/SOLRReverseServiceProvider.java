@@ -168,7 +168,11 @@ public class SOLRReverseServiceProvider extends OLSAbstractServiceProvider imple
 	        coordinates = pos.getValues();
 
 	        SolrQuery query = new SolrQuery("centerline:\"Intersects(Circle("+coordinates.get(0)+","+coordinates.get(1)+", d=0.0001))\"");
+//	        SolrQuery query = new SolrQuery("(is_building: true and centroid:\"Intersects(Circle("+coordinates.get(0)+","+coordinates.get(1)+", d=0.001))\") and (is_building: false and centerline:\"Intersects(Circle("+coordinates.get(0)+","+coordinates.get(1)+", d=0.0001))\")");
+	        SolrQuery queryBuilding = new SolrQuery("is_building: true && centroid:\"Intersects(Circle("+coordinates.get(0)+","+coordinates.get(1)+", d=0.0002))\"");
 	        
+	        
+	        //CenterLine
 	        try {
 	            //CAll Solr
 	            solrDocs = SolrPager.query(solrServer, query);
@@ -251,6 +255,92 @@ public class SOLRReverseServiceProvider extends OLSAbstractServiceProvider imple
 	        } catch (SolrServerException e) {
 	            throw new OLSException("SOLR error: " + e.getLocalizedMessage(), e);
 	        }
+	        
+	        //********
+	        //Building
+	        //********
+	        try {
+                    //CAll Solr
+                    solrDocs = SolrPager.query(solrServer, queryBuilding);
+
+                    for (SolrDocument solrDoc : solrDocs) {
+                        if (wktReader == null) {
+                                wktReader = new WKTReader();
+                        }
+                        listItem = of.createReverseGeocodedLocationType();
+                        sr = new StringReader(solrDoc.getFieldValue("centroid").toString());
+                        
+                        try {
+                                geometry = wktReader.read(sr);
+                                
+                                point = of.createPointType();
+                                pos = of.createPos();
+                                
+                                pos.setDimension(BigInteger.valueOf(2));
+                                
+                                coordinates = pos.getValues();
+                                
+                                coordinates.add(Double.valueOf(geometry.getCoordinate().getOrdinate(0)));
+                                coordinates.add(Double.valueOf(geometry.getCoordinate().getOrdinate(1)));
+                                // pos.setSrsName(value);
+                                
+                                point.setPos(pos);
+                                // point.setSrsName(value);
+                                // point.setId(value);
+                                listItem.setPoint(point);
+                            } catch (ParseException e) {
+                                throw new OLSException("WKT parse error: " + e.getLocalizedMessage(), e);
+                            }
+                        
+                        returnAddress = of.createAddressType();
+                        returnAddress.setCountryCode(COUNTRY_CODE);
+                        places = returnAddress.getPlaces();
+                        
+                        if (solrDoc.getFieldValue("municipality") != null) {
+                                place = of.createPlace();
+                                
+                                place.setType(NamedPlaceClassification.MUNICIPALITY);
+                                place.setValue(solrDoc.getFieldValue("municipality").toString());
+                                
+                                places.add(place);
+                        }
+                        
+                        if (solrDoc.getFieldValue("country_subdivision") != null) {
+                                place = of.createPlace();
+                                
+                                place.setType(NamedPlaceClassification.COUNTRY_SECONDARY_SUBDIVISION);
+                                place.setValue(solrDoc.getFieldValue("country_subdivision").toString());
+                                
+                                places.add(place);
+                        }
+                        place = of.createPlace();
+                        
+                        place.setType(NamedPlaceClassification.COUNTRY_SUBDIVISION);
+                        place.setValue("Toscana");
+                            
+                        places.add(place);
+                        
+                        // Manca
+                        // returnAddress.setPostalCode(datiNormalizzazioneInd.getCap());
+                        
+                        streetAddress = of.createStreetAddress();
+                        street = of.createStreet();
+                        street.setValue(solrDoc.getFieldValue("name").toString());
+                        streetAddress.getStreets().add(street);
+                        returnAddress.setStreetAddress(streetAddress);
+                        
+                        listItem.setAddress(returnAddress);
+                        
+                        geocodeMatchCode = of.createGeocodeMatchCode();
+                        geocodeMatchCode.setMatchType("SOLR");
+                        geocodeMatchCode.setAccuracy(new Float(1));
+                        
+                        responseList.add(listItem);
+                    }
+                    
+                } catch (SolrServerException e) {
+                    throw new OLSException("SOLR error: " + e.getLocalizedMessage(), e);
+                }
 	        
 		return retval;
 	}
