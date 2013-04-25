@@ -91,6 +91,7 @@ public class PgRoutingServiceProvider extends OLSAbstractServiceProvider impleme
     private static final String  PN_PGROUTING_NODE_TABLE ="OLS.serviceProvider.geocoding.pgrouting.service.node.table";
     private static final String  PN_PGROUTING_EDGE_TABLE ="OLS.serviceProvider.geocoding.pgrouting.service.edge.table";
     private static final String  PN_PGROUTING_EDGE_QUERY ="OLS.serviceProvider.geocoding.pgrouting.service.edge.query";
+    private static final String  PN_PGROUTING_UNDIRECTED_QUERY ="OLS.serviceProvider.geocoding.pgrouting.service.undirected.query";
     private static final String  PN_NAVIGATION_INFO     = "OLS.serviceProvider.geocoding.pgrouting.service.navigationInfo";
     private static final String  PN_NAVIGATION_S_INFO   = "OLS.serviceProvider.geocoding.pgrouting.service.navigationShortInfo";
     private static final String  PN_NAVIGATION_REL      = "OLS.serviceProvider.geocoding.pgrouting.service.navigationInfo.relative";
@@ -169,6 +170,14 @@ public class PgRoutingServiceProvider extends OLSAbstractServiceProvider impleme
 
     public void setEdgeQuery(String edgeQuery) {
         properties.setProperty(PN_PGROUTING_EDGE_QUERY, edgeQuery);
+    }
+    
+    public String getUndirectedQuery() {
+        return properties.getProperty(PN_PGROUTING_UNDIRECTED_QUERY);
+    }
+
+    public void setUndirectedQuery(String undirectedQuery) {
+        properties.setProperty(PN_PGROUTING_UNDIRECTED_QUERY, undirectedQuery);
     }
     
     public String getNavigationInfo() {
@@ -266,6 +275,9 @@ public class PgRoutingServiceProvider extends OLSAbstractServiceProvider impleme
         String edgeQuery = ((PgRoutingTab)getTab()).getEdgeQueryRouting();
         if(edgeQuery == null)
             edgeQuery = "";
+        String undirectedQuery = ((PgRoutingTab)getTab()).getUndirectedQueryRouting();
+        if(undirectedQuery == null)
+            undirectedQuery = "";
         String navigation       = ((PgRoutingTab)getTab()).getNavigationInfo();
         String navigationS      = ((PgRoutingTab)getTab()).getNavigationInfoShort();
         String navigationR      = ((PgRoutingTab)getTab()).getNavigationInfoRel();
@@ -281,6 +293,7 @@ public class PgRoutingServiceProvider extends OLSAbstractServiceProvider impleme
         setNodeTable(nodeTable);
         setEdgeTable(edgeTable);
         setEdgeQuery(edgeQuery);
+        setUndirectedQuery(undirectedQuery);
         setNavigationInfo(navigation);
         setNavigationInfoShort(navigationS);
         setNavigationInfoRel(navigationR);
@@ -304,6 +317,7 @@ public class PgRoutingServiceProvider extends OLSAbstractServiceProvider impleme
         ((PgRoutingTab)pgRoutingTab).setNodeTableRouting(this.getNodeTable());
         ((PgRoutingTab)pgRoutingTab).setEdgeTableRouting(this.getEdgeTable());
         ((PgRoutingTab)pgRoutingTab).setEdgeQueryRouting(this.getEdgeQuery());
+        ((PgRoutingTab)pgRoutingTab).setUndirectedQueryRouting(this.getUndirectedQuery());
         ((PgRoutingTab)pgRoutingTab).setNavigationInfo(this.getNavigationInfo());
         ((PgRoutingTab)pgRoutingTab).setNavigationInfoShort(this.getNavigationInfoShort());
         ((PgRoutingTab)pgRoutingTab).setNavigationInfoRel(this.getNavigationInfoRel());
@@ -364,13 +378,16 @@ public class PgRoutingServiceProvider extends OLSAbstractServiceProvider impleme
         
         RoutePreferenceType     preference = routePlan.getRoutePreference();
         boolean                 directed;
+        String                  query;
         
         switch (preference) {
         case PEDESTRIAN:
             directed = false;
+            query = getUndirectedQuery();
             break;
         default:
             directed = true;
+            query = getEdgeQuery();
             break;
         }
 
@@ -417,7 +434,7 @@ public class PgRoutingServiceProvider extends OLSAbstractServiceProvider impleme
                     statement = connection.prepareCall("{call shortest_path_astar(?, ?, ?, ?, ?)}");
                 }
                 
-                statement.setString(1, getEdgeQuery());             // SQL
+                statement.setString(1, query);                      // SQL
                 statement.setInt(2, extractNodeId(nodes, startId)); // source id
                 statement.setInt(3, extractNodeId(nodes, endId));   // target id
                 statement.setBoolean(4, directed);                  // directed

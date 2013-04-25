@@ -20,10 +20,14 @@
              <input value="" type="text" wicket:id="nodeTableRouting" name="nodeTableRouting" class="field text" />
         <label> Edge table name </label>
              <input value="" type="text" wicket:id="edgeTableRouting" name="edgeTableRouting" class="field text" />
-        <label> Edge SQL query </label>
+        <label> Directed Edge SQL query </label>
              <input value="" type="text" wicket:id="edgeQueryRouting" name="edgeQueryRouting" class="field text" />
              for Dijkstra: <pre>SELECT id, source, target, cost, reverse_cost FROM edge_table</pre>
              for A*: <pre>SELECT id, source, target, cost, x1, y1, x2, y2, reverse_cost FROM edge_table</pre>
+        <label> Undirected Edge SQL query </label>
+             <input value="" type="text" wicket:id="undirectedQueryRouting" name="undirectedQueryRouting" class="field text" />
+             for Dijkstra: <pre>SELECT id, source, target, cost FROM edge_table</pre>
+             for A*: <pre>SELECT id, source, target, cost, x1, y1, x2, y2 FROM edge_table</pre>
         <br />
         <label> Navigation Info </label>
              <input value="" type="text" wicket:id="navigationInfo" name="navigationInfo" class="field text" />
