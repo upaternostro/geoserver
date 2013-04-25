@@ -15,6 +15,7 @@
        <property name="nodeTable" value="vertices_tmp" />
        <property name="edgeTable" value="ways" />
        <property name="edgeQuery" value="SELECT gid as id, source, target, length as cost, reverse_cost FROM ways" />
+       <property name="undirectedQuery" value="SELECT gid as id, source, target, length as cost FROM ways" />
        <property name="navigationInfo" value="Procedi in direzione {0} per {1}km su {2}" />
        <property name="navigationInfoShort" value="Procedi in direzione {0} per {1}km" />
        <property name="navigationInfoRel" value=" su {0} - {1}km" />
