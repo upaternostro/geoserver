@@ -10,19 +10,13 @@ import it.phoops.geoserver.ols.solr.utils.SolrPager;
 
 import java.io.StringReader;
 import java.math.BigInteger;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 
 import javax.xml.bind.JAXBElement;
 
-import net.opengis.www.xls.AbstractStreetLocatorType;
 import net.opengis.www.xls.AddressType;
-import net.opengis.www.xls.BuildingLocatorType;
 import net.opengis.www.xls.GeocodeMatchCode;
-import net.opengis.www.xls.GeocodeResponseList;
-import net.opengis.www.xls.GeocodeResponseType;
-import net.opengis.www.xls.GeocodedAddressType;
 import net.opengis.www.xls.NamedPlaceClassification;
 import net.opengis.www.xls.ObjectFactory;
 import net.opengis.www.xls.Place;
@@ -39,7 +33,6 @@ import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.SolrServer;
 import org.apache.solr.client.solrj.SolrServerException;
 import org.apache.solr.client.solrj.impl.HttpSolrServer;
-import org.apache.solr.client.solrj.response.QueryResponse;
 import org.apache.solr.common.SolrDocument;
 import org.apache.solr.common.SolrDocumentList;
 import org.apache.solr.common.params.ModifiableSolrParams;
@@ -47,6 +40,13 @@ import org.apache.wicket.extensions.markup.html.tabs.ITab;
 import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.ResourceModel;
 import org.geoserver.config.ServiceInfo;
+import org.geotools.geometry.GeometryBuilder;
+import org.geotools.referencing.CRS;
+import org.opengis.geometry.primitive.Point;
+import org.opengis.referencing.FactoryException;
+import org.opengis.referencing.NoSuchAuthorityCodeException;
+import org.opengis.referencing.crs.CoordinateReferenceSystem;
+import org.opengis.referencing.operation.TransformException;
 
 import com.vividsolutions.jts.geom.Geometry;
 import com.vividsolutions.jts.io.ParseException;
@@ -126,7 +126,7 @@ public class SOLRReverseServiceProvider extends OLSAbstractServiceProvider imple
 	}
 
 	@Override
-	public JAXBElement<ReverseGeocodeResponseType> geocode(
+	public JAXBElement<ReverseGeocodeResponseType> reverseGeocode(
 			ReverseGeocodeRequestType input) throws OLSException {
 	        ObjectFactory                                           of = new ObjectFactory();
 	        ReverseGeocodeResponseType                              output = of.createReverseGeocodeResponseType();
@@ -166,7 +166,32 @@ public class SOLRReverseServiceProvider extends OLSAbstractServiceProvider imple
 	        }
 	        pos = pointType.getPos();
 	        coordinates = pos.getValues();
-
+	        
+	        CoordinateReferenceSystem      sourceCrs = null;
+                CoordinateReferenceSystem      destionationCrs = null;
+	        
+	        if (pos.getSrsName() != null && !"".equals(pos.getSrsName())) {
+	            try {
+                        sourceCrs = CRS.decode(pos.getSrsName());
+                        destionationCrs = CRS.decode("EPSG:4326");
+                        
+                        if (!sourceCrs.getName().equals(destionationCrs.getName())) {
+                            GeometryBuilder     builder = new GeometryBuilder(sourceCrs);
+                            Point               sourcePoint = builder.createPoint(coordinates.get(0), coordinates.get(1));
+                            Point               destinationPoint = (Point)sourcePoint.transform(destionationCrs);
+                            
+                            coordinates.set(0, destinationPoint.getDirectPosition().getCoordinate()[0]);
+                            coordinates.set(1, destinationPoint.getDirectPosition().getCoordinate()[1]);
+                        }
+                    } catch (NoSuchAuthorityCodeException e) {
+                        throw new OLSException("Unknow authority in SRS", e);
+                    } catch (FactoryException e) {
+                        throw new OLSException("Factory exception converting SRS", e);
+                    } catch (TransformException e) {
+                        throw new OLSException("Error transforming geometry", e);
+                    }
+	        }
+	        
 	        SolrQuery query = new SolrQuery("centerline:\"Intersects(Circle("+coordinates.get(0)+","+coordinates.get(1)+", d=0.0001))\"");
 //	        SolrQuery query = new SolrQuery("(is_building: true and centroid:\"Intersects(Circle("+coordinates.get(0)+","+coordinates.get(1)+", d=0.001))\") and (is_building: false and centerline:\"Intersects(Circle("+coordinates.get(0)+","+coordinates.get(1)+", d=0.0001))\")");
 	        SolrQuery queryBuilding = new SolrQuery("is_building: true && centroid:\"Intersects(Circle("+coordinates.get(0)+","+coordinates.get(1)+", d=0.0002))\"");

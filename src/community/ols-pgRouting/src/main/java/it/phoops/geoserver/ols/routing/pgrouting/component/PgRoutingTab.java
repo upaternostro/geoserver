@@ -35,6 +35,7 @@ public class PgRoutingTab extends AbstractTab implements ValidateCheckboxTab{
     private String                              portPgRouting;
     private String                              pswPgRouting;
     private String                              dbPgRouting;
+    private String                              schemaPgRouting;
     private String                              userPgRouting;
     private String                              nodeTableRouting;
     private String                              edgeTableRouting;
@@ -145,6 +146,7 @@ public class PgRoutingTab extends AbstractTab implements ValidateCheckboxTab{
         instancePanel.setPortPgRouting(portPgRouting);
         instancePanel.setPswPgRouting(pswPgRouting);
         instancePanel.setDbPgRouting(dbPgRouting);
+        instancePanel.setSchemaPgRouting(schemaPgRouting);
         instancePanel.setUserPgRouting(userPgRouting);
         instancePanel.setNodeTableRouting(nodeTableRouting);
         instancePanel.setEdgeTableRouting(edgeTableRouting);
@@ -217,6 +219,18 @@ public class PgRoutingTab extends AbstractTab implements ValidateCheckboxTab{
         if(instancePanel != null)
             instancePanel.setDbPgRouting(dbPgRouting);
         this.dbPgRouting = dbPgRouting;
+    }
+    
+    public String getSchemaPgRouting() {
+        if(instancePanel != null)
+            return instancePanel.getSchemaPgRouting();
+        return schemaPgRouting;
+    }
+
+    public void setSchemaPgRouting(String schemaPgRouting) {
+        if(instancePanel != null)
+            instancePanel.setSchemaPgRouting(schemaPgRouting);
+        this.schemaPgRouting = schemaPgRouting;
     }
     
     public String getUserPgRouting() {
@@ -369,6 +383,7 @@ public class PgRoutingTab extends AbstractTab implements ValidateCheckboxTab{
         private String                                          portPgRouting;
         private String                                          userPgRouting;
         private String                                          dbPgRouting;
+        private String                                          schemaPgRouting;
         private String                                          pswPgRouting;
         private String                                          nodeTableRouting;
         private String                                          edgeTableRouting;
@@ -431,6 +446,8 @@ public class PgRoutingTab extends AbstractTab implements ValidateCheckboxTab{
             add(new TextField("portPgRouting",new PropertyModel(this,"portPgRouting")));
             //Database
             add(new TextField("dbPgRouting",new PropertyModel(this,"dbPgRouting")));
+            //Schema
+            add(new TextField("schemaPgRouting",new PropertyModel(this,"schemaPgRouting")));
             //User
             add(new TextField("userPgRouting",new PropertyModel(this,"userPgRouting")));
             //Password field
@@ -488,6 +505,14 @@ public class PgRoutingTab extends AbstractTab implements ValidateCheckboxTab{
 
         public void setDbPgRouting(String dbPgRouting) {
             this.dbPgRouting = dbPgRouting;
+        }
+
+        public String getSchemaPgRouting() {
+            return schemaPgRouting;
+        }
+
+        public void setSchemaPgRouting(String schemaPgRouting) {
+            this.schemaPgRouting = schemaPgRouting;
         }
 
         public CheckBox getCheckboxPgRouting() {

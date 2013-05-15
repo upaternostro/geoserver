@@ -296,7 +296,7 @@ public class RFC59ServiceProviderMock extends OLSAbstractServiceProvider impleme
                     coordinates.add(Double.valueOf("43.766135280960945"));
                     coordinates.add(Double.valueOf("11.278839111328125"));
                     
-//                    pos.setSrsName(value);
+                    pos.setSrsName("EPSG:3003");
                     
                     point.setPos(pos);
 //                    point.setSrsName(value);

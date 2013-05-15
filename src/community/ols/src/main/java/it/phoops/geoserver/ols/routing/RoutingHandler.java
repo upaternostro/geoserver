@@ -41,7 +41,7 @@ public class RoutingHandler implements OLSHandler {
         }catch (JAXBException e) {
             throw new OLSException("JAXB error", e);
         }
-        JAXBElement<DetermineRouteResponseType>         output = provider.geocode(input);
+        JAXBElement<DetermineRouteResponseType>         output = provider.route(input);
         Document                                        domResponse = null;
         
         try {

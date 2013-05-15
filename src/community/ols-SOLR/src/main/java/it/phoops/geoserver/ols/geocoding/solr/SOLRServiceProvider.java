@@ -304,7 +304,7 @@ public class SOLRServiceProvider extends OLSAbstractServiceProvider implements G
                         
                         coordinates.add(Double.valueOf(geometry.getCoordinate().getOrdinate(0)));
                         coordinates.add(Double.valueOf(geometry.getCoordinate().getOrdinate(1)));
-//                        pos.setSrsName(value);
+                        pos.setSrsName("EPSG:4326");
                         
                         point.setPos(pos);
 //                        point.setSrsName(value);
