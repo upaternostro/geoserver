@@ -265,6 +265,7 @@
 		<configuration>
 			<warName>geoserver</warName>
 			<webappDirectory>${project.build.directory}/geoserver</webappDirectory>
+			<packagingExcludes>WEB-INF/lib/servlet-api*.jar</packagingExcludes>
 			<archive>
 				<manifest>
 					<addDefaultImplementationEntries>true</addDefaultImplementationEntries>
@@ -659,7 +660,7 @@
       <id>inspire</id>
       <dependencies>
         <dependency>
-          <groupId>org.geoserver.community</groupId>
+          <groupId>org.geoserver.extension</groupId>
           <artifactId>inspire</artifactId>
           <version>${project.version}</version>
         </dependency>
