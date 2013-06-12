@@ -276,7 +276,10 @@ public class PgRoutingServiceProvider extends OLSAbstractServiceProvider impleme
             psw = "";
         String active = ((PgRoutingTab)getTab()).getActivePgRouting();
         
-        String algorithm = ((PgRoutingTab)getTab()).getSelectedAlgorithm().getCode();
+        String algorithm = "";
+        if(((PgRoutingTab)getTab()).getSelectedAlgorithm() != null){
+            algorithm = ((PgRoutingTab)getTab()).getSelectedAlgorithm().getCode();
+        }
         
         String nodeTable = ((PgRoutingTab)getTab()).getNodeTableRouting();
         if(nodeTable == null)
@@ -293,8 +296,11 @@ public class PgRoutingServiceProvider extends OLSAbstractServiceProvider impleme
         String navigation       = ((PgRoutingTab)getTab()).getNavigationInfo();
         String navigationS      = ((PgRoutingTab)getTab()).getNavigationInfoShort();
         String navigationR      = ((PgRoutingTab)getTab()).getNavigationInfoRel();
-        String language         = ((PgRoutingTab)getTab()).getSelectedLanguage().getCode();
-        
+        String language = "";
+        if(((PgRoutingTab)getTab()).getSelectedLanguage() != null){
+            language = ((PgRoutingTab)getTab()).getSelectedLanguage().getCode();
+        }
+            
         setActive(active);
         setEndpointAddress(host);
         setPortNumber(port);
@@ -327,7 +333,11 @@ public class PgRoutingServiceProvider extends OLSAbstractServiceProvider impleme
         ((PgRoutingTab)pgRoutingTab).setUserPgRouting(this.getUser());
         ((PgRoutingTab)pgRoutingTab).setPswPgRouting(this.getPassword());
         Algorithm algorithm = Algorithm.get(this.getAlgorithm());
-        ((PgRoutingTab)pgRoutingTab).setCodeAlgorithmSelected(Integer.parseInt(algorithm.getCode()));
+        if(algorithm == null){
+            ((PgRoutingTab)pgRoutingTab).setCodeAlgorithmSelected(1);
+        }else{
+            ((PgRoutingTab)pgRoutingTab).setCodeAlgorithmSelected(Integer.parseInt(algorithm.getCode()));
+        }
         ((PgRoutingTab)pgRoutingTab).setNodeTableRouting(this.getNodeTable());
         ((PgRoutingTab)pgRoutingTab).setEdgeTableRouting(this.getEdgeTable());
         ((PgRoutingTab)pgRoutingTab).setEdgeQueryRouting(this.getEdgeQuery());
