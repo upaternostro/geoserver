@@ -9,6 +9,7 @@ import it.phoops.geoserver.ols.routing.pgrouting.component.PgRoutingTab;
 import it.phoops.geoserver.ols.routing.pgrouting.component.PgRoutingTabFactory;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.math.BigDecimal;
 import java.sql.CallableStatement;
 import java.sql.Connection;
@@ -72,8 +73,11 @@ import com.vividsolutions.jts.geom.GeometryFactory;
 import com.vividsolutions.jts.geom.LineString;
 import com.vividsolutions.jts.geom.Point;
 
-public class PgRoutingServiceProvider extends OLSAbstractServiceProvider implements RoutingServiceProvider
-{
+public class PgRoutingServiceProvider extends OLSAbstractServiceProvider implements RoutingServiceProvider, Serializable{
+
+    /** serialVersionUID */
+    private static final long serialVersionUID = 1L;
+
     private static final Logger logger = Logger.getLogger(PgRoutingServiceProvider.class);
     
     public static final double  DEGREES_TO_RADIANS_FACTOR = Math.PI / 180.0;

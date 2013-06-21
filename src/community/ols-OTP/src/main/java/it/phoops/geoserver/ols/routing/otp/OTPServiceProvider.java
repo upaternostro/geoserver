@@ -19,6 +19,7 @@ import it.phoops.geoserver.ols.routing.otp.client.ns0.WalkStep;
 import it.phoops.geoserver.ols.routing.otp.component.OTPTab;
 import it.phoops.geoserver.ols.routing.otp.component.OTPTabFactory;
 
+import java.io.Serializable;
 import java.math.BigDecimal;
 import java.text.DateFormat;
 import java.text.MessageFormat;
@@ -37,7 +38,6 @@ import javax.xml.datatype.DatatypeFactory;
 import javax.xml.datatype.XMLGregorianCalendar;
 
 import net.opengis.www.xls.AbstractLocationType;
-import net.opengis.www.xls.AvoidList;
 import net.opengis.www.xls.DetermineRouteRequestType;
 import net.opengis.www.xls.DetermineRouteResponseType;
 import net.opengis.www.xls.DistanceType;
@@ -61,8 +61,6 @@ import org.apache.wicket.extensions.markup.html.tabs.ITab;
 import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.ResourceModel;
 import org.geoserver.config.ServiceInfo;
-import org.geotools.gml3.bindings.DirectPositionTypeBinding;
-import org.geotools.xml.gml.GMLComplexTypes.MultiLineStringType;
 import org.opentripplanner.util.PolylineEncoder;
 
 import com.sun.jersey.api.client.Client;
@@ -71,9 +69,11 @@ import com.sun.jersey.core.util.MultivaluedMapImpl;
 import com.vividsolutions.jts.geom.Coordinate;
 import com.vividsolutions.jts.geom.Geometry;
 import com.vividsolutions.jts.geom.GeometryFactory;
-import com.vividsolutions.jts.geom.MultiLineString;
 
-public class OTPServiceProvider extends OLSAbstractServiceProvider implements RoutingServiceProvider {
+public class OTPServiceProvider extends OLSAbstractServiceProvider implements RoutingServiceProvider, Serializable {
+
+    /** serialVersionUID */
+    private static final long serialVersionUID = 1L;
     //Properties Name
     private static final String  PN_ENDPOINT_ADDRESS    = "OLS.serviceProvider.geocoding.otp.service.endpointAddress";
     private static final String  PN_NAVIGATION_INFO     = "OLS.serviceProvider.geocoding.otp.service.navigationInfo";
