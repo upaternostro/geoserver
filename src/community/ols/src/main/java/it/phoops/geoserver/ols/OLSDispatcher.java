@@ -91,6 +91,7 @@ public class OLSDispatcher extends AbstractController {
                                 if(sInfo.getWorkspace() != null 
                                         && sInfo.getWorkspace().getName() == wDefautl.getName()){
                                     olsInfo = (OLSInfo) sInfo;
+                                    break;
                                 }else{
                                     olsInfo = null;
                                 }
