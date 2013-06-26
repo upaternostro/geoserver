@@ -35,6 +35,7 @@ import net.opengis.www.xls.DistanceUnitType;
 import net.opengis.www.xls.EnvelopeType;
 import net.opengis.www.xls.LineStringType;
 import net.opengis.www.xls.ObjectFactory;
+import net.opengis.www.xls.PointType;
 import net.opengis.www.xls.Pos;
 import net.opengis.www.xls.PositionType;
 import net.opengis.www.xls.RouteGeometryType;
@@ -548,6 +549,7 @@ public class PgRoutingServiceProvider extends OLSAbstractServiceProvider impleme
                         distance = of.createDistanceType();
                         bdValue = BigDecimal.valueOf(length * 0.001);
                         bdValue = bdValue.setScale(2, BigDecimal.ROUND_DOWN);
+                        
                         distance.setValue(bdValue);
                         routeInstruction.setDistance(distance);
                         
@@ -570,6 +572,23 @@ public class PgRoutingServiceProvider extends OLSAbstractServiceProvider impleme
                         }
                         
     //                    routeInstruction.setInstruction(relativeDirection + " - " + edge.getAttribute("name").toString() + " - " + length + " - " + absoluteDirection); // FIXME
+                        
+                        RouteGeometryType routeGeoInstruction = of.createRouteGeometryType();
+//                        PointType pointType = of.createPointType();
+                        LineStringType lineStringType = of.createLineStringType();
+                        Pos posInstruction = new Pos();
+                        List<Double> posValues;
+                        List<Pos> posList;
+                        posValues = posInstruction.getValues();
+                        posList = lineStringType.getPos();
+                        
+                        posValues.add(preLastCoordinate.y);
+                        posValues.add(preLastCoordinate.x);
+                        posList.add(posInstruction);
+                        posList.add(posInstruction);
+                        
+                        routeGeoInstruction.setLineString(lineStringType);
+                        routeInstruction.setRouteInstructionGeometry(routeGeoInstruction);
                         routeInstruction.setInstruction(resultFormatter);
                         routeInstructions.getRouteInstructions().add(routeInstruction);
                     }

@@ -66,6 +66,7 @@ import org.opentripplanner.util.PolylineEncoder;
 import com.sun.jersey.api.client.Client;
 import com.sun.jersey.api.client.WebResource;
 import com.sun.jersey.core.util.MultivaluedMapImpl;
+import com.sun.xml.bind.v2.runtime.unmarshaller.XsiNilLoader.Array;
 import com.vividsolutions.jts.geom.Coordinate;
 import com.vividsolutions.jts.geom.Geometry;
 import com.vividsolutions.jts.geom.GeometryFactory;
@@ -416,43 +417,43 @@ public class OTPServiceProvider extends OLSAbstractServiceProvider implements Ro
                 double valueY = Double.parseDouble(splittedValueY);
                 
                 //Controllo il primo punto
-                if(index == 0){
-                    Geometry segmentGeometry = gf.createPoint(firstCoordinate);
-                    geometrySegmentList.add(segmentGeometry);
-                }else{
-                    //Calcolo del WalkStep
-                    //Ciclo per determinare quali punti della geometria vanno inseriti nei segmenti
-                    for (int i = 1; i < coordinatesGeometry.length; i++) {
-                        //Allineamento del valoreX per i punti della geometria
-                        String geomStringValueX = Double.toString(coordinatesGeometry[i].x);
-                        String geomSplitValueX = geomStringValueX;
-                        if(geomStringValueX.length() >= 8)
-                            geomSplitValueX = geomStringValueX.substring(0, 8);
-                        double geomValueX = Double.parseDouble(geomSplitValueX);
-                        //Allineamento del valoreY per i punti della geometria
-                        String geomStringValueY = Double.toString(coordinatesGeometry[i].y);
-                        String geomSplitValueY = geomStringValueY;
-                        if(geomStringValueY.length() >= 8)
-                            geomSplitValueY = geomStringValueY.substring(0, 8);
-                        double geomValueY = Double.parseDouble(geomSplitValueY);
-                        if(geomValueX == valueX
-                                && geomValueY == valueY){
-                            listCoordinate.add(coordinatesGeometry[i]);
-                            if(listCoordinate.size()== 1){
-                                listCoordinate.add(coordinatesGeometry[i+1]);
-                            }
-                            Coordinate[] coordinateG = new Coordinate[listCoordinate.size()];
-                            coordinateG = listCoordinate.toArray(coordinateG);
-                            Geometry segmentGeometry = gf.createLineString(coordinateG);
-                            geometrySegmentList.add(segmentGeometry);
-                            coordinatesGeometry = calculateCoordinatesGeometry(listCoordinate, coordinatesGeometry);
-                            break;
-                        }else{
-                            listCoordinate.add(coordinatesGeometry[i]);
-                        }
-                    }
-                }
-                listCoordinate = new ArrayList<Coordinate>();
+//                if(index == 0){
+//                    Geometry segmentGeometry = gf.createPoint(firstCoordinate);
+//                    geometrySegmentList.add(segmentGeometry);
+//                }else{
+//                    //Calcolo del WalkStep
+//                    //Ciclo per determinare quali punti della geometria vanno inseriti nei segmenti
+//                    for (int i = 1; i < coordinatesGeometry.length; i++) {
+//                        //Allineamento del valoreX per i punti della geometria
+//                        String geomStringValueX = Double.toString(coordinatesGeometry[i].x);
+//                        String geomSplitValueX = geomStringValueX;
+//                        if(geomStringValueX.length() >= 8)
+//                            geomSplitValueX = geomStringValueX.substring(0, 8);
+//                        double geomValueX = Double.parseDouble(geomSplitValueX);
+//                        //Allineamento del valoreY per i punti della geometria
+//                        String geomStringValueY = Double.toString(coordinatesGeometry[i].y);
+//                        String geomSplitValueY = geomStringValueY;
+//                        if(geomStringValueY.length() >= 8)
+//                            geomSplitValueY = geomStringValueY.substring(0, 8);
+//                        double geomValueY = Double.parseDouble(geomSplitValueY);
+//                        if(geomValueX == valueX
+//                                && geomValueY == valueY){
+//                            listCoordinate.add(coordinatesGeometry[i]);
+//                            if(listCoordinate.size()== 1){
+//                                listCoordinate.add(coordinatesGeometry[i+1]);
+//                            }
+//                            Coordinate[] coordinateG = new Coordinate[listCoordinate.size()];
+//                            coordinateG = listCoordinate.toArray(coordinateG);
+//                            Geometry segmentGeometry = gf.createLineString(coordinateG);
+//                            geometrySegmentList.add(segmentGeometry);
+//                            coordinatesGeometry = calculateCoordinatesGeometry(listCoordinate, coordinatesGeometry);
+//                            break;
+//                        }else{
+//                            listCoordinate.add(coordinatesGeometry[i]);
+//                        }
+//                    }
+//                }
+//                listCoordinate = new ArrayList<Coordinate>();
                 distance.setValue(bdValue);
                 routeInstruction.setDistance(distance);
                 
@@ -482,6 +483,7 @@ public class OTPServiceProvider extends OLSAbstractServiceProvider implements Ro
                     }else
                         resultFormatter = MessageFormat.format(properties.getProperty(PN_NAVIGATION_S_INFO), absoluteDirection, bdValue);
                 }
+                
                 routeInstruction.setInstruction(resultFormatter);
                 //TODO:
                 //Setting della geometria pre la RouteInstruction -> Visualizzazione del percorso su mappa
@@ -507,15 +509,15 @@ public class OTPServiceProvider extends OLSAbstractServiceProvider implements Ro
             }
             
             //Aggiungi l'ultima tratta del percorso
-            listCoordinate = new ArrayList<Coordinate>();
-            Coordinate[] coordinateG = null;
-            for (int i = 0; i < coordinatesGeometry.length; i++) {
-                listCoordinate.add(coordinatesGeometry[i]);
-                coordinateG = new Coordinate[listCoordinate.size()];
-                coordinateG = listCoordinate.toArray(coordinateG);
-            }
-            Geometry segmentGeometry = gf.createLineString(coordinateG);
-            geometrySegmentList.add(segmentGeometry);
+//            listCoordinate = new ArrayList<Coordinate>();
+//            Coordinate[] coordinateG = null;
+//            for (int i = 0; i < coordinatesGeometry.length; i++) {
+//                listCoordinate.add(coordinatesGeometry[i]);
+//                coordinateG = new Coordinate[listCoordinate.size()];
+//                coordinateG = listCoordinate.toArray(coordinateG);
+//            }
+//            Geometry segmentGeometry = gf.createLineString(coordinateG);
+//            geometrySegmentList.add(segmentGeometry);
         }
         
         distance = of.createDistanceType();
