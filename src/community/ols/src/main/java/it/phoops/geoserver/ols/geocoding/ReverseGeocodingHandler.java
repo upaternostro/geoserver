@@ -38,7 +38,7 @@ public class ReverseGeocodingHandler implements OLSHandler {
             throw new OLSException("JAXB error", e);
         }
         
-        JAXBElement<ReverseGeocodeResponseType>      output = provider.geocode(input);
+        JAXBElement<ReverseGeocodeResponseType>      output = provider.reverseGeocode(input);
         Document                                	domResponse = null;
         
         try {

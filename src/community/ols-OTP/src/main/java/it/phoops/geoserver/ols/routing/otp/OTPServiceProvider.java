@@ -199,7 +199,7 @@ public class OTPServiceProvider extends OLSAbstractServiceProvider implements Ro
     }
 
     @Override
-    public JAXBElement<DetermineRouteResponseType> geocode(
+    public JAXBElement<DetermineRouteResponseType> route(
             DetermineRouteRequestType input) throws OLSException {
         JAXBElement<DetermineRouteResponseType> retval = null;
         DatatypeFactory                         df;

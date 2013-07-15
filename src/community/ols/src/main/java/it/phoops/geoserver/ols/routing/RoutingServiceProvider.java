@@ -9,5 +9,5 @@ import net.opengis.www.xls.DetermineRouteRequestType;
 import net.opengis.www.xls.DetermineRouteResponseType;
 
 public interface RoutingServiceProvider extends OLSServiceProvider {
-    public abstract JAXBElement<DetermineRouteResponseType> geocode(DetermineRouteRequestType input) throws OLSException;
+    public abstract JAXBElement<DetermineRouteResponseType> route(DetermineRouteRequestType input) throws OLSException;
 }

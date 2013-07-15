@@ -84,6 +84,7 @@ public class PgRoutingServiceProvider extends OLSAbstractServiceProvider impleme
     private static final String  PN_ENDPOINT_ADDRESS = "OLS.serviceProvider.geocoding.pgrouting.service.endpointAddress";
     private static final String  PN_PORT_NUMBER = "OLS.serviceProvider.geocoding.pgrouting.service.portNumber";
     private static final String  PN_DATABASE = "OLS.serviceProvider.geocoding.pgrouting.service.database";
+    private static final String  PN_SCHEMA = "OLS.serviceProvider.geocoding.pgrouting.service.schema";
     private static final String  PN_USER = "OLS.serviceProvider.geocoding.pgrouting.service.user";
     private static final String  PN_PASSWORD = "OLS.serviceProvider.geocoding.pgrouting.service.password";
     private static final String  PN_ACTIVE_SERVICE = "OLS.serviceProvider.service.active";
@@ -122,6 +123,14 @@ public class PgRoutingServiceProvider extends OLSAbstractServiceProvider impleme
 
     public void setDatabase(String database) {
         properties.setProperty(PN_DATABASE, database);
+    }
+    
+    public String getSchema() {
+        return properties.getProperty(PN_SCHEMA);
+    }
+
+    public void setSchema(String schema) {
+        properties.setProperty(PN_SCHEMA, schema);
     }
     
     public String getUser() {
@@ -256,6 +265,9 @@ public class PgRoutingServiceProvider extends OLSAbstractServiceProvider impleme
         String db = ((PgRoutingTab)getTab()).getDbPgRouting();
         if(db == null)
             db = "";
+        String schema = ((PgRoutingTab)getTab()).getSchemaPgRouting();
+        if(schema == null)
+            schema = "";
         String user = ((PgRoutingTab)getTab()).getUserPgRouting();
         if(user == null)
             user = "";
@@ -287,6 +299,7 @@ public class PgRoutingServiceProvider extends OLSAbstractServiceProvider impleme
         setEndpointAddress(host);
         setPortNumber(port);
         setDatabase(db);
+        setSchema(schema);
         setUser(user);
         setPassword(psw);
         setAlgorithm(algorithm);
@@ -310,6 +323,7 @@ public class PgRoutingServiceProvider extends OLSAbstractServiceProvider impleme
         ((PgRoutingTab)pgRoutingTab).setHostPgRouting(this.getEndpointAddress());
         ((PgRoutingTab)pgRoutingTab).setPortPgRouting(this.getPortNumber());
         ((PgRoutingTab)pgRoutingTab).setDbPgRouting(this.getDatabase());
+        ((PgRoutingTab)pgRoutingTab).setSchemaPgRouting(this.getSchema());
         ((PgRoutingTab)pgRoutingTab).setUserPgRouting(this.getUser());
         ((PgRoutingTab)pgRoutingTab).setPswPgRouting(this.getPassword());
         Algorithm algorithm = Algorithm.get(this.getAlgorithm());
@@ -330,7 +344,7 @@ public class PgRoutingServiceProvider extends OLSAbstractServiceProvider impleme
     }
 
     @Override
-    public JAXBElement<DetermineRouteResponseType> geocode(
+    public JAXBElement<DetermineRouteResponseType> route(
             DetermineRouteRequestType input) throws OLSException {
         JAXBElement<DetermineRouteResponseType> retval = null;
         
@@ -397,6 +411,7 @@ public class PgRoutingServiceProvider extends OLSAbstractServiceProvider impleme
         params.put("host",      getEndpointAddress());
         params.put("port",      new Integer(getPortNumber()));
         params.put("database",  getDatabase());
+        params.put("schema",    getSchema());
         params.put("user",      getUser());
         params.put("passwd",    getPassword());
         

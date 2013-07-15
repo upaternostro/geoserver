@@ -167,6 +167,12 @@
       </modules>
     </profile>
     <profile>
+      <id>css</id>
+      <modules>
+        <module>css</module>
+      </modules>
+    </profile>
+    <profile>
       <id>gss</id>
       <modules>
         <module>gss</module>
@@ -256,12 +262,12 @@
       </modules>
     </profile>	
     <profile>
-      <id>kml-old</id>
+      <id>kml2</id>
       <activation>
-        <property><name>kml-old</name></property>
+        <property><name>kml2</name></property>
       </activation> 	  
       <modules>
-        <module>kml-old</module>
+        <module>kml2</module>
       </modules>
     </profile>	
     <profile>
@@ -278,6 +284,17 @@
         <module>ols_web</module>
       </modules>
     </profile>
+    <profile>
+      <id>kml-old</id>
+      <activation>
+        <property><name>kml-old</name></property>
+      </activation> 	  
+      <modules>
+        <module>kml-old</module>
+      </modules>
+    </profile>
+=======
+>>>>>>> origin/12I_CPO_TP_S4_Ugo
 		<profile>
 			<id>libjpeg-turbo</id>
 			<activation>
