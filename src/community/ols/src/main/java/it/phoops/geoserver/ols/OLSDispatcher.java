@@ -23,6 +23,12 @@ import javax.xml.xpath.XPathExpression;
 import javax.xml.xpath.XPathFactory;
 
 import org.apache.xerces.util.XMLCatalogResolver;
+import org.geoserver.catalog.WorkspaceInfo;
+import org.geoserver.catalog.impl.WorkspaceInfoImpl;
+import org.geoserver.config.ServiceInfo;
+import org.geoserver.config.impl.DefaultGeoServerFacade;
+import org.geoserver.ows.LocalWorkspace;
+import org.geoserver.ows.WorkspaceQualifyingCallback;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.AbstractController;
 import org.w3c.dom.Document;
@@ -76,7 +82,36 @@ public class OLSDispatcher extends AbstractController {
                         OLSHandler          handler = handlers.get(path);
                         
                         // Set configured service provider for this service handler
-                        handler.setActiveServiceProvider(OLS.get().getServiceProvider(handler.getService()));
+                        DefaultGeoServerFacade dGeoServer = (DefaultGeoServerFacade)OLS.get().getFacade();
+                        WorkspaceInfo wDefautl = OLS.get().getCatalog().getDefaultWorkspace();
+                        OLSInfo olsInfo = null;
+                        
+                        for (ServiceInfo sInfo : dGeoServer.getAllServices()) {
+                            if(sInfo.getClass().equals(OLSInfoImpl.class)){
+                                if(sInfo.getWorkspace() != null 
+                                        && sInfo.getWorkspace().getName() == wDefautl.getName()){
+                                    olsInfo = (OLSInfo) sInfo;
+                                    break;
+                                }else{
+                                    olsInfo = null;
+                                }
+                            }
+                        }
+                        
+                        if(olsInfo != null){
+                            OLSServiceProvider sProvidereToSet = null;
+                            for (OLSServiceProvider sProvider : olsInfo.getServiceProvider()) {
+                                if(sProvider.getServiceType() == handler.getService()){
+                                    sProvidereToSet = sProvider;
+                                    break;
+                                }else{
+                                    sProvidereToSet = OLS.get().getServiceProvider(handler.getService());
+                                }
+                            }
+                            handler.setActiveServiceProvider(sProvidereToSet);
+                        }else{
+                            handler.setActiveServiceProvider(OLS.get().getServiceProvider(handler.getService()));
+                        }
                         
                         Document            domResponse = handler.processRequest(domRequest);
                         TransformerFactory  transFactory = TransformerFactory.newInstance();
