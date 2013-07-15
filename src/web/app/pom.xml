@@ -948,6 +948,7 @@
     </dependency>
 </dependencies>
     </profile>
+    <profile>
        <id>kml</id>
        <activation>
          <activeByDefault>true</activeByDefault>
