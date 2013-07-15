@@ -322,7 +322,7 @@ public class RFC59ServiceProvider extends OLSAbstractServiceProvider implements 
                     coordinates.add(Double.valueOf(datiGeoreferenziazioneInd.getLongitudine()));
                     coordinates.add(Double.valueOf(datiGeoreferenziazioneInd.getLatitudine()));
                     
-//                    pos.setSrsName(value);
+                    pos.setSrsName("EPSG:3003");
                     
                     point.setPos(pos);
 //                    point.setSrsName(value);

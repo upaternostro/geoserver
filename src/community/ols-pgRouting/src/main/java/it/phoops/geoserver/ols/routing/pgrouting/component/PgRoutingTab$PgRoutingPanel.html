@@ -7,6 +7,8 @@
 			 <input value="" type="text" wicket:id="hostPgRouting" name="hostPgRouting" class="field text" />
 		<label> Port </label>
 			 <input value="" type="text" wicket:id="portPgRouting" name="portPgRouting" class="field text" />
+        <label> Schema </label>
+             <input value="" type="text" wicket:id="schemaPgRouting" name="schemaPgRouting" class="field text" />
 		<label> Database </label>
 			 <input value="" type="text" wicket:id="dbPgRouting" name="dbPgRouting" class="field text" />
 		<label> User </label>
@@ -14,8 +16,32 @@
 		<label> Password </label>
 			 <input value="" type="password" wicket:id="pswPgRouting" name="pswPgRouting" class="field text" />
 		<br />
-		<label> Shortest Algotihm </label>
+		<label> Algotihm </label>
 			<select wicket:id="algorithm"></select>
+        <label> Node table name </label>
+             <input value="" type="text" wicket:id="nodeTableRouting" name="nodeTableRouting" class="field text" />
+        <label> Edge table name </label>
+             <input value="" type="text" wicket:id="edgeTableRouting" name="edgeTableRouting" class="field text" />
+        <label> Directed Edge SQL query </label>
+             <input value="" type="text" wicket:id="edgeQueryRouting" name="edgeQueryRouting" class="field text" />
+             for Dijkstra: <pre>SELECT id, source, target, cost, reverse_cost FROM edge_table</pre>
+             for A*: <pre>SELECT id, source, target, cost, x1, y1, x2, y2, reverse_cost FROM edge_table</pre>
+        <label> Undirected Edge SQL query </label>
+             <input value="" type="text" wicket:id="undirectedQueryRouting" name="undirectedQueryRouting" class="field text" />
+             for Dijkstra: <pre>SELECT id, source, target, cost FROM edge_table</pre>
+             for A*: <pre>SELECT id, source, target, cost, x1, y1, x2, y2 FROM edge_table</pre>
+        <br />
+        <label> Navigation Info </label>
+             <input value="" type="text" wicket:id="navigationInfo" name="navigationInfo" class="field text" />
+        <br />
+        <label> Navigation Info Short </label>
+             <input value="" type="text" wicket:id="navigationInfoShort" name="navigationInfoShort" class="field text" />
+        <br />
+        <label> Navigation Relative Info </label>
+             <input value="" type="text" wicket:id="navigationInfoRel" name="navigationInfoRel" class="field text" />
+        <br />
+        <label> Language </label>
+            <select wicket:id="language"></select>
 		<hr>
 	</wicket:panel>
 </html>

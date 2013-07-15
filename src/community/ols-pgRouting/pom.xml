@@ -26,6 +26,10 @@
 			<version>${project.version}</version>
 		</dependency>
 		<dependency>
+			<groupId>org.geotools.jdbc</groupId>
+			<artifactId>gt-jdbc-postgis</artifactId>
+		</dependency>
+		<dependency>
 			<groupId>org.geoserver</groupId>
 			<artifactId>main</artifactId>
 			<classifier>tests</classifier>
