@@ -265,6 +265,7 @@
 		<configuration>
 			<warName>geoserver</warName>
 			<webappDirectory>${project.build.directory}/geoserver</webappDirectory>
+			<packagingExcludes>WEB-INF/lib/servlet-api*.jar</packagingExcludes>
 			<archive>
 				<manifest>
 					<addDefaultImplementationEntries>true</addDefaultImplementationEntries>
@@ -659,7 +660,7 @@
       <id>inspire</id>
       <dependencies>
         <dependency>
-          <groupId>org.geoserver.community</groupId>
+          <groupId>org.geoserver.extension</groupId>
           <artifactId>inspire</artifactId>
           <version>${project.version}</version>
         </dependency>
@@ -867,7 +868,7 @@
       </activation> 
       <dependencies>
         <dependency>
-          <groupId>org.geoserver.community</groupId>
+          <groupId>org.geoserver</groupId>
           <artifactId>xslt</artifactId>
           <version>${project.version}</version>
         </dependency>
@@ -947,6 +948,60 @@
     </dependency>
 </dependencies>
     </profile>
+       <id>kml</id>
+       <activation>
+         <activeByDefault>true</activeByDefault>
+       </activation>
+       <dependencies>  
+         <dependency>
+           <groupId>org.geoserver</groupId>
+           <artifactId>kml</artifactId>
+           <version>${project.version}</version>
+         </dependency>
+       </dependencies>
+    </profile>
+    <profile>
+       <id>kml-old</id>
+       <dependencies>  
+         <dependency>
+           <groupId>org.geoserver.community</groupId>
+           <artifactId>kml-old</artifactId>
+           <version>${project.version}</version>
+         </dependency>
+      </dependencies>
+    </profile>
+		<profile>
+			<id>libjpeg-turbo</id>
+      <dependencies>
+        <dependency>
+          <groupId>org.geoserver.community</groupId>
+          <artifactId>libjpeg-turbo</artifactId>
+          <version>${project.version}</version>
+        </dependency>
+      </dependencies>
+		</profile>
+    <profile>
+			<id>netcdf</id>
+      <dependencies>
+        <dependency>
+          <groupId>org.geotools</groupId>
+          <artifactId>gt-netcdf</artifactId>
+          <version>${gt.version}</version>
+        <exclusions>
+          <exclusion>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>org.slf4j</groupId>
+            <artifactId>jcl-over-slf4j</artifactId>
+          </exclusion>
+
+
+        </exclusions>
+        </dependency>
+      </dependencies>
+		</profile>        
  </profiles>
 
 </project>

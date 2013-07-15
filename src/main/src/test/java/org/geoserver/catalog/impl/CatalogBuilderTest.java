@@ -13,6 +13,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
+import java.net.URL;
 import java.util.Arrays;
 import java.util.LinkedHashSet;
 
@@ -24,19 +25,25 @@ import org.geoserver.catalog.FeatureTypeInfo;
 import org.geoserver.catalog.Keyword;
 import org.geoserver.catalog.LayerGroupInfo;
 import org.geoserver.catalog.LayerInfo;
+import org.geoserver.catalog.TestHttpClientProvider;
 import org.geoserver.catalog.WMSLayerInfo;
 import org.geoserver.catalog.WMSStoreInfo;
 import org.geoserver.data.test.MockData;
 import org.geoserver.data.test.MockTestData;
 import org.geoserver.test.GeoServerMockTestSupport;
 import org.geoserver.test.RemoteOWSTestSupport;
+import org.geoserver.test.http.MockHttpClient;
+import org.geoserver.test.http.MockHttpResponse;
 import org.geotools.data.FeatureSource;
 import org.geotools.data.Query;
 import org.geotools.data.ResourceInfo;
 import org.geotools.feature.NameImpl;
+import org.geotools.geometry.jts.ReferencedEnvelope;
 import org.geotools.referencing.CRS;
+import org.geotools.referencing.crs.DefaultGeographicCRS;
 import org.junit.Test;
 import org.opengis.feature.type.FeatureType;
+import org.opengis.referencing.crs.CoordinateReferenceSystem;
 
 import com.vividsolutions.jts.geom.Point;
 
@@ -370,5 +377,103 @@ public class CatalogBuilderTest extends GeoServerMockTestSupport {
 
         CatalogBuilder cb = new CatalogBuilder(getCatalog());
         cb.setupMetadata(ftInfo, fs);
+    }
+    
+    @Test
+    public void testLatLonBounds() throws Exception {
+        ReferencedEnvelope nativeBounds = new ReferencedEnvelope(700000, 800000, 4000000, 4100000, null);
+        CoordinateReferenceSystem crs = CRS.decode("EPSG:32632", true);
+        CatalogBuilder cb = new CatalogBuilder(getCatalog());
+        ReferencedEnvelope re = cb.getLatLonBounds(nativeBounds, crs);
+        assertEquals(DefaultGeographicCRS.WGS84, re.getCoordinateReferenceSystem());
+        assertEquals(11.22, re.getMinX(), 0.01);
+        assertEquals(36.1, re.getMinY(), 0.01);
+    }
+    
+    @Test
+    public void testWMSLayer111() throws Exception {
+        TestHttpClientProvider.startTest();
+        try {
+            String baseURL = TestHttpClientProvider.MOCKSERVER + "/wms11";
+            MockHttpClient client = new MockHttpClient();
+            URL capsURL = new URL(baseURL + "?service=WMS&request=GetCapabilities&version=1.1.0");
+            client.expectGet(capsURL, 
+                    new MockHttpResponse(getClass().getResource("caps111.xml"), "text/xml"));
+            TestHttpClientProvider.bind(client, capsURL);
+            
+            CatalogBuilder cb = new CatalogBuilder(getCatalog());
+            WMSStoreInfo store = cb.buildWMSStore("test-store");
+            store.setCapabilitiesURL(capsURL.toExternalForm());
+            cb.setStore(store);
+            WMSLayerInfo layer = cb.buildWMSLayer("world4326");
+            
+            // check the bbox has the proper axis order
+            assertEquals("EPSG:4326", layer.getSRS());
+            ReferencedEnvelope bbox = layer.getLatLonBoundingBox();
+            assertEquals(-180, bbox.getMinX(), 0d);
+            assertEquals(-90, bbox.getMinY(), 0d);
+            assertEquals(180, bbox.getMaxX(), 0d);
+            assertEquals(90, bbox.getMaxY(), 0d);
+        } finally {
+            TestHttpClientProvider.endTest();
+        }
+    }
+    
+    @Test
+    public void testWMSLayer130() throws Exception {
+        TestHttpClientProvider.startTest();
+        try {
+            String baseURL = TestHttpClientProvider.MOCKSERVER + "/wms13";
+            MockHttpClient client = new MockHttpClient();
+            URL capsURL = new URL(baseURL + "?service=WMS&request=GetCapabilities&version=1.3.0");
+            client.expectGet(capsURL, 
+                    new MockHttpResponse(getClass().getResource("caps130.xml"), "text/xml"));
+            TestHttpClientProvider.bind(client, capsURL);
+            
+            CatalogBuilder cb = new CatalogBuilder(getCatalog());
+            WMSStoreInfo store = cb.buildWMSStore("test-store");
+            store.setCapabilitiesURL(capsURL.toExternalForm());
+            cb.setStore(store);
+            WMSLayerInfo layer = cb.buildWMSLayer("world4326");
+            
+            // check the bbox has the proper axis order
+            assertEquals("EPSG:4326", layer.getSRS());
+            ReferencedEnvelope bbox = layer.getLatLonBoundingBox();
+            assertEquals(-180, bbox.getMinX(), 0d);
+            assertEquals(-90, bbox.getMinY(), 0d);
+            assertEquals(180, bbox.getMaxX(), 0d);
+            assertEquals(90, bbox.getMaxY(), 0d);
+        } finally {
+            TestHttpClientProvider.endTest();
+        }
+    }
+    
+    @Test
+    public void testWMSLayer130crs84() throws Exception {
+        TestHttpClientProvider.startTest();
+        try {
+            String baseURL = TestHttpClientProvider.MOCKSERVER + "/wms13";
+            MockHttpClient client = new MockHttpClient();
+            URL capsURL = new URL(baseURL + "?service=WMS&request=GetCapabilities&version=1.3.0");
+            client.expectGet(capsURL, 
+                    new MockHttpResponse(getClass().getResource("caps130_crs84.xml"), "text/xml"));
+            TestHttpClientProvider.bind(client, capsURL);
+            
+            CatalogBuilder cb = new CatalogBuilder(getCatalog());
+            WMSStoreInfo store = cb.buildWMSStore("test-store");
+            store.setCapabilitiesURL(capsURL.toExternalForm());
+            cb.setStore(store);
+            WMSLayerInfo layer = cb.buildWMSLayer("world4326");
+            
+            // check the bbox has the proper axis order
+            assertEquals("EPSG:4326", layer.getSRS());
+            ReferencedEnvelope bbox = layer.getLatLonBoundingBox();
+            assertEquals(-180, bbox.getMinX(), 0d);
+            assertEquals(-90, bbox.getMinY(), 0d);
+            assertEquals(180, bbox.getMaxX(), 0d);
+            assertEquals(90, bbox.getMaxY(), 0d);
+        } finally {
+            TestHttpClientProvider.endTest();
+        }
     }
 }

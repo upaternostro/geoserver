@@ -89,6 +89,24 @@ public class WCS20GetCoverageResponse extends Response {
 
         // grab the delegate
         CoverageResponseDelegate delegate = responseFactory.encoderFor(format);
+        
         delegate.encode(coverage, format,encodingParameters, output);
+    }
+    
+    @Override
+    public String getAttachmentFileName(Object value, Operation operation) {
+        // grab the format
+        GetCoverageType getCoverage = (GetCoverageType) operation.getParameters()[0];
+        String format = getCoverage.getFormat();
+        if (format == null) {
+            format = "image/tiff";
+        } 
+        
+        // grab the delegate and thus the extension
+        CoverageResponseDelegate delegate = responseFactory.encoderFor(format);
+        String extension = delegate.getFileExtension(format);
+        
+        // collect the name of the coverages that have been requested
+        return getCoverage.getCoverageId() + "." + extension;
     }
 }
