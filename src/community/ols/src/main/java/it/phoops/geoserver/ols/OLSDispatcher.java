@@ -37,7 +37,8 @@ import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 
 public class OLSDispatcher extends AbstractController {
-    private Map<String,OLSHandler>  handlers = new HashMap<String,OLSHandler>();
+    private Map<String,OLSHandler>      handlers = new HashMap<String,OLSHandler>();
+    private static final String         DEFAULT_WS = "default";
     
     public OLSDispatcher()
     {
@@ -75,55 +76,113 @@ public class OLSDispatcher extends AbstractController {
                 
                 httpResponse.setContentType("text/xml");
                 
-                for (String path : handlers.keySet()) {
-                    xPathExpr = xPath.compile(path);
-                    
-                    if ((Boolean)xPathExpr.evaluate(domRequest, XPathConstants.BOOLEAN)) {
-                        OLSHandler          handler = handlers.get(path);
+                String[] requestArray = httpRequest.getRequestURI().split("/");
+                String workspaceName = "";
+                if(requestArray.length > 3){
+                    workspaceName = requestArray[3];
+                }else{
+                    workspaceName = DEFAULT_WS;
+                }
+                
+                if(!workspaceName.equalsIgnoreCase(DEFAULT_WS)){
+                    for (String path : handlers.keySet()) {
+                        xPathExpr = xPath.compile(path);
                         
-                        // Set configured service provider for this service handler
-                        DefaultGeoServerFacade dGeoServer = (DefaultGeoServerFacade)OLS.get().getFacade();
-                        WorkspaceInfo wDefautl = OLS.get().getCatalog().getDefaultWorkspace();
-                        OLSInfo olsInfo = null;
-                        
-                        for (ServiceInfo sInfo : dGeoServer.getAllServices()) {
-                            if(sInfo.getClass().equals(OLSInfoImpl.class)){
-                                if(sInfo.getWorkspace() != null 
-                                        && sInfo.getWorkspace().getName() == wDefautl.getName()){
-                                    olsInfo = (OLSInfo) sInfo;
-                                    break;
-                                }else{
-                                    olsInfo = null;
+                        if ((Boolean)xPathExpr.evaluate(domRequest, XPathConstants.BOOLEAN)) {
+                            OLSHandler          handler = handlers.get(path);
+                            Boolean             wsFound = Boolean.FALSE;
+                            // Set configured service provider for this service handler
+                            DefaultGeoServerFacade dGeoServer = (DefaultGeoServerFacade)OLS.get().getFacade();
+                            WorkspaceInfo wDefautl = OLS.get().getCatalog().getDefaultWorkspace();
+                            OLSInfo olsInfo = null;
+                            
+                            
+                            //Set the correct workspace
+                            for (ServiceInfo sInfo : dGeoServer.getAllServices()) {
+                                if(sInfo.getClass().equals(OLSInfoImpl.class)){
+                                    if(sInfo.getWorkspace() != null 
+                                            && sInfo.getWorkspace().getName().equalsIgnoreCase(workspaceName)){
+                                        OLS.get().getCatalog().setDefaultWorkspace(sInfo.getWorkspace());
+                                        wsFound = Boolean.TRUE;
+                                        wDefautl = OLS.get().getCatalog().getDefaultWorkspace();
+                                        break;
+                                    }
                                 }
                             }
+                            
+                            if(!wsFound){
+                                logger.info("Error, NO Workspace Found!");
+                                httpResponse.getWriter().print("noWorkspace");
+                                
+                                for (SAXException e : errorHandler.getExceptions()) {
+                                    e.printStackTrace(httpResponse.getWriter());
+                                }
+                                
+                                return null;
+                            }
+                            
+                            //Checking the workspace
+                            for (ServiceInfo sInfo : dGeoServer.getAllServices()) {
+                                if(sInfo.getClass().equals(OLSInfoImpl.class)){
+                                    if(sInfo.getWorkspace() != null 
+                                            && sInfo.getWorkspace().getName() == wDefautl.getName()){
+                                        olsInfo = (OLSInfo) sInfo;
+                                        break;
+                                    }else{
+                                        olsInfo = null;
+                                    }
+                                }
+                            }
+                            
+                            if(olsInfo != null){
+                                OLSServiceProvider sProvidereToSet = null;
+                                for (OLSServiceProvider sProvider : olsInfo.getServiceProvider()) {
+                                    if(sProvider.getServiceType() == handler.getService()){
+                                        sProvidereToSet = sProvider;
+                                        break;
+                                    }else{
+                                        sProvidereToSet = OLS.get().getServiceProvider(handler.getService());
+                                    }
+                                }
+                                handler.setActiveServiceProvider(sProvidereToSet);
+                            }else{
+                                handler.setActiveServiceProvider(OLS.get().getServiceProvider(handler.getService()));
+                            }
+                            
+                            Document            domResponse = handler.processRequest(domRequest);
+                            TransformerFactory  transFactory = TransformerFactory.newInstance();
+                            Transformer         transformer = transFactory.newTransformer();
+                            
+//                            transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
+                            transformer.setOutputProperty(OutputKeys.INDENT, "yes");
+                            transformer.transform(new DOMSource(domResponse.getFirstChild()), new StreamResult(httpResponse.getOutputStream()));
+                            break;
                         }
+                    }
+                }else{
+                    //Loading the the default configuration - without workspace
+                    for (String path : handlers.keySet()) {
+                        xPathExpr = xPath.compile(path);
                         
-                        if(olsInfo != null){
-                            OLSServiceProvider sProvidereToSet = null;
-                            for (OLSServiceProvider sProvider : olsInfo.getServiceProvider()) {
-                                if(sProvider.getServiceType() == handler.getService()){
-                                    sProvidereToSet = sProvider;
-                                    break;
-                                }else{
-                                    sProvidereToSet = OLS.get().getServiceProvider(handler.getService());
-                                }
-                            }
-                            handler.setActiveServiceProvider(sProvidereToSet);
-                        }else{
+                        if ((Boolean)xPathExpr.evaluate(domRequest, XPathConstants.BOOLEAN)) {
+                            OLSHandler handler = handlers.get(path);
+                            
+                            // Set configured service provider for this service handler
                             handler.setActiveServiceProvider(OLS.get().getServiceProvider(handler.getService()));
+                            
+                            Document domResponse = handler.processRequest(domRequest);
+                            TransformerFactory transFactory = TransformerFactory.newInstance();
+                            Transformer transformer = transFactory.newTransformer();
+                            
+    //                      transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
+                            transformer.setOutputProperty(OutputKeys.INDENT, "yes");
+                            transformer.transform(new DOMSource(domResponse.getFirstChild()), new StreamResult(httpResponse.getOutputStream()));
+                            break;
                         }
-                        
-                        Document            domResponse = handler.processRequest(domRequest);
-                        TransformerFactory  transFactory = TransformerFactory.newInstance();
-                        Transformer         transformer = transFactory.newTransformer();
-                        
-//                        transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
-                        transformer.setOutputProperty(OutputKeys.INDENT, "yes");
-                        transformer.transform(new DOMSource(domResponse.getFirstChild()),
-                              new StreamResult(httpResponse.getOutputStream()));
-                        break;
                     }
                 }
+                
+                
             } else {
                 httpResponse.getWriter().println("Error parsing XML payload!");
                 

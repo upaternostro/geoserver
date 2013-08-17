@@ -281,6 +281,8 @@ public class OTPServiceProvider extends OLSAbstractServiceProvider implements Ro
         
         queryParams.add("fromPlace",    formatPosition(startPosition));
         if(viaPosition != null){
+            Integer ordinal = preference.ordinal();
+            queryParams.add("ordinal", ordinal.toString());
             queryParams.add("showIntermediateStops", "true");
             for (PositionType via : viaPosition) {
                 queryParams.add("intermediatePlaces", formatPosition(via));
