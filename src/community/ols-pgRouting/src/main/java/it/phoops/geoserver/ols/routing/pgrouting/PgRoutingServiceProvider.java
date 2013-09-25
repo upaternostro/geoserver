@@ -35,7 +35,6 @@ import net.opengis.www.xls.DistanceUnitType;
 import net.opengis.www.xls.EnvelopeType;
 import net.opengis.www.xls.LineStringType;
 import net.opengis.www.xls.ObjectFactory;
-import net.opengis.www.xls.PointType;
 import net.opengis.www.xls.Pos;
 import net.opengis.www.xls.PositionType;
 import net.opengis.www.xls.RouteGeometryType;
@@ -80,10 +79,6 @@ public class PgRoutingServiceProvider extends OLSAbstractServiceProvider impleme
     private static final long serialVersionUID = 1L;
 
     private static final Logger logger = Logger.getLogger(PgRoutingServiceProvider.class);
-    
-    public static final double  DEGREES_TO_RADIANS_FACTOR = Math.PI / 180.0;
-    public static final double  EARTH_RADIUS = 6378137.0;
-    public static final double  DEGREES_TO_METERS_FACTOR = DEGREES_TO_RADIANS_FACTOR * EARTH_RADIUS;
     
     //Properties Name
     private static final String  PN_ENDPOINT_ADDRESS = "OLS.serviceProvider.geocoding.pgrouting.service.endpointAddress";
@@ -579,13 +574,18 @@ public class PgRoutingServiceProvider extends OLSAbstractServiceProvider impleme
                         Pos posInstruction = new Pos();
                         List<Double> posValues;
                         List<Pos> posList;
+                        
+                        lineStringType.setSrsName("EPSG:4326");
                         posValues = posInstruction.getValues();
                         posList = lineStringType.getPos();
                         
-                        posValues.add(preLastCoordinate.y);
-                        posValues.add(preLastCoordinate.x);
-                        posList.add(posInstruction);
-                        posList.add(posInstruction);
+                        for (Coordinate coord : edgeGeometry.getCoordinates()) {
+                            posInstruction = new Pos();
+                            posValues = posInstruction.getValues();
+                            posValues.add(coord.y);
+                            posValues.add(coord.x);
+                            posList.add(posInstruction);
+                        }
                         
                         routeGeoInstruction.setLineString(lineStringType);
                         routeInstruction.setRouteInstructionGeometry(routeGeoInstruction);
@@ -613,6 +613,8 @@ public class PgRoutingServiceProvider extends OLSAbstractServiceProvider impleme
             double                  minY = 360;
             double                  maxY = -360;
             
+            lineString.setSrsName("EPSG:4326");
+            
             for (Coordinate coord : routeGeometry.getCoordinates()) {
                 pos = new Pos();
                 posValues = pos.getValues();
@@ -639,6 +641,7 @@ public class PgRoutingServiceProvider extends OLSAbstractServiceProvider impleme
             
             EnvelopeType    boundingBox = of.createEnvelopeType();
             
+            boundingBox.setSrsName("EPSG:4326");
             posList = boundingBox.getPos();
             
             pos = new Pos();

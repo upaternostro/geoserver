@@ -71,6 +71,8 @@ import com.vividsolutions.jts.geom.GeometryFactory;
 
 public class OTPServiceProvider extends OLSAbstractServiceProvider implements RoutingServiceProvider, Serializable {
 
+    public static final double EPSILON = 1.0;
+    
     /** serialVersionUID */
     private static final long serialVersionUID = 1L;
     //Properties Name
@@ -375,6 +377,7 @@ public class OTPServiceProvider extends OLSAbstractServiceProvider implements Ro
         List<Double>            posValues;
         int                     index = 0;
         int                     oldIndex = 0;
+        double                  factor;
         
         for (Leg leg : itinerary.getLegs().getLeg()) {
             totalDistance += leg.getDistance();
@@ -400,10 +403,11 @@ public class OTPServiceProvider extends OLSAbstractServiceProvider implements Ro
                 BigDecimal bdValue = BigDecimal.valueOf(walkStep.getDistance() * 0.001);
                 bdValue = bdValue.setScale(2, BigDecimal.ROUND_DOWN);
                 
+                factor = DEGREES_TO_METERS_FACTOR * Math.cos(walkStep.getLat() * DEGREES_TO_RADIANS_FACTOR);
                 oldIndex = index;
                 
                 for (; index < legCoordiantesArray.length; index++) {
-                    if (legCoordiantesArray[index].x == walkStep.getLon() && legCoordiantesArray[index].y == walkStep.getLat()) {
+                    if (Math.abs((legCoordiantesArray[index].x - walkStep.getLat())*factor) < EPSILON && Math.abs((legCoordiantesArray[index].y - walkStep.getLon())*factor) < EPSILON) {
                         break;
                     }
                 }
@@ -415,11 +419,11 @@ public class OTPServiceProvider extends OLSAbstractServiceProvider implements Ro
                     lineStringType.setSrsName("EPSG:4326");
                     posList = lineStringType.getPos(); 
                     
-                    for (int i = oldIndex ; i < index; i++) {
+                    for (int i = oldIndex ; i <= index; i++) {
                         posInstruction = new Pos();
                         posValues = posInstruction.getValues();
-                        posValues.add(legCoordiantesArray[i].y);
                         posValues.add(legCoordiantesArray[i].x);
+                        posValues.add(legCoordiantesArray[i].y);
                         posList.add(posInstruction);
                     }
                     
@@ -470,8 +474,8 @@ public class OTPServiceProvider extends OLSAbstractServiceProvider implements Ro
             for (int i = index ; i < legCoordiantesArray.length; i++) {
                 posInstruction = new Pos();
                 posValues = posInstruction.getValues();
-                posValues.add(legCoordiantesArray[i].y);
                 posValues.add(legCoordiantesArray[i].x);
+                posValues.add(legCoordiantesArray[i].y);
                 posList.add(posInstruction);
             }
             

@@ -11,6 +11,10 @@ import org.geoserver.config.SettingsInfo;
 
 public abstract class OLSAbstractServiceProvider implements OLSServiceProvider,
         OLSServiceProviderGUI, ConfigurationListener {
+    public static final double  DEGREES_TO_RADIANS_FACTOR = Math.PI / 180.0;
+    public static final double  EARTH_RADIUS = 6378137.0;
+    public static final double  DEGREES_TO_METERS_FACTOR = DEGREES_TO_RADIANS_FACTOR * EARTH_RADIUS;
+    
     private String descriptionKey;
 
     protected Properties properties = new Properties();
