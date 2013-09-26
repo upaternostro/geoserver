@@ -1,5 +1,10 @@
 package it.phoops.geoserver.ols.routing;
 
+import it.phoops.geoserver.ols.OLSException;
+import it.phoops.geoserver.ols.OLSHandler;
+import it.phoops.geoserver.ols.OLSService;
+import it.phoops.geoserver.ols.OLSServiceProvider;
+
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBElement;
 import javax.xml.bind.JAXBException;
@@ -9,33 +14,42 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
-import it.phoops.geoserver.ols.OLSException;
-import it.phoops.geoserver.ols.OLSHandler;
-import it.phoops.geoserver.ols.OLSService;
-import it.phoops.geoserver.ols.OLSServiceProvider;
-import it.phoops.geoserver.ols.geocoding.ReverseGeocodingServiceProvider;
-
 import net.opengis.www.xls.DetermineRouteRequestType;
 import net.opengis.www.xls.DetermineRouteResponseType;
-import net.opengis.www.xls.GeocodeRequestType;
-import net.opengis.www.xls.GeocodeResponseType;
-import net.opengis.www.xls.RouteGeometryType;
 
 import org.w3c.dom.Document;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
 public class RoutingHandler implements OLSHandler {
     private RoutingServiceProvider    provider;
 
     @Override
-    public Document processRequest(Document request) throws OLSException {
+    public Document processRequest(Node request) throws OLSException
+    {
         JAXBContext                     jaxbContext = null;
         DetermineRouteRequestType       input = null;
+        NodeList                        nodeList = request.getChildNodes();
+        
+        request = null;
+        
+        for (int i = 0; i < nodeList.getLength(); i++) {
+            if (nodeList.item(i).getNodeName().equals("DetermineRouteRequest")) {
+                request = nodeList.item(i);
+                break;
+            }
+        }
+        
+        if (request == null) {
+            throw new OLSException("Request not found");
+        }
+        
         
         try{
             jaxbContext = JAXBContext.newInstance(DetermineRouteRequestType.class);
             
             Unmarshaller                                unmarshaller = jaxbContext.createUnmarshaller();
-            JAXBElement<DetermineRouteRequestType>      jaxbElement = unmarshaller.unmarshal(request.getFirstChild(), DetermineRouteRequestType.class);
+            JAXBElement<DetermineRouteRequestType>      jaxbElement = unmarshaller.unmarshal(request, DetermineRouteRequestType.class);
             
             input = jaxbElement.getValue();
         }catch (JAXBException e) {

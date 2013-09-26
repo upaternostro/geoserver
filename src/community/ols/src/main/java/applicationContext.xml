@@ -40,12 +40,12 @@
 		<!-- <constructor-arg ref="resourceLoader" /> -->
         <property name="handlers">
             <map>
-                <entry key="/*[local-name() = 'GeocodeRequest' and namespace-uri()='http://www.opengis.net/xls']"><ref bean="geocodingHandler"/></entry>
-                <entry key="/*[local-name() = 'ReverseGeocodeRequest' and namespace-uri()='http://www.opengis.net/xls']"><ref bean="reverseGeocodingHandler"/></entry>
-                <entry key="/*[local-name() = 'DetermineRouteRequest' and namespace-uri()='http://www.opengis.net/xls']"><ref bean="routingHandler"/></entry>
+                <entry key="/*[local-name() = 'XLS' and namespace-uri()='http://www.opengis.net/xls']/*[local-name() = 'Request' and namespace-uri()='http://www.opengis.net/xls']/*[local-name() = 'GeocodeRequest' and namespace-uri()='http://www.opengis.net/xls']"><ref bean="geocodingHandler"/></entry>
+                <entry key="/*[local-name() = 'XLS' and namespace-uri()='http://www.opengis.net/xls']/*[local-name() = 'Request' and namespace-uri()='http://www.opengis.net/xls']/*[local-name() = 'ReverseGeocodeRequest' and namespace-uri()='http://www.opengis.net/xls']"><ref bean="reverseGeocodingHandler"/></entry>
+                <entry key="/*[local-name() = 'XLS' and namespace-uri()='http://www.opengis.net/xls']/*[local-name() = 'Request' and namespace-uri()='http://www.opengis.net/xls']/*[local-name() = 'DetermineRouteRequest' and namespace-uri()='http://www.opengis.net/xls']"><ref bean="routingHandler"/></entry>
 <!--
-                <entry key="/*[local-name() = 'GetPortrayMapCapabilitiesRequest' and namespace-uri()='http://www.opengis.net/xls']"><ref bean="portrayCapabilitiesHandler"/></entry>
-                <entry key="/*[local-name() = 'PortrayMapRequest' and namespace-uri()='http://www.opengis.net/xls']"><ref bean="portrayHandler"/></entry>
+                <entry key="/*[local-name() = 'XLS' and namespace-uri()='http://www.opengis.net/xls']/*[local-name() = 'Request' and namespace-uri()='http://www.opengis.net/xls']/*[local-name() = 'GetPortrayMapCapabilitiesRequest' and namespace-uri()='http://www.opengis.net/xls']"><ref bean="portrayCapabilitiesHandler"/></entry>
+                <entry key="/*[local-name() = 'XLS' and namespace-uri()='http://www.opengis.net/xls']/*[local-name() = 'Request' and namespace-uri()='http://www.opengis.net/xls']/*[local-name() = 'PortrayMapRequest' and namespace-uri()='http://www.opengis.net/xls']"><ref bean="portrayHandler"/></entry>
 -->
             </map>
         </property>

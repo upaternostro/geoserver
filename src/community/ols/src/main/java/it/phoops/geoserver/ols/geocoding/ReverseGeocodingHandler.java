@@ -18,20 +18,37 @@ import net.opengis.www.xls.ReverseGeocodeRequestType;
 import net.opengis.www.xls.ReverseGeocodeResponseType;
 
 import org.w3c.dom.Document;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
 public class ReverseGeocodingHandler implements OLSHandler {
     private ReverseGeocodingServiceProvider    provider;
 
     @Override
-    public Document processRequest(Document request) throws OLSException {
-    	JAXBContext             	   jaxbContext = null;
-    	ReverseGeocodeRequestType      input = null;
+    public Document processRequest(Node request) throws OLSException
+    {
+    	JAXBContext                jaxbContext = null;
+    	ReverseGeocodeRequestType  input = null;
+    	NodeList                   nodeList = request.getChildNodes();
+    	
+    	request = null;
+    	
+    	for (int i = 0; i < nodeList.getLength(); i++) {
+    	    if (nodeList.item(i).getNodeName().equals("ReverseGeocodeRequest")) {
+    	        request = nodeList.item(i);
+    	        break;
+    	    }
+    	}
+    	
+    	if (request == null) {
+            throw new OLSException("Request not found");
+    	}
         
         try {
             jaxbContext = JAXBContext.newInstance(ReverseGeocodeRequestType.class);
             
             Unmarshaller        						unmarshaller = jaxbContext.createUnmarshaller();
-            JAXBElement<ReverseGeocodeRequestType>      jaxbElement = unmarshaller.unmarshal(request.getFirstChild(), ReverseGeocodeRequestType.class);
+            JAXBElement<ReverseGeocodeRequestType>      jaxbElement = unmarshaller.unmarshal(request, ReverseGeocodeRequestType.class);
             
             input = jaxbElement.getValue();
         } catch (JAXBException e) {

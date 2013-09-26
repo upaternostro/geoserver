@@ -1,15 +1,16 @@
 package it.phoops.geoserver.ols.util;
 
+import it.phoops.geoserver.ols.OLSException;
+import it.phoops.geoserver.ols.OLSHandler;
+import it.phoops.geoserver.ols.OLSService;
+import it.phoops.geoserver.ols.OLSServiceProvider;
+
 import javax.xml.bind.JAXBContext;
 
 import net.opengis.www.xls.GeocodeRequestType;
 
 import org.w3c.dom.Document;
-
-import it.phoops.geoserver.ols.OLSException;
-import it.phoops.geoserver.ols.OLSHandler;
-import it.phoops.geoserver.ols.OLSService;
-import it.phoops.geoserver.ols.OLSServiceProvider;
+import org.w3c.dom.Node;
 
 public class OLSWorkspaceHandler implements OLSHandler{
 
@@ -32,7 +33,7 @@ public class OLSWorkspaceHandler implements OLSHandler{
     }
 
     @Override
-    public Document processRequest(Document request) throws OLSException {
+    public Document processRequest(Node request) throws OLSException {
         JAXBContext             jaxbContext = null;
         GeocodeRequestType      input = null;
         
