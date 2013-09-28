@@ -130,8 +130,8 @@ public class SOLRReverseServiceProvider extends OLSAbstractServiceProvider imple
 	}
 
 	@Override
-	public JAXBElement<ReverseGeocodeResponseType> reverseGeocode(
-			ReverseGeocodeRequestType input) throws OLSException {
+	public JAXBElement<ReverseGeocodeResponseType> reverseGeocode(ReverseGeocodeRequestType input, String lang, String srsName) throws OLSException
+	{
 	        ObjectFactory                                           of = new ObjectFactory();
 	        ReverseGeocodeResponseType                              output = of.createReverseGeocodeResponseType();
 	        JAXBElement<ReverseGeocodeResponseType>                 retval = of.createReverseGeocodeResponse(output);

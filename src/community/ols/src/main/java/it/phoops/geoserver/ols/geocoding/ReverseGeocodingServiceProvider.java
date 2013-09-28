@@ -9,5 +9,5 @@ import net.opengis.www.xls.ReverseGeocodeRequestType;
 import net.opengis.www.xls.ReverseGeocodeResponseType;
 
 public interface ReverseGeocodingServiceProvider extends OLSServiceProvider {
-	public abstract JAXBElement<ReverseGeocodeResponseType> reverseGeocode(ReverseGeocodeRequestType input) throws OLSException;
+	public abstract JAXBElement<ReverseGeocodeResponseType> reverseGeocode(ReverseGeocodeRequestType input, String lang, String srsName) throws OLSException;
 }

@@ -9,5 +9,5 @@ import net.opengis.www.xls.GeocodeRequestType;
 import net.opengis.www.xls.GeocodeResponseType;
 
 public interface GeocodingServiceProvider extends OLSServiceProvider {
-    public abstract JAXBElement<GeocodeResponseType> geocode(GeocodeRequestType input) throws OLSException;
+    public abstract JAXBElement<GeocodeResponseType> geocode(GeocodeRequestType input, String lang, String srsName) throws OLSException;
 }

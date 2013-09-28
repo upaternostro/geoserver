@@ -69,7 +69,7 @@
 			<props>
 				<prop key="/ols/**/ws">olsDispatcher</prop>
 				<prop key="/ols">olsDispatcher</prop>
-				<prop key="/workspace">olsDispatcherWS</prop>
+				<prop key="/olsWorkspaces">olsDispatcherWS</prop>
 			</props>
 		</property>
 	</bean>

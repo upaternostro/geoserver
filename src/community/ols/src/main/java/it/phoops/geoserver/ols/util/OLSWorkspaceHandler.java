@@ -5,12 +5,10 @@ import it.phoops.geoserver.ols.OLSHandler;
 import it.phoops.geoserver.ols.OLSService;
 import it.phoops.geoserver.ols.OLSServiceProvider;
 
-import javax.xml.bind.JAXBContext;
+import javax.xml.bind.JAXBElement;
 
-import net.opengis.www.xls.GeocodeRequestType;
-
-import org.w3c.dom.Document;
-import org.w3c.dom.Node;
+import net.opengis.www.xls.AbstractResponseParametersType;
+import net.opengis.www.xls.RequestType;
 
 public class OLSWorkspaceHandler implements OLSHandler{
 
@@ -33,11 +31,8 @@ public class OLSWorkspaceHandler implements OLSHandler{
     }
 
     @Override
-    public Document processRequest(Node request) throws OLSException {
-        JAXBContext             jaxbContext = null;
-        GeocodeRequestType      input = null;
-        
-        
+    public JAXBElement<? extends AbstractResponseParametersType> processRequest(RequestType request, String lang, String srsName) throws OLSException
+    {
         return null;
     }
 

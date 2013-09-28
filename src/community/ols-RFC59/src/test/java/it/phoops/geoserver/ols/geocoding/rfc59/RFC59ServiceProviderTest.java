@@ -59,7 +59,7 @@ public class RFC59ServiceProviderTest {
         
         request.getAddresses().add(address);
         
-        JAXBElement<GeocodeResponseType>        response = serviceProvider.geocode(request);
+        JAXBElement<GeocodeResponseType>        response = serviceProvider.geocode(request, "it", "EPSG:4328");
         assertNotNull(response);
     }
 }

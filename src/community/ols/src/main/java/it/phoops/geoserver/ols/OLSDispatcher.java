@@ -1,5 +1,6 @@
 package it.phoops.geoserver.ols;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -8,13 +9,13 @@ import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.xml.XMLConstants;
+import javax.xml.bind.JAXBContext;
+import javax.xml.bind.JAXBElement;
+import javax.xml.bind.JAXBException;
+import javax.xml.bind.Marshaller;
+import javax.xml.bind.Unmarshaller;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.transform.OutputKeys;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.dom.DOMSource;
-import javax.xml.transform.stream.StreamResult;
 import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
 import javax.xml.xpath.XPath;
@@ -22,8 +23,16 @@ import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpression;
 import javax.xml.xpath.XPathFactory;
 
+import net.opengis.www.xls.AbstractResponseParametersType;
+import net.opengis.www.xls.DetermineRouteRequestType;
+import net.opengis.www.xls.ObjectFactory;
+import net.opengis.www.xls.RequestHeaderType;
+import net.opengis.www.xls.RequestType;
+import net.opengis.www.xls.ResponseHeaderType;
+import net.opengis.www.xls.ResponseType;
+import net.opengis.www.xls.XLS;
+
 import org.apache.xerces.util.XMLCatalogResolver;
-import org.geoserver.catalog.WorkspaceInfo;
 import org.geoserver.config.ServiceInfo;
 import org.geoserver.config.impl.DefaultGeoServerFacade;
 import org.springframework.web.servlet.ModelAndView;
@@ -35,8 +44,10 @@ import org.xml.sax.SAXParseException;
 
 public class OLSDispatcher extends AbstractController
 {
+    public static final String          OLS_VERSION = "1.2";
+    
     private Map<String,OLSHandler>      handlers = new HashMap<String,OLSHandler>();
-    private static final String         DEFAULT_WS = "default";
+    private static final String         DEFAULT_WS = null;
     
     public OLSDispatcher()
     {
@@ -85,103 +96,89 @@ public class OLSDispatcher extends AbstractController
                     workspaceName = DEFAULT_WS;
                 }
                 
-                if (!workspaceName.equalsIgnoreCase(DEFAULT_WS)) {
-                    for (String path : handlers.keySet()) {
-                        xPathExpr = xPath.compile(path);
+                for (String path : handlers.keySet()) {
+                    xPathExpr = xPath.compile(path);
+                    
+                    if ((Boolean)xPathExpr.evaluate(domRequest, XPathConstants.BOOLEAN)) {
+                        OLSHandler          handler = handlers.get(path);
+                        boolean             wsFound = false;
+                        // Set configured service provider for this service handler
+                        DefaultGeoServerFacade dGeoServer = (DefaultGeoServerFacade)OLS.get().getFacade();
+                        OLSInfo olsInfo = null;
+                        OLSInfo defaultOlsInfo = null;
                         
-                        if ((Boolean)xPathExpr.evaluate(domRequest, XPathConstants.BOOLEAN)) {
-                            OLSHandler          handler = handlers.get(path);
-                            Boolean             wsFound = Boolean.FALSE;
-                            // Set configured service provider for this service handler
-                            DefaultGeoServerFacade dGeoServer = (DefaultGeoServerFacade)OLS.get().getFacade();
-                            WorkspaceInfo wDefautl = OLS.get().getCatalog().getDefaultWorkspace();
-                            OLSInfo olsInfo = null;
-                            
-                            //Set the correct workspace
-                            for (ServiceInfo sInfo : dGeoServer.getAllServices()) {
-                                if (sInfo.getClass().equals(OLSInfoImpl.class)) {
-                                    if (sInfo.getWorkspace() != null && sInfo.getWorkspace().getName().equalsIgnoreCase(workspaceName)) {
-                                        OLS.get().getCatalog().setDefaultWorkspace(sInfo.getWorkspace());
-                                        wsFound = Boolean.TRUE;
-                                        wDefautl = OLS.get().getCatalog().getDefaultWorkspace();
-                                        break;
-                                    }
-                                }
-                            }
-                            
-                            if (!wsFound) {
-                                logger.info("Error, No Workspace Found!");
-                                httpResponse.getWriter().print("noWorkspace");
-                                
-                                for (SAXException e : errorHandler.getExceptions()) {
-                                    e.printStackTrace(httpResponse.getWriter());
+                        //Set the correct workspace
+                        for (ServiceInfo sInfo : dGeoServer.getAllServices()) {
+                            if (sInfo.getClass().equals(OLSInfoImpl.class)) {
+                                if (sInfo.getWorkspace() != null && sInfo.getWorkspace().getName().equalsIgnoreCase(workspaceName)) {
+                                    olsInfo = (OLSInfo) sInfo;
+                                    wsFound = true;
                                 }
                                 
-                                return null;
-                            }
-                            
-                            //Checking the workspace
-                            for (ServiceInfo sInfo : dGeoServer.getAllServices()) {
-                                if (sInfo.getClass().equals(OLSInfoImpl.class)) {
-                                    if (sInfo.getWorkspace() != null && sInfo.getWorkspace().getName() == wDefautl.getName()) {
-                                        olsInfo = (OLSInfo) sInfo;
-                                        break;
-                                    } else {
-                                        olsInfo = null;
-                                    }
+                                if (sInfo.getWorkspace() == null) {
+                                    defaultOlsInfo = (OLSInfo)sInfo;
                                 }
                             }
-                            
-                            if (olsInfo != null) {
-                                OLSServiceProvider sProvidereToSet = null;
-                                
-                                for (OLSServiceProvider sProvider : olsInfo.getServiceProvider()) {
-                                    if (sProvider.getServiceType() == handler.getService()) {
-                                        sProvidereToSet = sProvider;
-                                        break;
-                                    } else {
-                                        sProvidereToSet = OLS.get().getServiceProvider(handler.getService());
-                                    }
-                                }
-                                
-                                handler.setActiveServiceProvider(sProvidereToSet);
-                            } else {
-                                handler.setActiveServiceProvider(OLS.get().getServiceProvider(handler.getService()));
-                            }
-                            
-                            Document            domResponse = handler.processRequest(domRequest.getElementsByTagNameNS("http://www.opengis.net/xls", "Request").item(0));
-                            TransformerFactory  transFactory = TransformerFactory.newInstance();
-                            Transformer         transformer = transFactory.newTransformer();
-                            
-//                            transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
-                            transformer.setOutputProperty(OutputKeys.INDENT, "yes");
-                            transformer.transform(new DOMSource(domResponse.getFirstChild()), new StreamResult(httpResponse.getOutputStream()));
-                            break;
                         }
-                    }
-                } else {
-                    // Loading the the default configuration - without workspace
-                    for (String path : handlers.keySet()) {
-                        xPathExpr = xPath.compile(path);
                         
-                        if ((Boolean)xPathExpr.evaluate(domRequest, XPathConstants.BOOLEAN)) {
-                            OLSHandler handler = handlers.get(path);
+                        if (!wsFound) {
+                            logger.warn("No workspace found, switching to default!");
+                            olsInfo = defaultOlsInfo;
+                        }
+                        
+                        OLSServiceProvider sProvidereToSet = OLS.get().getServiceProvider(handler.getService());
+                        
+                        for (OLSServiceProvider sProvider : olsInfo.getServiceProvider()) {
+                            if (sProvider.getServiceType() == handler.getService()) {
+                                sProvidereToSet = sProvider;
+                                break;
+                            }
+                        }
+                        
+                        handler.setActiveServiceProvider(sProvidereToSet);
+                        
+                        JAXBContext                     jaxbContext = null;
+                        
+                        try{
+                            jaxbContext = JAXBContext.newInstance(DetermineRouteRequestType.class);
                             
-                            // Set configured service provider for this service handler
-                            handler.setActiveServiceProvider(OLS.get().getServiceProvider(handler.getService()));
+                            Unmarshaller                                                unmarshaller = jaxbContext.createUnmarshaller();
+                            JAXBElement<XLS>                                            jaxbElement = unmarshaller.unmarshal(domRequest.getFirstChild(), XLS.class);
+                            XLS                                                         input = jaxbElement.getValue();
+                            RequestHeaderType                                           inputHeader = (RequestHeaderType)input.getHeader().getValue(); 
+                            String                                                      sessionId = inputHeader.getSessionID();
+                            JAXBElement<? extends AbstractResponseParametersType>       response = handler.processRequest((RequestType)input.getBodies().get(0).getValue(), input.getLang(), inputHeader.getSrsName());
+                            ObjectFactory                                               of = new ObjectFactory();
+                            ResponseHeaderType                                          outputHeader = of.createResponseHeaderType();
+                            ResponseType                                                outputBody = of.createResponseType();
+                            XLS                                                         output = of.createXLS();
+                            Marshaller                                                  marshaller = jaxbContext.createMarshaller();
                             
-                            Document domResponse = handler.processRequest(domRequest.getElementsByTagNameNS("http://www.opengis.net/xls", "Request").item(0));
-                            TransformerFactory transFactory = TransformerFactory.newInstance();
-                            Transformer transformer = transFactory.newTransformer();
+                            if (sessionId != null && !"".equals(sessionId)) {
+                                outputHeader.setSessionID(sessionId);
+                            }
                             
-    //                      transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
-                            transformer.setOutputProperty(OutputKeys.INDENT, "yes");
-                            transformer.transform(new DOMSource(domResponse.getFirstChild()), new StreamResult(httpResponse.getOutputStream()));
+                            outputBody.setResponseParameters(response);
+                            
+                            output.setHeader(of.createHeader(outputHeader));
+                            output.getBodies().add(of.createBody(outputBody));
+                            
+                            output.setLang(input.getLang());
+                            output.setVersion(new BigDecimal(OLS_VERSION));
+                            
+                            marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
+                            
+                            marshaller.marshal(output, httpResponse.getOutputStream());
                             break;
+                        } catch (JAXBException e) {
+                            httpResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+                            httpResponse.getWriter().println("Error (un)marshalling XML payload: " + e.getMessage());
+                            e.printStackTrace(httpResponse.getWriter());
                         }
                     }
                 }
             } else {
+                httpResponse.setStatus(HttpServletResponse.SC_BAD_REQUEST);
                 httpResponse.getWriter().println("Error parsing XML payload!");
                 
                 for (SAXException e : errorHandler.getExceptions()) {
@@ -189,6 +186,7 @@ public class OLSDispatcher extends AbstractController
                 }
             }
         } else {
+            httpResponse.setStatus(HttpServletResponse.SC_METHOD_NOT_ALLOWED);
             httpResponse.getWriter().println("Invoke Open LS service via POST method!");
         }
         

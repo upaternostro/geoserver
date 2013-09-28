@@ -135,8 +135,8 @@ public class RFC59ServiceProviderMock extends OLSAbstractServiceProvider impleme
         }
 
 	@Override
-	public JAXBElement<GeocodeResponseType> geocode(GeocodeRequestType input)
-			throws OLSException {
+	public JAXBElement<GeocodeResponseType> geocode(GeocodeRequestType input, String lang, String srsName) throws OLSException
+	{
 		ObjectFactory                                           of = new ObjectFactory();
         GeocodeResponseType                                     output = of.createGeocodeResponseType();
         JAXBElement<GeocodeResponseType>                        retval = of.createGeocodeResponse(output);

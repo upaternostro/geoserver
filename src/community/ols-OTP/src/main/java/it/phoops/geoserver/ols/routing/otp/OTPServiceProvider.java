@@ -201,7 +201,7 @@ public class OTPServiceProvider extends OLSAbstractServiceProvider implements Ro
     }
 
     @Override
-    public JAXBElement<DetermineRouteResponseType> route(DetermineRouteRequestType input) throws OLSException
+    public JAXBElement<DetermineRouteResponseType> route(DetermineRouteRequestType input, String lang, String srsName) throws OLSException
     {
         JAXBElement<DetermineRouteResponseType> retval = null;
         DatatypeFactory                         df;

@@ -5,76 +5,19 @@ import it.phoops.geoserver.ols.OLSHandler;
 import it.phoops.geoserver.ols.OLSService;
 import it.phoops.geoserver.ols.OLSServiceProvider;
 
-import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBElement;
-import javax.xml.bind.JAXBException;
-import javax.xml.bind.Marshaller;
-import javax.xml.bind.Unmarshaller;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
 
+import net.opengis.www.xls.AbstractResponseParametersType;
+import net.opengis.www.xls.RequestType;
 import net.opengis.www.xls.ReverseGeocodeRequestType;
-import net.opengis.www.xls.ReverseGeocodeResponseType;
-
-import org.w3c.dom.Document;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
 
 public class ReverseGeocodingHandler implements OLSHandler {
     private ReverseGeocodingServiceProvider    provider;
 
     @Override
-    public Document processRequest(Node request) throws OLSException
+    public JAXBElement<? extends AbstractResponseParametersType> processRequest(RequestType request, String lang, String srsName) throws OLSException
     {
-    	JAXBContext                jaxbContext = null;
-    	ReverseGeocodeRequestType  input = null;
-    	NodeList                   nodeList = request.getChildNodes();
-    	
-    	request = null;
-    	
-    	for (int i = 0; i < nodeList.getLength(); i++) {
-    	    if (nodeList.item(i).getNodeName().equals("ReverseGeocodeRequest")) {
-    	        request = nodeList.item(i);
-    	        break;
-    	    }
-    	}
-    	
-    	if (request == null) {
-            throw new OLSException("Request not found");
-    	}
-        
-        try {
-            jaxbContext = JAXBContext.newInstance(ReverseGeocodeRequestType.class);
-            
-            Unmarshaller        						unmarshaller = jaxbContext.createUnmarshaller();
-            JAXBElement<ReverseGeocodeRequestType>      jaxbElement = unmarshaller.unmarshal(request, ReverseGeocodeRequestType.class);
-            
-            input = jaxbElement.getValue();
-        } catch (JAXBException e) {
-            throw new OLSException("JAXB error", e);
-        }
-        
-        JAXBElement<ReverseGeocodeResponseType>      output = provider.reverseGeocode(input);
-        Document                                	domResponse = null;
-        
-        try {
-            Marshaller              marshaller = jaxbContext.createMarshaller();
-            DocumentBuilderFactory  domFactory = DocumentBuilderFactory.newInstance();
-            
-            domFactory.setNamespaceAware(true);
-            
-            DocumentBuilder         domBuilder = domFactory.newDocumentBuilder();
-            
-            domResponse = domBuilder.newDocument();
-            marshaller.marshal(output, domResponse);
-        } catch (JAXBException e) {
-            throw new OLSException("JAXB error: " + e.getLocalizedMessage(), e);
-        } catch (ParserConfigurationException e) {
-            throw new OLSException("JAXP error: " + e.getLocalizedMessage(), e);
-        }
-        
-        return domResponse;
+        return provider.reverseGeocode((ReverseGeocodeRequestType)request.getRequestParameters().getValue(), lang, srsName);
     }
 
     @Override

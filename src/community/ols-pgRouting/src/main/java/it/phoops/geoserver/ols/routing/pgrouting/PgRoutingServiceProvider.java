@@ -354,8 +354,8 @@ public class PgRoutingServiceProvider extends OLSAbstractServiceProvider impleme
     }
 
     @Override
-    public JAXBElement<DetermineRouteResponseType> route(
-            DetermineRouteRequestType input) throws OLSException {
+    public JAXBElement<DetermineRouteResponseType> route(DetermineRouteRequestType input, String lang, String srsName) throws OLSException
+    {
         JAXBElement<DetermineRouteResponseType> retval = null;
         
         // Parse request parameters
