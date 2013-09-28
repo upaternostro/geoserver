@@ -15,6 +15,7 @@ import org.geoserver.kml.decorator.KmlDecoratorFactory;
 import org.geoserver.kml.decorator.KmlDecoratorFactory.KmlDecorator;
 import org.geoserver.kml.sequence.CompositeList;
 import org.geoserver.kml.utils.LookAtOptions;
+import org.geoserver.ows.util.KvpUtils;
 import org.geoserver.platform.GeoServerExtensions;
 import org.geoserver.wms.GetMapRequest;
 import org.geoserver.wms.WMS;
@@ -24,6 +25,8 @@ import org.geotools.data.simple.SimpleFeatureCollection;
 import org.geotools.geometry.jts.ReferencedEnvelope;
 import org.geotools.map.FeatureLayer;
 import org.geotools.map.Layer;
+import org.geotools.map.MapViewport;
+import org.geotools.referencing.CRS;
 import org.geotools.referencing.crs.DefaultGeographicCRS;
 import org.geotools.styling.Style;
 import org.geotools.styling.Symbolizer;
@@ -31,6 +34,7 @@ import org.geotools.util.Converters;
 import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.simple.SimpleFeatureType;
 
+import de.micromata.opengis.kml.v_2_2_0.Document;
 import de.micromata.opengis.kml.v_2_2_0.Feature;
 import de.micromata.opengis.kml.v_2_2_0.Folder;
 
@@ -83,15 +87,18 @@ public class KmlEncodingContext {
     protected ServiceInfo service;
 
     protected int layerIndex;
+    
+    protected String mode;
 
     public final static ReferencedEnvelope WORLD_BOUNDS_WGS84 = new ReferencedEnvelope(-180, 180, -90, 90, DefaultGeographicCRS.WGS84);
     protected boolean liveIcons;
     protected Map<String, Style> iconStyles;
 
     public KmlEncodingContext(WMSMapContent mapContent, WMS wms, boolean kmz) {
-        this.mapContent = mapContent;
+        this.mapContent = fixViewport(mapContent);
         this.request = mapContent.getRequest();
         this.wms = wms;
+        this.mode = computeModeOption(request.getFormatOptions());
         this.descriptionEnabled = computeKMAttr();
         this.lookAtOptions = new LookAtOptions(request.getFormatOptions());
         this.placemarkForced = computeKmplacemark();
@@ -104,8 +111,54 @@ public class KmlEncodingContext {
         this.service = wms.getServiceInfo();
         this.liveIcons = true;
         this.iconStyles = new HashMap<String,Style>();
+        
+        Boolean autofit = Converters.convert(request.getFormatOptions().get("autofit"), Boolean.class);
+        if(autofit != null && Converters.convert(autofit, Boolean.class)) {
+            double width = mapContent.getMapWidth();
+            double height = mapContent.getMapHeight();
+            ReferencedEnvelope bbox = mapContent.getViewport().getBounds();
+            double bbox_width = bbox.getWidth(); 
+            double bbox_height = bbox.getHeight();
+            // be on the safe side
+            if(bbox_width > 0 && bbox_height > 0 & width > 0 & height > 0) {
+                double ratio = bbox_width / bbox_height;
+                if(bbox_width > bbox_height) {
+                    height = width / ratio;
+                    int h = (int) Math.ceil(height);
+                    mapContent.setMapHeight(h);
+                    mapContent.getRequest().setHeight(h);
+                } else {
+                    width = height * ratio;
+                    int w = (int) Math.ceil(width);
+                    mapContent.setMapWidth(w);
+                    mapContent.getRequest().setWidth(w);
+                }
+            }
+        }
     }
     
+    private String computeModeOption(Map<String, String> rawKvp) {
+        String mode = KvpUtils.caseInsensitiveParam(rawKvp, "mode", null);
+        return mode;
+    }
+
+    /**
+     * Force the output to be in WGS84
+     * @param mc
+     * @return
+     */
+    private WMSMapContent fixViewport(WMSMapContent mc) {
+        MapViewport viewport = mc.getViewport();
+        if(!CRS.equalsIgnoreMetadata(viewport.getCoordinateReferenceSystem(), DefaultGeographicCRS.WGS84)) {
+            viewport.setCoordinateReferenceSystem(DefaultGeographicCRS.WGS84);
+            GetMapRequest req = mc.getRequest();
+            req.setSRS("EPSG:4326");
+            req.setBbox(viewport.getBounds());
+        }
+        
+        return mc;
+    }
+
     /**
      * Protected constructor used by WFS output format to create a fake kml encoding context
      */
@@ -240,6 +293,23 @@ public class KmlEncodingContext {
             // in this case, compose the already existing features with the
             // dynamically generated ones
             folder.setFeature(new CompositeList<Feature>(originalFeatures, features));
+        }
+    }
+    
+    /**
+     * Adds features to the document own list
+     * 
+     * @param folder
+     * @param features
+     */
+    public void addFeatures(Document document, List<Feature> features) {
+        List<Feature> originalFeatures = document.getFeature();
+        if (originalFeatures == null || originalFeatures.size() == 0) {
+            document.setFeature(features);
+        } else {
+            // in this case, compose the already existing features with the
+            // dynamically generated ones
+            document.setFeature(new CompositeList<Feature>(originalFeatures, features));
         }
     }
 
@@ -421,6 +491,10 @@ public class KmlEncodingContext {
 
     public Map<String, Style> getIconStyles() {
         return iconStyles;
+    }
+
+    public String getMode() {
+        return mode;
     }
 
 }

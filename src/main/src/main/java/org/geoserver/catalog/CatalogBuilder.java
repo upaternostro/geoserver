@@ -351,8 +351,12 @@ public class CatalogBuilder {
         ftinfo.setEnabled(true);
 
         // naming
-        ftinfo.setNativeName(featureType.getName().getLocalPart());
-        ftinfo.setName(featureType.getName().getLocalPart());
+        Name name = featureSource.getName();
+        if (name == null) {
+            name = featureType.getName();
+        }
+        ftinfo.setNativeName(name.getLocalPart());
+        ftinfo.setName(name.getLocalPart());
 
         WorkspaceInfo workspace = store.getWorkspace();
         NamespaceInfo namespace = catalog.getNamespaceByPrefix(workspace.getName());
@@ -1025,18 +1029,26 @@ public class CatalogBuilder {
 
         for (int i = 0; i < length; i++) {
             CoverageDimensionInfo dim = catalog.getFactory().createCoverageDimension();
-            dim.setName(sampleDimensions[i].getDescription().toString(Locale.getDefault()));
+            GridSampleDimension sd = sampleDimensions[i];
+            String name = sd.getDescription().toString(Locale.getDefault());
+            dim.setName(name);
 
             StringBuilder label = new StringBuilder("GridSampleDimension".intern());
-            final Unit uom = sampleDimensions[i].getUnits();
+            final Unit uom = sd.getUnits();
 
+            String uName = name.toUpperCase();
             if (uom != null) {
                 label.append("(".intern());
                 parseUOM(label, uom);
                 label.append(")".intern());
+                dim.setUnit(uom.toString());
+            } else if(uName.startsWith("RED") || uName.startsWith("GREEN") || uName.startsWith("BLUE")) {
+                // radiance in SI
+                dim.setUnit("W.m-2.Sr-1");
             }
+            
+            dim.setDimensionType(sd.getSampleDimensionType());
 
-            GridSampleDimension sd = sampleDimensions[i];
             label.append("[".intern());
             label.append(sd.getMinimumValue());
             label.append(",".intern());
@@ -1067,7 +1079,7 @@ public class CatalogBuilder {
                     }
                 }
             }
-
+            
             dims.add(dim);
         }
 

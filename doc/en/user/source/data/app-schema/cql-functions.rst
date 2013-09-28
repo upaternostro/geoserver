@@ -12,6 +12,7 @@ CQL functions enable data conversion and conditional behaviour to be specified i
     * http://udig.refractions.net/confluence/display/EN/Constraint+Query+Language
 
 * CQL string literals are enclosed in single quotes, for example ``'urn:ogc:def:nil:OGC:missing'``.
+* Single quotes are represented in CQL string literals as two single quotes, just as in SQL. For example, ``'yyyy-MM-dd''T''HH:mm:ss''Z'''`` for the string ``yyyy-MM-dd'T'HH:mm:ss'Z'``.
 
 
 Vocabulary translation
@@ -176,6 +177,18 @@ Expression
     name of column pointing to second double value
 Expression
     expression of gml:id (optional)
+    
+toLineString
+````````````
+
+This function converts double values to 1D LineString geometry type. This is needed to express 1D borehole intervals with custom (non EPSG) CRS.
+
+Literal
+    ``'SRS_NAME'`` (EPSG code or custom SRS)
+Expression
+    name of column pointing to first double value
+Expression
+    name of column pointing to second double value
 
 
 Reference
@@ -208,7 +221,7 @@ A function to format a date/time using a `SimpleDateFormat pattern <http://docs.
     FormatDateTimezone(pattern, date, timezone)
 
 pattern
-    formatting pattern supported by `SimpleDateFormat <http://docs.oracle.com/javase/6/docs/api/java/text/SimpleDateFormat.html>`_, for example ``'yyyy-MM-dd'``.
+    formatting pattern supported by `SimpleDateFormat <http://docs.oracle.com/javase/6/docs/api/java/text/SimpleDateFormat.html>`_, for example ``'yyyy-MM-dd'``. Use two single quotes to include a literal single quote in a CQL string literal, for example ``'yyyy-MM-dd''T''HH:mm:ss''Z'''``.
 date
     the date/time to be formatted or its string representation, for example ``'1948-01-01T00:00:00Z'``. An exception will be returned if the date is invalid. Database types with time zone information are recommended.
 timezone
@@ -219,7 +232,7 @@ This example formats date/times from a column ``POSITION`` in UTC for inclusion 
     <AttributeMapping>
         <targetAttribute>csml:timePositionList</targetAttribute>                    
         <sourceExpression>
-            <OCQL>FormatDateTimezone('yyyy-MM-dd', POSITION, 'UTC')</OCQL>
+            <OCQL>FormatDateTimezone('yyyy-MM-dd''T''HH:mm:ss''Z''', POSITION, 'UTC')</OCQL>
         </sourceExpression>
         <isList>true</isList>
     </AttributeMapping>

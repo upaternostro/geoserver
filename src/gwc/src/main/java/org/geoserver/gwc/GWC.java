@@ -61,6 +61,7 @@ import org.geotools.geometry.GeneralEnvelope;
 import org.geotools.geometry.jts.JTS;
 import org.geotools.geometry.jts.ReferencedEnvelope;
 import org.geotools.referencing.CRS;
+import org.geotools.referencing.CRS.AxisOrder;
 import org.geotools.util.logging.Logging;
 import org.geowebcache.GeoWebCacheException;
 import org.geowebcache.GeoWebCacheExtensions;
@@ -665,18 +666,30 @@ public class GWC implements DisposableBean, InitializingBean, ApplicationContext
         final long[] tileIndex;
         final Map<String, String> fullParameters;
         try {
+            boolean axisFlip = false;
+            final List<GridSubset> crsMatchingGridSubsets;
+            {
+                CoordinateReferenceSystem crs = request.getCrs();
+                int epsgId;
+                // are we in wms 1.3 land?
+                if(CRS.getAxisOrder(crs) == AxisOrder.NORTH_EAST) {
+                    axisFlip = true;
+                }
+                String srs = request.getSRS();
+                epsgId = Integer.parseInt(srs.substring(srs.lastIndexOf(':') + 1));
+                SRS srs2 = SRS.getSRS(epsgId);
+                crsMatchingGridSubsets = tileLayer.getGridSubsetsForSRS(srs2);
+            }
             final BoundingBox tileBounds;
             {
                 Envelope bbox = request.getBbox();
-                tileBounds = new BoundingBox(bbox.getMinX(), bbox.getMinY(), bbox.getMaxX(),
-                        bbox.getMaxY());
-            }
-            final List<GridSubset> crsMatchingGridSubsets;
-            {
-                String srs = request.getSRS();
-                int epsgId = Integer.parseInt(srs.substring(srs.indexOf(':') + 1));
-                SRS srs2 = SRS.getSRS(epsgId);
-                crsMatchingGridSubsets = tileLayer.getGridSubsetsForSRS(srs2);
+                if(axisFlip) {
+                    tileBounds = new BoundingBox(bbox.getMinY(), bbox.getMinX(), bbox.getMaxY(),
+                            bbox.getMaxX());
+                } else {
+                    tileBounds = new BoundingBox(bbox.getMinX(), bbox.getMinY(), bbox.getMaxX(),
+                            bbox.getMaxY());
+                }
             }
 
             if (crsMatchingGridSubsets.isEmpty()) {
@@ -1465,11 +1478,15 @@ public class GWC implements DisposableBean, InitializingBean, ApplicationContext
 
         List<GeoServerTileLayer> affected = new ArrayList<GeoServerTileLayer>();
         for (GeoServerTileLayer tl : tileLayers) {
-            GeoServerTileLayerInfo info = tl.getInfo();
-            String defaultStyle = tl.getStyles();// may be null if backed by a LayerGroupInfo
-            Set<String> cachedStyles = info.cachedStyles();
-            if (styleName.equals(defaultStyle) || cachedStyles.contains(styleName)) {
-                affected.add(tl);
+            try {
+                GeoServerTileLayerInfo info = tl.getInfo();
+                String defaultStyle = tl.getStyles();// may be null if backed by a LayerGroupInfo
+                Set<String> cachedStyles = info.cachedStyles();
+                if (styleName.equals(defaultStyle) || cachedStyles.contains(styleName)) {
+                    affected.add(tl);
+                }
+            } catch (Exception e) {
+                log.log(Level.SEVERE, "Failed to retrieve style info for layer" + tl.getName(), e);
             }
         }
         return affected;
@@ -1484,17 +1501,21 @@ public class GWC implements DisposableBean, InitializingBean, ApplicationContext
         List<LayerInfo> result = new ArrayList<LayerInfo>();
         {
             for (LayerInfo layer : getLayerInfos()) {
-                String name = layer.getDefaultStyle().getName();
-                if (styleName.equals(name)) {
-                    result.add(layer);
-                    continue;
-                }
-                for (StyleInfo alternateStyle : layer.getStyles()) {
-                    name = alternateStyle.getName();
+                try {
+                    String name = layer.getDefaultStyle().getName();
                     if (styleName.equals(name)) {
                         result.add(layer);
-                        break;
+                        continue;
                     }
+                    for (StyleInfo alternateStyle : layer.getStyles()) {
+                        name = alternateStyle.getName();
+                        if (styleName.equals(name)) {
+                            result.add(layer);
+                            break;
+                        }
+                    }
+                } catch (Exception e) {
+                    log.log(Level.SEVERE, "Failed to retrieve style info for layer" + layer.getName(), e);
                 }
             }
         }
