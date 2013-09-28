@@ -31,6 +31,11 @@
 			<artifactId>main</artifactId>
 		</dependency>
 		<dependency>
+			<groupId>org.geoserver.web</groupId>
+			<artifactId>web-security</artifactId>
+			<version>${project.version}</version>
+		</dependency>
+		<dependency>
 			<groupId>org.apache.wicket</groupId>
 			<artifactId>wicket-extensions</artifactId>
 		</dependency>
@@ -44,11 +49,11 @@
 			<artifactId>xml-resolver</artifactId>
 			<version>1.2</version>
 		</dependency>
-        <dependency>
-            <groupId>apache-xerces</groupId>
-            <artifactId>xercesImpl</artifactId>
-            <version>2.7.1</version>
-        </dependency>
+		<dependency>
+			<groupId>apache-xerces</groupId>
+			<artifactId>xercesImpl</artifactId>
+			<version>2.7.1</version>
+		</dependency>
 		<dependency>
 			<groupId>apache-xerces</groupId>
 			<artifactId>xercesImpl</artifactId>
@@ -115,8 +120,8 @@
 				<configuration>
 					<packageName>net.opengis.www.xls</packageName>
 					<schemaDirectory>${project.basedir}/src/main/resources/xsd/OLS</schemaDirectory>
-                    <catalog>${project.basedir}/src/main/resources/xsd/catalog.xml</catalog>
-                    <extension>true</extension>
+					<catalog>${project.basedir}/src/main/resources/xsd/catalog.xml</catalog>
+					<extension>true</extension>
 					<arguments>${project.basedir}/src/main/schemalet/simpleBinding.schemalet</arguments>
 				</configuration>
 			</plugin>

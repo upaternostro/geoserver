@@ -102,4 +102,13 @@
 
 	<!-- disposes of all coverages created during GetCoverage calls -->
 	<!-- <bean id="coverageCleaner" class="org.geoserver.wcs.CoverageCleanerCallback"/> -->
+	
+    <bean id="olsAuthenticationProvider" class="it.phoops.geoserver.ols.security.OLSAuthenticationProvider"/>
+
+    <bean id="olsAuthPanelInfo" class="it.phoops.geoserver.ols.security.OLSAuthFilterPanelInfo">
+        <property name="id" value="security.olsAuthFilter" />
+        <property name="shortTitleKey" value="OLSAuthFilterPanel.short"/>
+        <property name="titleKey" value="OLSAuthFilterPanel.title"/>
+        <property name="descriptionKey" value="OLSAuthFilterPanel.description"/>
+    </bean>
 </beans>
