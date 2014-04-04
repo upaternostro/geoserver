@@ -15,15 +15,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import net.opengis.cat.csw20.ElementSetType;
-
 import org.geoserver.catalog.util.CloseableIterator;
 import org.geoserver.catalog.util.CloseableIteratorAdapter;
 import org.geoserver.csw.records.AbstractRecordDescriptor;
+import org.geoserver.csw.records.CSWRecordDescriptor;
 import org.geoserver.csw.records.RecordDescriptor;
 import org.geotools.data.Query;
 import org.geotools.data.Transaction;
 import org.geotools.feature.FeatureCollection;
+import org.geotools.feature.NameImpl;
 import org.opengis.feature.Feature;
 import org.opengis.feature.FeatureVisitor;
 import org.opengis.feature.Property;
@@ -41,10 +41,12 @@ import org.opengis.filter.identity.FeatureId;
  */
 public abstract class AbstractCatalogStore implements CatalogStore {
 
-    protected Map<String, RecordDescriptor> descriptorByType = new HashMap<String, RecordDescriptor>();
+    protected Map<Name, RecordDescriptor> descriptorByType = new RecordDescriptorsMap();
+    protected Map<String, RecordDescriptor> descriptorByOutputSchema = new HashMap<String, RecordDescriptor>();
 
     protected void support(RecordDescriptor descriptor) {
-        descriptorByType.put(descriptor.getFeatureDescriptor().getName().getLocalPart(), descriptor);
+        descriptorByType.put(descriptor.getFeatureDescriptor().getName(), descriptor);
+        descriptorByOutputSchema.put(descriptor.getOutputSchema(), descriptor);
     }
 
     @Override
@@ -55,11 +57,10 @@ public abstract class AbstractCatalogStore implements CatalogStore {
 
     @Override
     public CloseableIterator<String> getDomain(Name typeName, final Name attributeName) throws IOException {
-		
-	final RecordDescriptor rd = descriptorByType.get(typeName.getLocalPart());
-	        
+        final RecordDescriptor rd = descriptorByType.get(typeName);
+
         if (rd==null) {
-            throw new IOException(typeName.getLocalPart() + " is not a supported type");
+            throw new IOException(typeName + " is not a supported type");
         }
 		
         // do we have such attribute?
@@ -76,7 +77,7 @@ public abstract class AbstractCatalogStore implements CatalogStore {
         
         // collect the values without duplicates
         final Set<String> values = new HashSet<String>();
-        getRecords(q, Transaction.AUTO_COMMIT).accepts(new FeatureVisitor() {
+        getRecords(q, Transaction.AUTO_COMMIT, rd.getOutputSchema()).accepts(new FeatureVisitor() {
             
             @Override
             public void visit(Feature feature) {
@@ -97,22 +98,37 @@ public abstract class AbstractCatalogStore implements CatalogStore {
     }
     
     @Override
-    public FeatureCollection getRecords(Query q, Transaction t) throws IOException {
+    public FeatureCollection getRecords(Query q, Transaction t, String outputSchema) throws IOException {
         RecordDescriptor rd;
+        Name typeName = null;
         if (q.getTypeName() == null) {
-            rd = descriptorByType.get("Record");
+            typeName = CSWRecordDescriptor.RECORD_DESCRIPTOR.getName();
+        } else if(q.getNamespace() != null) {
+            typeName = new NameImpl(q.getNamespace().toString(), q.getTypeName());
         } else {
-            rd = descriptorByType.get(q.getTypeName());
+            typeName = new NameImpl(q.getTypeName());
+        }
+        rd = descriptorByType.get(typeName);
+        
+        RecordDescriptor rdOutput;
+        if (outputSchema == null || "".equals(outputSchema)) {
+        	rdOutput = descriptorByOutputSchema.get(CSWRecordDescriptor.getInstance().getOutputSchema());
+        } else {
+        	rdOutput = descriptorByOutputSchema.get(outputSchema);
         }
                 
         if (rd==null) {
             throw new IOException(q.getTypeName() + " is not a supported type");
         }
         
-        return getRecordsInternal(rd, q, t);
+        if (rdOutput==null) {
+            throw new IOException(outputSchema + " is not a supported output schema");
+        }
+        
+        return getRecordsInternal(rd, rdOutput, q, t);
     }
     
-    public abstract FeatureCollection getRecordsInternal(RecordDescriptor rd, Query q, Transaction t) throws IOException;
+    public abstract FeatureCollection getRecordsInternal(RecordDescriptor rd, RecordDescriptor rdOutput, Query q, Transaction t) throws IOException;
     
     @Override
     public RepositoryItem getRepositoryItem(String recordId) throws IOException {
@@ -125,7 +141,7 @@ public abstract class AbstractCatalogStore implements CatalogStore {
         // simply delegate to the feature collection, we have no optimizations 
         // available for the time being (even counting the files in case of no filtering
         // would be wrong as we have to 
-        return getRecords(q, t).size();
+        return getRecords(q, t, null).size();
     }
 
     @Override
@@ -146,7 +162,7 @@ public abstract class AbstractCatalogStore implements CatalogStore {
     
     @Override
     public CatalogStoreCapabilities getCapabilities() {
-        return new CatalogStoreCapabilities(descriptorByType) ;
+        return new CatalogStoreCapabilities(descriptorByType);
     }
     
     @Override

@@ -399,9 +399,10 @@ public class KMLReflectorTest extends WMSTestSupport {
     @Test
     public void testRasterTransformerSLD() throws Exception {
         URL url = getClass().getResource("allsymbolizers.sld");
+        String urlExternal = URLDecoder.decode(url.toExternalForm(), "UTF-8");
         final String requestUrl = "wms/reflect?layers=" + getLayerId(MockData.BASIC_POLYGONS)
                 + "&format_options=KMSCORE:0;mode:refresh&format= " + KMLMapOutputFormat.MIME_TYPE 
-                + "&sld=" + url.toExternalForm();
+                + "&sld=" + urlExternal;
 
         Document dom = getAsDOM(requestUrl);
         // print(dom);
@@ -413,7 +414,7 @@ public class KMLReflectorTest extends WMSTestSupport {
         assertTrue(href.startsWith("http://localhost:8080/geoserver/wms"));
         assertTrue(href.contains("request=GetMap"));
         assertTrue(href.contains("format=image/png"));
-        assertTrue(href.contains("&sld=" + url.toExternalForm()));
+        assertTrue(href.contains("&sld=" + urlExternal));
     }
 
     @Test
@@ -671,6 +672,31 @@ public class KMLReflectorTest extends WMSTestSupport {
         }
     }
     
+    @Test
+    public void testHeightTemplatePoint() throws Exception {
+        File template = null;
+        try {
+            String layerId = getLayerId(MockData.POINTS);
+            FeatureTypeInfo resource = getCatalog().getResourceByName(layerId, FeatureTypeInfo.class);
+            File parent = getDataDirectory().findOrCreateResourceDir(resource);
+            template = new File(parent, "height.ftl");
+            FileUtils.write(template, "${altitude.value}");
+
+            final String requestUrl = "wms/kml?layers=" + layerId
+                    + "&mode=download";
+            Document doc = getAsDOM(requestUrl);
+
+            String base = "//kml:Placemark[@id='Points.0']/kml:Point";
+            XMLAssert.assertXpathEvaluatesTo("1", "count(" + base+ ")", doc);
+            XMLAssert.assertXpathEvaluatesTo("1", base + "/kml:extrude", doc);
+            XMLAssert.assertXpathEvaluatesTo("relativeToGround", base + "/kml:altitudeMode", doc);
+        } finally {
+            if(template != null) {
+                template.delete();
+            }
+        }
+    }
+
     private void assertXPathCoordinates( String message, String expectedText, String xpath, Document doc ) throws XpathException {
     	XpathEngine engine = XMLUnit.newXpathEngine();
         String text = engine.evaluate(xpath, doc);
@@ -785,7 +811,7 @@ public class KMLReflectorTest extends WMSTestSupport {
         KMLMap map = of.produceMap(mapContent);
 
         ByteArrayOutputStream bout = new ByteArrayOutputStream();
-        new KMLEncoder().encode(map.getKml(), bout);
+        new KMLEncoder().encode(map.getKml(), bout, null);
 
         Document document = dom(new ByteArrayInputStream(bout.toByteArray()));
        

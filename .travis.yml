@@ -5,7 +5,12 @@ jdk:
 before_script:
   - cd src
 script:
-  - mvn clean test -Prelease -T2
+  - mvn clean test -Prelease -B -T2
 notifications:
-  email: false
+  email:
+    on_success: never
+    on_failure: never
+branches:
+  only:
+    - master
 

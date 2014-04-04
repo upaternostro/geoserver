@@ -1,0 +1,378 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<wsdl:definitions targetNamespace="http://localhost/musume/Musume.jws"
+	xmlns:apachesoap="http://xml.apache.org/xml-soap" xmlns:impl="http://localhost/musume/Musume.jws"
+	xmlns:intf="http://localhost/musume/Musume.jws" xmlns:soapenc="http://schemas.xmlsoap.org/soap/encoding/"
+	xmlns:tns1="http://tipi.musume.toscana.regione.org" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/"
+	xmlns:wsdlsoap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+	<!--WSDL created by Apache Axis version: 1.3Built on Oct 05, 2005 (05:23:37 EDT) -->
+	<wsdl:types>
+		<schema targetNamespace="http://tipi.musume.toscana.regione.org"
+			xmlns="http://www.w3.org/2001/XMLSchema">
+			<import namespace="http://schemas.xmlsoap.org/soap/encoding/" />
+			<complexType name="AmbiguitaIndItem">
+				<sequence>
+					<element name="civico" nillable="true" type="xsd:string" />
+					<element name="indirizzo" nillable="true" type="xsd:string" />
+					<element name="x" nillable="true" type="xsd:string" />
+					<element name="y" nillable="true" type="xsd:string" />
+				</sequence>
+			</complexType>
+			<complexType name="AmbiguitaInd">
+				<sequence>
+					<element maxOccurs="unbounded" name="ambiguitaIndItem"
+						nillable="true" type="tns1:AmbiguitaIndItem" />
+					<element name="ambiguitaIndItemCount" type="xsd:int" />
+				</sequence>
+			</complexType>
+			<complexType name="IndirizzoAmbiguoType">
+				<sequence>
+					<element name="ambiguitaInd" nillable="true"
+						type="tns1:AmbiguitaInd" />
+					<element name="descrizione" nillable="true" type="xsd:string" />
+				</sequence>
+			</complexType>
+			<complexType name="IndirizzoAmbiguo">
+				<complexContent>
+					<extension base="tns1:IndirizzoAmbiguoType">
+						<sequence />
+					</extension>
+				</complexContent>
+			</complexType>
+			<complexType name="DatiGeoreferenziazioneType">
+				<sequence>
+					<element name="XCivicoPuntualeGB" nillable="true"
+						type="xsd:string" />
+					<element name="XIstat" nillable="true" type="xsd:string" />
+					<element name="YCivicoPuntualeGB" nillable="true"
+						type="xsd:string" />
+					<element name="YIstat" nillable="true" type="xsd:string" />
+					<element name="latitudine" nillable="true" type="xsd:string" />
+					<element name="longitudine" nillable="true" type="xsd:string" />
+				</sequence>
+			</complexType>
+			<complexType name="DatiGeoreferenziazioneInd">
+				<complexContent>
+					<extension base="tns1:DatiGeoreferenziazioneType">
+						<sequence />
+					</extension>
+				</complexContent>
+			</complexType>
+			<complexType name="DatiNormalizzazioneIndRiconosciutoType">
+				<sequence>
+					<element name="cap" nillable="true" type="xsd:string" />
+					<element name="civico" nillable="true" type="xsd:string" />
+					<element name="codiceComuneIstat" nillable="true"
+						type="xsd:string" />
+					<element name="codiceProvinciaIstat" nillable="true"
+						type="xsd:string" />
+					<element name="codiceRegioneIstat" nillable="true"
+						type="xsd:string" />
+					<element name="codiceToponimo" nillable="true" type="xsd:string" />
+					<element name="dug" nillable="true" type="xsd:string" />
+					<element name="fonte" nillable="true" type="xsd:string" />
+					<element name="localita" nillable="true" type="xsd:string" />
+					<element name="provincia" nillable="true" type="xsd:string" />
+					<element name="sezioneIstat" nillable="true" type="xsd:string" />
+					<element name="toponimo" nillable="true" type="xsd:string" />
+				</sequence>
+			</complexType>
+			<complexType name="DatiNormalizzazioneInd">
+				<complexContent>
+					<extension base="tns1:DatiNormalizzazioneIndRiconosciutoType">
+						<sequence />
+					</extension>
+				</complexContent>
+			</complexType>
+			<complexType name="IndirizzoRiconosciutoType">
+				<sequence>
+					<element name="datiGeoreferenziazioneInd" nillable="true"
+						type="tns1:DatiGeoreferenziazioneInd" />
+					<element name="datiNormalizzazioneInd" nillable="true"
+						type="tns1:DatiNormalizzazioneInd" />
+					<element name="descrizione" nillable="true" type="xsd:string" />
+				</sequence>
+			</complexType>
+			<complexType name="IndirizzoRiconosciuto">
+				<complexContent>
+					<extension base="tns1:IndirizzoRiconosciutoType">
+						<sequence />
+					</extension>
+				</complexContent>
+			</complexType>
+			<complexType name="IndirizzoScartatoType">
+				<sequence>
+					<element name="descrizione" nillable="true" type="xsd:string" />
+				</sequence>
+			</complexType>
+			<complexType name="IndirizzoScartato">
+				<complexContent>
+					<extension base="tns1:IndirizzoScartatoType">
+						<sequence />
+					</extension>
+				</complexContent>
+			</complexType>
+			<complexType name="AmbiguitaLocItem">
+				<sequence>
+					<element name="localita" nillable="true" type="xsd:string" />
+					<element name="sigla" nillable="true" type="xsd:string" />
+				</sequence>
+			</complexType>
+			<complexType name="AmbiguitaLoc">
+				<sequence>
+					<element maxOccurs="unbounded" name="ambiguitaLocItem"
+						nillable="true" type="tns1:AmbiguitaLocItem" />
+					<element name="ambiguitaLocItemCount" type="xsd:int" />
+				</sequence>
+			</complexType>
+				<complexType name="LocalitaAmbiguaType">
+					<sequence>
+						<element name="ambiguitaLoc" nillable="true"
+							type="tns1:AmbiguitaLoc" />
+						<element name="descrizione" nillable="true" type="xsd:string" />
+					</sequence>
+				</complexType>
+				<complexType name="LocalitaAmbigua">
+					<complexContent>
+						<extension base="tns1:LocalitaAmbiguaType">
+							<sequence />
+						</extension>
+					</complexContent>
+				</complexType>
+				<complexType name="DatiNormalizzazioneLocRiconosciutaType">
+					<sequence>
+						<element name="cap" nillable="true" type="xsd:string" />
+						<element name="codiceComuneIstat" nillable="true"
+							type="xsd:string" />
+						<element name="codiceProvinciaIstat" nillable="true"
+							type="xsd:string" />
+						<element name="codiceRegioneIstat" nillable="true"
+							type="xsd:string" />
+						<element name="fonte" nillable="true" type="xsd:string" />
+						<element name="localita" nillable="true" type="xsd:string" />
+						<element name="provincia" nillable="true" type="xsd:string" />
+						<element name="sezioneIstat" nillable="true" type="xsd:string" />
+						<element name="XIstat" nillable="true" type="xsd:string" />
+						<element name="YIstat" nillable="true" type="xsd:string" />
+					</sequence>
+				</complexType>
+				<complexType name="DatiNormalizzazioneLoc">
+					<complexContent>
+						<extension base="tns1:DatiNormalizzazioneLocRiconosciutaType">
+							<sequence />
+						</extension>
+					</complexContent>
+				</complexType>
+				<complexType name="LocalitaNormalizzataType">
+					<sequence>
+						<element name="datiNormalizzazioneLoc" nillable="true"
+							type="tns1:DatiNormalizzazioneLoc" />
+						<element name="descrizione" nillable="true" type="xsd:string" />
+					</sequence>
+				</complexType>
+				<complexType name="LocalitaNormalizzata">
+					<complexContent>
+						<extension base="tns1:LocalitaNormalizzataType">
+							<sequence />
+						</extension>
+					</complexContent>
+				</complexType>
+				<complexType name="LocalitaScartataType">
+					<sequence>
+						<element name="descrizione" nillable="true" type="xsd:string" />
+					</sequence>
+				</complexType>
+				<complexType name="LocalitaScartata">
+					<complexContent>
+						<extension base="tns1:LocalitaScartataType">
+							<sequence />
+						</extension>
+					</complexContent>
+				</complexType>
+				<complexType name="RispostaNormalizzataType">
+					<sequence>
+						<element name="choiceValue" nillable="true" type="xsd:anyType" />
+						<element name="indirizzoAmbiguo" nillable="true"
+							type="tns1:IndirizzoAmbiguo" />
+						<element name="indirizzoRiconosciuto" nillable="true"
+							type="tns1:IndirizzoRiconosciuto" />
+						<element name="indirizzoScartato" nillable="true"
+							type="tns1:IndirizzoScartato" />
+						<element name="localitaAmbigua" nillable="true"
+							type="tns1:LocalitaAmbigua" />
+						<element name="localitaNormalizzata" nillable="true"
+							type="tns1:LocalitaNormalizzata" />
+						<element name="localitaScartata" nillable="true"
+							type="tns1:LocalitaScartata" />
+						<element name="tipoRispostaNorm" nillable="true"
+							type="xsd:string" />
+					</sequence>
+				</complexType>
+		</schema>
+	</wsdl:types>
+	<wsdl:message name="CapRequest">
+		<wsdl:part name="cap" type="xsd:string" />
+	</wsdl:message>
+	<wsdl:message name="FonteResponse" />
+	<wsdl:message name="richiestaRequest">
+		<wsdl:part name="algoritmo" type="xsd:string" />
+		<wsdl:part name="indirizzo" type="xsd:string" />
+		<wsdl:part name="comune" type="xsd:string" />
+		<wsdl:part name="provincia" type="xsd:string" />
+		<wsdl:part name="cap" type="xsd:string" />
+		<wsdl:part name="fonte" type="xsd:string" />
+	</wsdl:message>
+	<wsdl:message name="AlgoritmoResponse" />
+	<wsdl:message name="IndirizzoResponse" />
+	<wsdl:message name="FonteRequest">
+		<wsdl:part name="fonte" type="xsd:string" />
+	</wsdl:message>
+	<wsdl:message name="CapResponse" />
+	<wsdl:message name="ComuneRequest">
+		<wsdl:part name="comune" type="xsd:string" />
+	</wsdl:message>
+	<wsdl:message name="ProvinciaResponse" />
+	<wsdl:message name="AlgoritmoRequest">
+		<wsdl:part name="algoritmo" type="xsd:string" />
+	</wsdl:message>
+	<wsdl:message name="ProvinciaRequest">
+		<wsdl:part name="provincia" type="xsd:string" />
+	</wsdl:message>
+	<wsdl:message name="richiestaResponse">
+		<wsdl:part name="richiestaReturn"
+			type="tns1:RispostaNormalizzataType" />
+	</wsdl:message>
+	<wsdl:message name="ComuneResponse" />
+	<wsdl:message name="IndirizzoRequest">
+		<wsdl:part name="indirizzo" type="xsd:string" />
+	</wsdl:message>
+	<wsdl:portType name="Musume">
+		<wsdl:operation name="Indirizzo" parameterOrder="indirizzo">
+			<wsdl:input message="impl:IndirizzoRequest"
+				name="IndirizzoRequest" />
+			<wsdl:output message="impl:IndirizzoResponse"
+				name="IndirizzoResponse" />
+		</wsdl:operation>
+		<wsdl:operation name="Provincia" parameterOrder="provincia">
+			<wsdl:input message="impl:ProvinciaRequest"
+				name="ProvinciaRequest" />
+			<wsdl:output message="impl:ProvinciaResponse"
+				name="ProvinciaResponse" />
+		</wsdl:operation>
+		<wsdl:operation name="Algoritmo" parameterOrder="algoritmo">
+			<wsdl:input message="impl:AlgoritmoRequest"
+				name="AlgoritmoRequest" />
+			<wsdl:output message="impl:AlgoritmoResponse"
+				name="AlgoritmoResponse" />
+		</wsdl:operation>
+		<wsdl:operation name="Comune" parameterOrder="comune">
+			<wsdl:input message="impl:ComuneRequest"
+				name="ComuneRequest" />
+			<wsdl:output message="impl:ComuneResponse"
+				name="ComuneResponse" />
+		</wsdl:operation>
+		<wsdl:operation name="richiesta"
+			parameterOrder="algoritmo indirizzo comune provincia cap fonte">
+			<wsdl:input message="impl:richiestaRequest"
+				name="richiestaRequest" />
+			<wsdl:output message="impl:richiestaResponse"
+				name="richiestaResponse" />
+		</wsdl:operation>
+		<wsdl:operation name="Fonte" parameterOrder="fonte">
+			<wsdl:input message="impl:FonteRequest"
+				name="FonteRequest" />
+			<wsdl:output message="impl:FonteResponse"
+				name="FonteResponse" />
+		</wsdl:operation>
+		<wsdl:operation name="Cap" parameterOrder="cap">
+			<wsdl:input message="impl:CapRequest" name="CapRequest" />
+			<wsdl:output message="impl:CapResponse"
+				name="CapResponse" />
+		</wsdl:operation>
+	</wsdl:portType>
+	<wsdl:binding name="MusumeSoapBinding" type="impl:Musume">
+		<wsdlsoap:binding style="rpc"
+			transport="http://schemas.xmlsoap.org/soap/http" />
+		<wsdl:operation name="Indirizzo">
+			<wsdlsoap:operation soapAction="" />
+			<wsdl:input name="IndirizzoRequest">
+				<wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://DefaultNamespace"
+					use="encoded" />
+			</wsdl:input>
+			<wsdl:output name="IndirizzoResponse">
+				<wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"
+					namespace="http://localhost/musume/Musume.jws" use="encoded" />
+			</wsdl:output>
+		</wsdl:operation>
+		<wsdl:operation name="Provincia">
+			<wsdlsoap:operation soapAction="" />
+			<wsdl:input name="ProvinciaRequest">
+				<wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://DefaultNamespace"
+					use="encoded" />
+			</wsdl:input>
+			<wsdl:output name="ProvinciaResponse">
+				<wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"
+					namespace="http://localhost/musume/Musume.jws" use="encoded" />
+			</wsdl:output>
+		</wsdl:operation>
+		<wsdl:operation name="Algoritmo">
+			<wsdlsoap:operation soapAction="" />
+			<wsdl:input name="AlgoritmoRequest">
+				<wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://DefaultNamespace"
+					use="encoded" />
+			</wsdl:input>
+			<wsdl:output name="AlgoritmoResponse">
+				<wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"
+					namespace="http://localhost/musume/Musume.jws" use="encoded" />
+			</wsdl:output>
+		</wsdl:operation>
+		<wsdl:operation name="Comune">
+			<wsdlsoap:operation soapAction="" />
+			<wsdl:input name="ComuneRequest">
+				<wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://DefaultNamespace"
+					use="encoded" />
+			</wsdl:input>
+			<wsdl:output name="ComuneResponse">
+				<wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"
+					namespace="http://localhost/musume/Musume.jws" use="encoded" />
+			</wsdl:output>
+		</wsdl:operation>
+		<wsdl:operation name="richiesta">
+			<wsdlsoap:operation soapAction="" />
+			<wsdl:input name="richiestaRequest">
+				<wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://DefaultNamespace"
+					use="encoded" />
+			</wsdl:input>
+			<wsdl:output name="richiestaResponse">
+				<wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"
+					namespace="http://localhost/musume/Musume.jws" use="encoded" />
+			</wsdl:output>
+		</wsdl:operation>
+		<wsdl:operation name="Fonte">
+			<wsdlsoap:operation soapAction="" />
+			<wsdl:input name="FonteRequest">
+				<wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://DefaultNamespace"
+					use="encoded" />
+			</wsdl:input>
+			<wsdl:output name="FonteResponse">
+				<wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"
+					namespace="http://localhost/musume/Musume.jws" use="encoded" />
+			</wsdl:output>
+		</wsdl:operation>
+		<wsdl:operation name="Cap">
+			<wsdlsoap:operation soapAction="" />
+			<wsdl:input name="CapRequest">
+				<wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://DefaultNamespace"
+					use="encoded" />
+			</wsdl:input>
+			<wsdl:output name="CapResponse">
+				<wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"
+					namespace="http://localhost/musume/Musume.jws" use="encoded" />
+			</wsdl:output>
+		</wsdl:operation>
+	</wsdl:binding>
+	<wsdl:service name="MusumeService">
+		<wsdl:port binding="impl:MusumeSoapBinding" name="Musume">
+			<wsdlsoap:address location="http://localhost/musume/Musume.jws" />
+		</wsdl:port>
+	</wsdl:service>
+</wsdl:definitions>

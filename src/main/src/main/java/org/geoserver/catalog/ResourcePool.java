@@ -33,6 +33,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.eclipse.xsd.XSDElementDeclaration;
 import org.eclipse.xsd.XSDParticle;
@@ -815,102 +816,145 @@ public class ResourcePool {
     }
     
     FeatureType getFeatureType( FeatureTypeInfo info, boolean handleProjectionPolicy ) throws IOException {
-        boolean cacheable = isCacheable(info);
+        boolean cacheable = isCacheable(info) && handleProjectionPolicy;
+        return cacheable ? getCacheableFeatureType(info, handleProjectionPolicy): 
+                           getNonCacheableFeatureType(info, handleProjectionPolicy);
+    }
+    
+    FeatureType getCacheableFeatureType( FeatureTypeInfo info, boolean handleProjectionPolicy ) throws IOException {
         String key = getFeatureTypeInfoKey(info, handleProjectionPolicy);
-        FeatureType ft = (FeatureType) featureTypeCache.get(key);
-        if ( ft == null || !cacheable ) {
+        FeatureType ft = (FeatureType) featureTypeCache.get( key );
+        if ( ft == null ) {
             synchronized ( featureTypeCache ) {
-                ft = (FeatureType) featureTypeCache.get(key);
-                if ( ft == null || !cacheable) {
+                ft = (FeatureType) featureTypeCache.get( key );
+                if ( ft == null ) {
                     
                     //grab the underlying feature type
                     DataAccess<? extends FeatureType, ? extends Feature> dataAccess = getDataStore(info.getStore());
                     
-                    // sql view handling
-                    VirtualTable vt = null;
-                    String vtName = null;
-                    if(dataAccess instanceof JDBCDataStore && info.getMetadata() != null &&
-                            (info.getMetadata().get(FeatureTypeInfo.JDBC_VIRTUAL_TABLE) instanceof VirtualTable)) {
-                        JDBCDataStore jstore = (JDBCDataStore) dataAccess;
-                        vt = info.getMetadata().get(FeatureTypeInfo.JDBC_VIRTUAL_TABLE, VirtualTable.class);
-                        
-                        if(!cacheable) {
-                            // use a highly random name, we don't want to actually add the
-                            // virtual table to the store as this feature type is not cacheable,
-                            // it is "dirty" or un-saved. The renaming below will take care
-                            // of making the user see the actual name
-                            final String[] typeNames = jstore.getTypeNames();
-                            do {
-                                vtName = UUID.randomUUID().toString();
-                            } while (Arrays.asList(typeNames).contains(vtName));
+                    if(isSQLView(info, dataAccess)) {
     
-                            // try adding the vt and see if that works
-                            jstore.addVirtualTable(new VirtualTable(vtName, vt));
-                            ft = jstore.getSchema(vtName);
-                        } else {
-                            vtName = vt.getName();
-                            if(!jstore.getVirtualTables().containsValue(vt)) {
-                                jstore.addVirtualTable(vt);
-                            }
-                            ft = jstore.getSchema(vt.getName());
+                        VirtualTable vt = info.getMetadata().get(FeatureTypeInfo.JDBC_VIRTUAL_TABLE, VirtualTable.class);
+                        JDBCDataStore jstore = (JDBCDataStore) dataAccess;
+                        if(!jstore.getVirtualTables().containsValue(vt)) {
+                            jstore.addVirtualTable(vt);
                         }
+                        ft = jstore.getSchema(vt.getName());
                     } else {
                         ft = dataAccess.getSchema(info.getQualifiedNativeName());
                     }
                     
-                    // TODO: support reprojection for non-simple FeatureType
-                    if (ft instanceof SimpleFeatureType) {
-                        SimpleFeatureType sft = (SimpleFeatureType) ft;
-                        //create the feature type so it lines up with the "declared" schema
-                        SimpleFeatureTypeBuilder tb = new SimpleFeatureTypeBuilder();
-                        tb.setName( info.getName() );
-                        tb.setNamespaceURI( info.getNamespace().getURI() );
-
-                        if ( info.getAttributes() == null || info.getAttributes().isEmpty() ) {
-                            //take this to mean just load all native
-                            for ( PropertyDescriptor pd : ft.getDescriptors() ) {
-                                if ( !( pd instanceof AttributeDescriptor ) ) {
-                                    continue;
-                                }
-                                
-                                AttributeDescriptor ad = (AttributeDescriptor) pd;
-                                if(handleProjectionPolicy) {
-                                    ad = handleDescriptor(ad, info);
-                                }
-                                tb.add( ad );
-                            }
-                        }
-                        else {
-                            //only load native attributes configured
-                            for ( AttributeTypeInfo att : info.getAttributes() ) {
-                                String attName = att.getName();
-                                
-                                //load the actual underlying attribute type
-                                PropertyDescriptor pd = ft.getDescriptor( attName );
-                                if ( pd == null || !( pd instanceof AttributeDescriptor) ) {
-                                    throw new IOException("the SimpleFeatureType " + info.getPrefixedName()
-                                            + " does not contains the configured attribute " + attName
-                                            + ". Check your schema configuration");
-                                }
-                            
-                                AttributeDescriptor ad = (AttributeDescriptor) pd;
-                                ad = handleDescriptor(ad, info);
-                                tb.add( (AttributeDescriptor) ad );
-                            }
-                        }
-                        ft = tb.buildFeatureType();
-                    } // end special case for SimpleFeatureType
+                    ft = buildFeatureType(info, handleProjectionPolicy, ft);
                     
-                    if(cacheable) {
-                        featureTypeCache.put(key, ft );
-                    } else if(vtName != null) {
-                        JDBCDataStore jstore = (JDBCDataStore) dataAccess;
-                        jstore.removeVirtualTable(vtName);
-                    }
+                    featureTypeCache.put( key, ft );
                 }
             }
         }
+        return ft;
+    }
+
+    private FeatureType getNonCacheableFeatureType( FeatureTypeInfo info, boolean handleProjectionPolicy ) throws IOException {
+        FeatureType ft = null;
         
+        //grab the underlying feature type
+        DataAccess<? extends FeatureType, ? extends Feature> dataAccess = getDataStore(info.getStore());
+        
+        String vtName = null;
+        if(isSQLView(info, dataAccess)) {
+            JDBCDataStore jstore = (JDBCDataStore) dataAccess;
+            VirtualTable vt = info.getMetadata().get(FeatureTypeInfo.JDBC_VIRTUAL_TABLE, VirtualTable.class);
+            
+            
+            // building the virtual table structure is expensive, see if the VT is already registered in the db
+            if(jstore.getVirtualTables().containsValue(vt)) {
+                // if the virtual table is already registered in the store (and equality in the test above
+                // guarantees the structure is the same), we can just get the schema from it directly
+                ft = jstore.getSchema(vt.getName());
+                // paranoid check: make sure nobody changed the vt structure while we fetched 
+                // the data (rather unlikely, even more unlikely would be 
+                if(!jstore.getVirtualTables().containsValue(vt)) {
+                    ft = null;
+                }
+            } 
+            
+            if(ft == null) {
+                // use a highly random name, we don't want to actually add the
+                // virtual table to the store as this feature type is not cacheable,
+                // it is "dirty" or un-saved. The renaming below will take care
+                // of making the user see the actual name
+                // NT 14/8/2012: Removed synchronization on jstore as it blocked query
+                // execution and risk of UUID clash is considered acceptable.
+                final String[] typeNames = jstore.getTypeNames();
+                do {
+                    vtName = UUID.randomUUID().toString();
+                } while (Arrays.asList(typeNames).contains(vtName));                                
+                jstore.addVirtualTable(new VirtualTable(vtName, vt));
+    
+                ft = jstore.getSchema(vtName);
+            }
+        } else {
+            ft = dataAccess.getSchema(info.getQualifiedNativeName());
+        }
+        
+        ft = buildFeatureType(info, handleProjectionPolicy, ft);
+        
+        if(vtName != null) {
+            JDBCDataStore jstore = (JDBCDataStore) dataAccess;
+            jstore.removeVirtualTable(vtName);
+        }
+        return ft;
+    }
+    
+    private boolean isSQLView(FeatureTypeInfo info,
+            DataAccess<? extends FeatureType, ? extends Feature> dataAccess) {
+        return dataAccess instanceof JDBCDataStore && info.getMetadata() != null &&
+                (info.getMetadata().get(FeatureTypeInfo.JDBC_VIRTUAL_TABLE) instanceof VirtualTable);
+    }
+    
+    private FeatureType buildFeatureType(FeatureTypeInfo info,
+            boolean handleProjectionPolicy, FeatureType ft) throws IOException {
+        // TODO: support reprojection for non-simple FeatureType
+        if (ft instanceof SimpleFeatureType) {
+            SimpleFeatureType sft = (SimpleFeatureType) ft;
+            //create the feature type so it lines up with the "declared" schema
+            SimpleFeatureTypeBuilder tb = new SimpleFeatureTypeBuilder();
+            tb.setName( info.getName() );
+            tb.setNamespaceURI( info.getNamespace().getURI() );
+
+            if ( info.getAttributes() == null || info.getAttributes().isEmpty() ) {
+                //take this to mean just load all native
+                for ( PropertyDescriptor pd : ft.getDescriptors() ) {
+                    if ( !( pd instanceof AttributeDescriptor ) ) {
+                        continue;
+                    }
+                    
+                    AttributeDescriptor ad = (AttributeDescriptor) pd;
+                    if(handleProjectionPolicy) {
+                        ad = handleDescriptor(ad, info);
+                    }
+                    tb.add( ad );
+                }
+            }
+            else {
+                //only load native attributes configured
+                for ( AttributeTypeInfo att : info.getAttributes() ) {
+                    String attName = att.getName();
+                    
+                    //load the actual underlying attribute type
+                    PropertyDescriptor pd = ft.getDescriptor( attName );
+                    if ( pd == null || !( pd instanceof AttributeDescriptor) ) {
+                        throw new IOException("the SimpleFeatureType " + info.getPrefixedName()
+                                + " does not contains the configured attribute " + attName
+                                + ". Check your schema configuration");
+                    }
+                
+                    AttributeDescriptor ad = (AttributeDescriptor) pd;
+                    ad = handleDescriptor(ad, info);
+                    tb.add( (AttributeDescriptor) ad );
+                }
+            }
+            ft = tb.buildFeatureType();
+        } // end special case for SimpleFeatureType
         return ft;
     }
 
@@ -1263,14 +1307,28 @@ public class ResourcePool {
         }
         
         // wrap it if we are dealing with a multi-coverage reader
-        if(coverageName != null) {
+        if (coverageName != null) {
             // force the result to work against a single coverage, so that the OGC service portion of
             // GeoServer does not need to be updated to the multicoverage stuff
             // (we might want to introduce a hint later for code that really wants to get the
             // multi-coverage reader)
-            return SingleGridCoverage2DReader.wrap((GridCoverage2DReader) reader, coverageName);
+            return CoverageDimensionCustomizerReader.wrap((GridCoverage2DReader) reader, coverageName, info);
         } else {
+            // In order to deal with Bands customization, we need to get a CoverageInfo.
+            // Therefore we won't wrap the reader into a CoverageDimensionCustomizerReader in case 
+            // we don't have the coverageName and the underlying reader has more than 1 coverage.
+            // Indeed, there are cases (as during first initialization) where a multi-coverage reader is requested
+            // to the resourcePool without specifying the coverageName: No way to get the proper coverageInfo in
+            // that case so returning the simple reader.
+            final int numCoverages = ((GridCoverage2DReader) reader).getGridCoverageCount();
+            if (numCoverages == 1) {
+                return CoverageDimensionCustomizerReader.wrap((GridCoverage2DReader) reader, null, info);
+            }
+            // Avoid dimensions wrapping since we have a multi-coverage reader 
+            // but no coveragename have been specified
             return (GridCoverage2DReader) reader;
+
+            
         }
     }
     
@@ -1632,20 +1690,42 @@ public class ResourcePool {
     public void writeStyle( StyleInfo style, InputStream in ) throws IOException {
         synchronized ( styleCache ) {
             File styleFile = dataDir().findOrCreateStyleSldFile(style);
-            BufferedOutputStream out = new BufferedOutputStream( new FileOutputStream( styleFile ) );
-            
-            try {
-                IOUtils.copy( in, out );
-                out.flush();
-                
-                clear(style);
-            }
-            finally {
-                out.close();
-            }
+            writeStyle(in, styleFile);
+            clear(style);
         }
     }
-    
+
+	/**
+	 * Safe write on styleFile the passed inputStream
+	 * 
+	 * @param in
+	 *            the new stream to write to styleFile
+	 * @param styleFile
+	 *            file to update
+	 * @throws IOException
+	 */
+	public static void writeStyle(final InputStream in, final File styleFile)
+			throws IOException {
+		final File temporaryFile = File.createTempFile(styleFile.getName(),
+				null, styleFile.getParentFile());
+		BufferedOutputStream out = null;
+		try {
+			out = new BufferedOutputStream(new FileOutputStream(temporaryFile));
+			IOUtils.copy(in, out);
+			out.flush();
+		} finally {
+			out.close();
+		}
+		// move the file
+		try {
+			org.geoserver.data.util.IOUtils.rename(temporaryFile, styleFile);
+		} finally {
+			if (temporaryFile.exists()) {
+				temporaryFile.delete();
+			}
+		}
+	}
+
     /**
      * Deletes a style from the configuration.
      * 

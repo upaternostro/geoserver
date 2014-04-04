@@ -18,7 +18,9 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 import javax.servlet.http.HttpServletResponse;
 
@@ -32,6 +34,7 @@ import org.geoserver.catalog.FeatureTypeInfo;
 import org.geoserver.catalog.LayerGroupInfo;
 import org.geoserver.catalog.LayerInfo;
 import org.geoserver.catalog.ResourceInfo;
+import org.geoserver.catalog.WorkspaceInfo;
 import org.geoserver.config.GeoServerDataDirectory;
 import org.geoserver.data.test.MockData;
 import org.geoserver.data.test.SystemTestData;
@@ -106,6 +109,15 @@ public class GWCIntegrationTest extends GeoServerSystemTestSupport {
         MockHttpServletResponse sr = getAsServletResponse("gwc/service/wmts?request=GetTile&layer="
                 + layerId
                 + "&format=image/png&tilematrixset=EPSG:4326&tilematrix=EPSG:4326:0&tilerow=0&tilecol=0");
+        assertEquals(200, sr.getErrorCode());
+        assertEquals("image/png", sr.getContentType());
+    }
+    
+    @Test 
+    public void testGetLegendGraphics() throws Exception {
+        String layerId = getLayerId(MockData.BASIC_POLYGONS);
+        MockHttpServletResponse sr = getAsServletResponse("gwc/service/wms?service=wms&version=1.1.1&request=GetLegendGraphic&layer="
+                + layerId + "&style=&format=image/png");
         assertEquals(200, sr.getErrorCode());
         assertEquals("image/png", sr.getContentType());
     }
@@ -576,9 +588,9 @@ public class GWCIntegrationTest extends GeoServerSystemTestSupport {
         quota.setQuotaStore("H2");
         gwc.saveDiskQuotaConfig(quota, null);
         GeoServerDataDirectory dd = GeoServerExtensions.bean(GeoServerDataDirectory.class);
-        File jdbcConfigFile = dd.findDataFile("gwc/geowebcache-diskquota-jdbc.xml");
+        File jdbcConfigFile = dd.findFile("gwc/geowebcache-diskquota-jdbc.xml");
         assertNull("jdbc config should not be there", jdbcConfigFile);
-        File h2DefaultStore = dd.findDataFile("gwc/diskquota_page_store_h2");
+        File h2DefaultStore = dd.findFile("gwc/diskquota_page_store_h2");
         assertNotNull("jdbc store should be there", h2DefaultStore);
         assertTrue(getActualStore(provider) instanceof JDBCQuotaStore);
         
@@ -602,7 +614,7 @@ public class GWCIntegrationTest extends GeoServerSystemTestSupport {
         pool.setMaxOpenPreparedStatements(50);
         jdbc.setConnectionPool(pool);
         gwc.saveDiskQuotaConfig(quota, jdbc);
-        jdbcConfigFile = dd.findDataFile("gwc/geowebcache-diskquota-jdbc.xml");
+        jdbcConfigFile = dd.findFile("gwc/geowebcache-diskquota-jdbc.xml");
         assertNotNull("jdbc config should be there", jdbcConfigFile);
         assertNull("jdbc store should be there", dd.findDataFile("gwc/diskquota_page_store_h2"));
         File newQuotaStore = new File("./target/quota-h2.data.db");
@@ -663,5 +675,46 @@ public class GWCIntegrationTest extends GeoServerSystemTestSupport {
         getGeoServer().reload();
         // grab the config, make sure it was saved as expected
         assertEquals(100, GWC.get().getConfig().getGutter());
+    }
+    
+    @Test
+    public void testRenameWorkspace() throws Exception {
+        String wsName = MockData.CITE_PREFIX;
+        String wsRenamed = MockData.CITE_PREFIX + "Renamed";
+        Catalog catalog = getCatalog();
+        WorkspaceInfo ws = catalog.getWorkspaceByName(wsName);
+        
+        try {
+            // collect all the layer names that are in the CITE workspace
+            List<String> layerNames = new ArrayList<String>();
+            for (LayerInfo layer : catalog.getLayers()) {
+                if(wsName.equals(layer.getResource().getStore().getWorkspace().getName())) {
+                    String prefixedName = layer.prefixedName();
+                    try {
+                        // filter out geometryless layers and other stuff that cannot be hanlded by GWC
+                        GWC.get().getTileLayerByName(prefixedName);
+                        layerNames.add(layer.getName());
+                    } catch(IllegalArgumentException e) {
+                        // fine, we are skipping layers that cannot be handled
+                    }
+                }
+            }
+            
+            // rename the workspace
+            
+            ws.setName(wsRenamed);
+            catalog.save(ws);
+            
+            // check all the preview layers have been renamed too
+            for (String name : layerNames) {
+                String prefixedName = wsRenamed + ":" + name; 
+                GWC.get().getTileLayerByName(prefixedName);
+            }
+        } finally {
+            if(wsRenamed.equals(ws.getName())) {
+                ws.setName(wsName);
+                catalog.save(ws);
+            }
+        }
     }
 }

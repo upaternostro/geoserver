@@ -84,6 +84,7 @@ import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 
+import com.sun.media.jai.codec.PNGEncodeParam;
 import com.vividsolutions.jts.geom.Coordinate;
 
 /**
@@ -120,6 +121,10 @@ public class WMS implements ApplicationContextAware {
     public static final String LOOP_CONTINUOUSLY = "loopContinuously";
 
     public static final Boolean LOOP_CONTINUOUSLY_DEFAULT = Boolean.FALSE;
+    
+    public static final String SCALEHINT_MAPUNITS_PIXEL = "scalehintMapunitsPixel";
+    
+    public static final Boolean SCALEHINT_MAPUNITS_PIXEL_DEFAULT = Boolean.FALSE;
     
     static final Logger LOGGER = Logging.getLogger(WMS.class);
 
@@ -301,9 +306,9 @@ public class WMS implements ApplicationContextAware {
         return getServiceInfo().getInterpolation();
     }
 
-    public Boolean getPNGNativeAcceleration() {
+    public JAIInfo.PngEncoderType getPNGEncoderType() {
         JAIInfo jaiInfo = getJaiInfo();
-        return Boolean.valueOf(jaiInfo.isPngAcceleration());
+        return jaiInfo.getPngEncoderType();
     }
 
     public Boolean getJPEGNativeAcceleration() {
@@ -486,6 +491,10 @@ public class WMS implements ApplicationContextAware {
     
     public Boolean getLoopContinuously() {
        return getMetadataValue(LOOP_CONTINUOUSLY, LOOP_CONTINUOUSLY_DEFAULT, Boolean.class);
+    }
+    
+    public Boolean getScalehintUnitPixel(){
+        return getMetadataValue(SCALEHINT_MAPUNITS_PIXEL, SCALEHINT_MAPUNITS_PIXEL_DEFAULT, Boolean.class);
     }
 
     int getMetadataPercentage(MetadataMap metadata, String key, int defaultValue) {
@@ -756,6 +765,13 @@ public class WMS implements ApplicationContextAware {
                     "Failed to determin if the layer is queryable, assuming it's not", e);
             return false;
         }
+    }
+
+    /**
+     * Returns true if the layer is opaque
+     */
+    public boolean isOpaque(LayerInfo layer) {
+        return layer.isOpaque();
     }
 
     public Integer getCascadedHopCount(LayerInfo layer) {

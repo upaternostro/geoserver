@@ -5,25 +5,21 @@
 package org.geoserver.csw.store.internal;
 
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 
 import org.geoserver.catalog.Catalog;
-import org.geoserver.csw.feature.MemoryFeatureCollection;
-import org.geoserver.csw.feature.sort.ComplexComparatorFactory;
+import org.geoserver.csw.GetRecords;
 import org.geoserver.csw.records.CSWRecordDescriptor;
 import org.geoserver.csw.records.RecordDescriptor;
 import org.geoserver.csw.records.iso.MetaDataDescriptor;
 import org.geoserver.csw.store.AbstractCatalogStore;
+import org.geoserver.ows.URLMangler.URLType;
+import org.geoserver.ows.util.ResponseUtils;
 import org.geotools.data.Query;
 import org.geotools.data.Transaction;
-import org.geotools.data.store.MaxFeaturesFeatureCollection;
 import org.geotools.feature.FeatureCollection;
 import org.geotools.filter.SortByImpl;
-import org.opengis.feature.Feature;
-import org.opengis.feature.type.FeatureType;
 import org.opengis.feature.type.Name;
 import org.opengis.filter.Filter;
 import org.opengis.filter.expression.Expression;
@@ -72,9 +68,18 @@ public class InternalCatalogStore extends AbstractCatalogStore {
     }
 
     @Override
-    public FeatureCollection getRecordsInternal(RecordDescriptor rd, Query q, Transaction t) throws IOException {
+    public FeatureCollection getRecordsInternal(RecordDescriptor rd, RecordDescriptor rdOutput, Query q, Transaction t) throws IOException {
+        
+        Map<String, String> interpolationProperties = new HashMap<String, String>();       
+        
+        String baseUrl = (String) q.getHints().get(GetRecords.KEY_BASEURL);
+        if (baseUrl != null) {
+            interpolationProperties.put("url.wfs", ResponseUtils.buildURL(baseUrl, "wfs", null, URLType.SERVICE));
+            interpolationProperties.put("url.wms", ResponseUtils.buildURL(baseUrl, "wms", null, URLType.SERVICE));
+        }
 
         CatalogStoreMapping mapping = getMapping(q.getTypeName());
+        CatalogStoreMapping outputMapping = getMapping(rdOutput.getFeatureDescriptor().getName().getLocalPart());
 
         int startIndex = 0;
         if (q.getStartIndex() != null) {
@@ -89,30 +94,31 @@ public class InternalCatalogStore extends AbstractCatalogStore {
             Filter filter = q.getFilter();
             unmapped = (Filter) filter.accept(unmapper, null);
         }
-               
-        if (q.getProperties() != null && q.getProperties().size() > 0) {
-            mapping = mapping.subMapping(q.getProperties(), rd);
-        }
         
-        //unmap sortby
+        // unmap sortby
         SortBy[] unmappedSortBy = null;
         if (q.getSortBy() != null && q.getSortBy().length > 0) {
-        	unmappedSortBy = new SortBy[q.getSortBy().length];
-        	for (int i=0; i<q.getSortBy().length; i++) {
-        		SortBy sortby = q.getSortBy()[i];
-        		Expression expr = (Expression) sortby.getPropertyName().accept(unmapper, null);
-        		
-        		if (!(expr instanceof PropertyName)) {
-        			throw new IOException("Sorting on " + sortby.getPropertyName() + " is not supported.");
-        		}
-        		
-        		unmappedSortBy[i] = new SortByImpl((PropertyName) expr, sortby.getSortOrder());
-            	
+            unmappedSortBy = new SortBy[q.getSortBy().length];
+            for (int i = 0; i < q.getSortBy().length; i++) {
+                SortBy sortby = q.getSortBy()[i];
+                Expression expr = (Expression) sortby.getPropertyName().accept(unmapper, null);
+
+                if (!(expr instanceof PropertyName)) {
+                    throw new IOException("Sorting on " + sortby.getPropertyName()
+                            + " is not supported.");
+                }
+
+                unmappedSortBy[i] = new SortByImpl((PropertyName) expr, sortby.getSortOrder());
+
             }
-        } 
+        }
+        
+        if (q.getProperties() != null && q.getProperties().size() > 0) {
+        	outputMapping = outputMapping.subMapping(q.getProperties(), rd);
+        }
 
         return new CatalogStoreFeatureCollection(startIndex,
-                q.getMaxFeatures(), unmappedSortBy, unmapped, catalog, mapping, rd);
+                q.getMaxFeatures(), unmappedSortBy, unmapped, catalog, outputMapping, rdOutput, interpolationProperties);
     }
 
     @Override
