@@ -10,19 +10,19 @@
 	</parent>
 
 	<groupId>org.geoserver</groupId>
-	<artifactId>ols-pgRouting</artifactId>
+	<artifactId>gs-ols-pgRouting</artifactId>
 	<packaging>jar</packaging>
 	<name>Open Location Services pgRouting service provider</name>
 
 	<dependencies>
 		<dependency>
 			<groupId>org.geoserver</groupId>
-			<artifactId>ols</artifactId>
+			<artifactId>gs-ols</artifactId>
 			<version>${project.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.geoserver.web</groupId>
-			<artifactId>web-ols</artifactId>
+			<artifactId>gs-web-ols</artifactId>
 			<version>${project.version}</version>
 		</dependency>
 		<dependency>

@@ -10,19 +10,19 @@
 	</parent>
 
 	<groupId>org.geoserver</groupId>
-	<artifactId>ols-RFC59</artifactId>
+	<artifactId>gs-ols-RFC59</artifactId>
 	<packaging>jar</packaging>
 	<name>Open Location Services RFC59 service provider</name>
 
 	<dependencies>
 		<dependency>
 			<groupId>org.geoserver</groupId>
-			<artifactId>ols</artifactId>
+			<artifactId>gs-ols</artifactId>
 			<version>${project.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.geoserver.web</groupId>
-			<artifactId>web-ols</artifactId>
+			<artifactId>gs-web-ols</artifactId>
 			<version>${project.version}</version>
 		</dependency>
 		<dependency>

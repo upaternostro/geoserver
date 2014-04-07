@@ -166,6 +166,9 @@
         <module>geopkg</module>
         <module>ols</module>
         <module>ols-RFC59</module>
+        <module>ols-SOLR</module>
+        <module>ols-pgRouting</module>
+        <module>ols-OTP</module>
         <module>ols_web</module>
       </modules>
     </profile>

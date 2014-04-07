@@ -11,14 +11,14 @@
 	</parent>
 
 	<groupId>org.geoserver.web</groupId>
-	<artifactId>web-ols</artifactId>
+	<artifactId>gs-web-ols</artifactId>
 	<packaging>jar</packaging>
 	<name>Open Location Services UI Module</name>
 
 	<dependencies>
 		<dependency>
 			<groupId>org.geoserver</groupId>
-			<artifactId>ols</artifactId>
+			<artifactId>gs-ols</artifactId>
 			<version>${project.version}</version>
 		</dependency>
 		<dependency>

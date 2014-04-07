@@ -1092,32 +1092,32 @@
       <dependencies>
     <dependency>
       <groupId>org.geoserver</groupId>
-      <artifactId>ols</artifactId>
+      <artifactId>gs-ols</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
       <groupId>org.geoserver</groupId>
-      <artifactId>ols-RFC59</artifactId>
+      <artifactId>gs-ols-RFC59</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
       <groupId>org.geoserver</groupId>
-      <artifactId>ols-SOLR</artifactId>
+      <artifactId>gs-ols-SOLR</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
       <groupId>org.geoserver</groupId>
-      <artifactId>ols-pgRouting</artifactId>
+      <artifactId>gs-ols-pgRouting</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
       <groupId>org.geoserver</groupId>
-      <artifactId>ols-OTP</artifactId>
+      <artifactId>gs-ols-OTP</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
       <groupId>org.geoserver.web</groupId>
-      <artifactId>web-ols</artifactId>
+      <artifactId>gs-web-ols</artifactId>
       <version>${project.version}</version>
     </dependency>
 </dependencies>
