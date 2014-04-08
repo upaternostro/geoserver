@@ -23,6 +23,7 @@ import java.io.Serializable;
 import java.math.BigDecimal;
 import java.text.DateFormat;
 import java.text.MessageFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.GregorianCalendar;
 import java.util.List;
@@ -265,7 +266,7 @@ public class OTPServiceProvider extends OLSAbstractServiceProvider implements Ro
         }
         
         DateFormat dateFormat = DateFormat.getDateInstance(DateFormat.SHORT);
-        DateFormat timeFormat = DateFormat.getTimeInstance(DateFormat.SHORT);
+        DateFormat timeFormat = new SimpleDateFormat("hh:mm a");
         
         // Build RESTful OPT request
         Client  client = Client.create();
