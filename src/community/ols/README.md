@@ -13,22 +13,25 @@ Open Street Map
 
 Overview
 ========
+
 Scope
 -----
 This document describes the implementation of an OpenLS as a GeoServer module.
 This document assumes that you are familiar with GeoServer's deploy and configuration methods, with
 Git and Maven. Moreover, this document will not explain how to deploy SOLR or Open Trip Planner, nor
 how to install pgRouting in your PostgreSQL server.
+
 References
 ==========
 Open Geospatial Consortium OpenLS v1.2.0 http://www.opengeospatial.org/standards/ols
 
 Definitions
 ===========
-OGC: Open Geospatial Consortium
-OpenLS: Open Location Service
-OLS: see OpenLS
-OTP: Open Trip Planner
+* OGC: Open Geospatial Consortium
+* OpenLS: Open Location Service
+* OLS: see OpenLS
+* OTP: Open Trip Planner
+
 Design consideration
 ====================
 The project aims to deliver an OpenLS server that supplies geocoding, reverse geocoding and routing
@@ -36,6 +39,7 @@ functionalities as per the OGC OpenLS v1.2.0 standard.
 The implementation consists of a series of GeoServer plugins that:
 * enable the OpenLS functionality on GeoServer
 * enable the various backends
+
 At the moment of this writing, the supported backends are:
 
 Functionality     | Backends
@@ -48,20 +52,25 @@ Routing           | OTP
 
 Please note that, while the master plugin adds to GeoServer the OpenLS framework, additional plugins
 are needed to handle the backends interactions.
+
 Project availability
 ====================
 The project has been developed as a series of community plugins to the GeoServer develop (master)
 branch.
 The source code for the project resides on GitHub at the URL https://github.com/phoops/geoserver
+
 How to build
 ============
 Follow GeoServer standard instruction, but clone the following git repository:
-    https://github.com/phoops/geoserver.git
+https://github.com/phoops/geoserver.git
 Remember to enable the ols profile when building:
+
     mvn -P ols ...
+
 How to run
 ==========
 Deploy the compiled GeoServer WAR archive to your application server as usual.
+
 How to configure
 ================
 After logging into GeoServer administration, you will notice a new service between the GeoServer's
@@ -79,23 +88,31 @@ between the following list:
 Choosing a particular service will bring up the configuration pages for the backend plugins bound to
 that service.
 Please note that is mandatory to activate a backend for each service.
+
 Back end configuration
 ======================
+
 Geocoding
 ---------
+
 ###RFC 59
 To configure RFC 59 geocoder, you must supply the RFC 59 web service endpoint, the time out and the
 algorithm to use. Please refer to http://mappe.regione.toscana.it/ for further information.
+
 ###SOLR
 To configure the SOLR-based geocoder, just the endpoint of the SOLR server is needed. The SOLR must
 index data as described in the paragraph “Loading data into SOLR”.
+
 Reverse geocoding
 -----------------
+
 ###SOLR
 To configure the SOLR-based reverse geocoder, just the endpoint of the SOLR server is needed.
 The SOLR must index data as described in the paragraph “Loading data into SOLR”.
+
 Routing & Navigation
 --------------------
+
 ###OTP
 To configure the Open Trip Planner router, you will need to supply the OTP URL (where REST web
 services are available). The OTP server must contain data as described in the paragraph “Loading
@@ -117,6 +134,7 @@ name is empty.  GeoServer will substitute this patterns:
  - {1}: distance
 
 At last, the Locale to output data must be configured.
+
 ###pgRouting
 To configure the pgRouting router, you will need to supply the parameters to connect to the
 database, the algorithm to use, the names for the nodes and edges tables and the queries required by
@@ -140,8 +158,10 @@ At last, the Locale to output data must be configured.
 
 How to load data
 ================
+
 Please note that you have to download Open Street Map data from
 http://wiki.openstreetmap.org/wiki/Planet.osm
+
 Loading data into SOLR
 ----------------------
 SOLR must be configured to have a specific core for the Geocoding/Reverse geocoding service. You
@@ -551,6 +571,7 @@ that encloses everything;
 Loading data into OTP
 ---------------------
 Please follow the Open Trip Planner documentation to load Open Street Map data into OTP.
+
 Loading data into pgRouting
 ---------------------------
 Load Open Street Map data into PostgreSQL using osm2pgrouting. Once the process ends, add a primary
