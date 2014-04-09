@@ -352,13 +352,15 @@ The instance directory must contain a subdirectory named “conf” where the fo
     </schema>
 
 A temporary PostgreSQL database is used to prepare data that will be loaded into SOLR. The steps are:
-load Open Street Map data into PostgreSQL using osm2pgrouting;
-load the municipality border (in this example we are using Regione Toscana ones)
-shp2pgsql -s 3003:4326 -c -I GIA_COMUNI.shp >  GIA_COMUNI.sql
-psql -h localhost -U routing -W -d prova -f GIA_COMUNI.sql
+* load Open Street Map data into PostgreSQL using osm2pgrouting;
+* load the municipality border (in this example we are using Regione Toscana ones)
+
+    shp2pgsql -s 3003:4326 -c -I GIA_COMUNI.shp >  GIA_COMUNI.sql
+    psql -h localhost -U routing -W -d prova -f GIA_COMUNI.sql
 
 * extract features from pgRouting ways with the following queries:
-* create table features as 
+
+    create table features as 
     select 'OSM_' || coalesce(codcom, 'OUTSIDE') || '_' || osm_id id, 
         trim(replace(replace(replace(name, '&', '&amp;'), '>', '&gt;'), '<', '&lt;'))::character varying as name, 
         st_collect(the_geom) centerline, 
@@ -522,7 +524,9 @@ psql -h localhost -U routing -W -d prova -f GIA_COMUNI.sql
     municipality, country_subdivision, street_type, street_name 
     from features 
     group by name, municipality, country_subdivision, street_type, street_name;
+
 * generate the SOLR dataset using the output of the following query:
+
     select '<doc><field name="id">' || id || '</field><field name="is_building">false</field><field name="name">' || 
             name || '</field><field name="street_type">' || street_type || '</field><field name="street_name">' || 
             street_name || '</field><field name="municipality">' || municipality || '</field><field name="country_subdivision">' || 
@@ -539,6 +543,7 @@ psql -h localhost -U routing -W -d prova -f GIA_COMUNI.sql
             st_xmin(bounding_box) || ' ' || st_ymin(bounding_box) || ' ' || st_xmax(bounding_box) || ' ' || st_ymax(bounding_box) ||
         '</field></doc>'
     from features2 where street_type is null and street_name is null;
+
 * modify the output of the previous query to remove psql header and add an XML tag <add>...</add>
 that encloses everything;
 * sent the data to SOLR using post.jar
@@ -550,11 +555,15 @@ Loading data into pgRouting
 ---------------------------
 Load Open Street Map data into PostgreSQL using osm2pgrouting. Once the process ends, add a primary
 key to the table with the following command:
+
     alter table vertices_tmp add primary key(gid);
+
 To use the loaded data, configure the pgRouting plugin with the following parameters:
+
 Parameter                 | Value
 ------------------------- | ----------------------------------------------------------------------------------------
 Node table name           | vertices_tmp
 Edge table name           | ways
 Directed Edge SQL query   | SELECT gid as id, source, target, length as cost, x1, y1, x2, y2, reverse_cost FROM ways
 Undirected Edge SQL query | SELECT gid as id, source, target, length as cost, x1, y1, x2, y2 FROM ways
+
