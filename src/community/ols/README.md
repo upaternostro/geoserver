@@ -45,13 +45,16 @@ At the moment of this writing, the supported backends are:
 Functionality     | Backends
 ----------------- | --------
 Geocoding         | SOLR
-                  | RFC 591
+                  | RFC 59
 Reverse geocoding | SOLR
 Routing           | OTP
                   | pgRouting
 
 Please note that, while the master plugin adds to GeoServer the OpenLS framework, additional plugins
 are needed to handle the backends interactions.
+
+RFC 59 is a proposed standard sponsored by Regione Toscana for geocoding. For reference, see 
+e.Toscana Compliance portal at the address http://web.rete.toscana.it/eCompliance/
 
 Project availability
 ====================
