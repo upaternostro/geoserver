@@ -75,6 +75,7 @@ between the following list:
 * Geocoding
 * Reverse geocoding
 * Routing & Navigation
+
 Choosing a particular service will bring up the configuration pages for the backend plugins bound to
 that service.
 Please note that is mandatory to activate a backend for each service.
@@ -114,6 +115,7 @@ not empty.  GeoServer will substitute this patterns:
 name is empty.  GeoServer will substitute this patterns:
  - {0}: direction
  - {1}: distance
+
 At last, the Locale to output data must be configured.
 ###pgRouting
 To configure the pgRouting router, you will need to supply the parameters to connect to the
@@ -135,6 +137,7 @@ street name is empty.  GeoServer will substitute this patterns:
  - {0}: direction
  - {1}: distance
 At last, the Locale to output data must be configured.
+
 How to load data
 ================
 Please note that you have to download Open Street Map data from
@@ -144,209 +147,209 @@ Loading data into SOLR
 SOLR must be configured to have a specific core for the Geocoding/Reverse geocoding service. You
 will need to modify the SOLR configuration (solr.xml) to add:
 
-`<?xml version="1.0" encoding="UTF-8" ?>
-<solr persistent="true">
-  <cores defaultCoreName="12I_CPO_TP" adminPath="/admin/cores" zkClientTimeout="${zkClientTimeout:15000}" host="${host:}" hostPort="${jetty.port:}" hostContext="${hostContext:}">
-    <core schema="schema.xml" loadOnStartup="true" instanceDir="12I_CPO_TP/" transient="false" name="12I_CPO_TP" config="solrconfig.xml" dataDir="data"/>
-  </cores>
-</solr>`
+    <?xml version="1.0" encoding="UTF-8" ?>
+    <solr persistent="true">
+      <cores defaultCoreName="12I_CPO_TP" adminPath="/admin/cores" zkClientTimeout="${zkClientTimeout:15000}" host="${host:}" hostPort="${jetty.port:}" hostContext="${hostContext:}">
+        <core schema="schema.xml" loadOnStartup="true" instanceDir="12I_CPO_TP/" transient="false" name="12I_CPO_TP" config="solrconfig.xml" dataDir="data"/>
+      </cores>
+    </solr>
 
 The instance directory must contain a subdirectory named “conf” where the following schema file
 (schema.xml) must reside:
 
-`<?xml version="1.0" encoding="UTF-8" ?>
-<schema name="example" version="1.5">
- <fields>
-   <field name="id" type="string" indexed="true" stored="true" required="true" multiValued="false" />
-   <field name="is_building" type="boolean" indexed="true" stored="true"/>
-   <field name="name" type="text_general" indexed="true" stored="true"/>
-   <field name="street_type" type="text_general" indexed="true" stored="true"/>
-   <field name="street_name" type="text_general" indexed="true" stored="true"/>
-   <field name="municipality" type="text_general" indexed="true" stored="true"/>
-   <field name="country_subdivision" type="text_general" indexed="true" stored="true"/>
-   <field name="building_number" type="text_general" indexed="true" stored="true"/>
-   <field name="number" type="text_general" indexed="true" stored="true"/>
-   <field name="number_extension" type="text_general" indexed="true" stored="true"/>
-   <field name="centerline" type="location_rpt" indexed="true" stored="true"/>
-   <field name="centroid" type="location_rpt" indexed="true" stored="true"/>
-   <field name="bounding_box" type="location_rpt" indexed="true" stored="true"/>
-   <field name="_version_" type="long" indexed="true" stored="true"/>   
- </fields>
- <uniqueKey>id</uniqueKey>
-
-  <types>
-    <fieldType name="string" class="solr.StrField" sortMissingLast="true" />
-    <fieldType name="boolean" class="solr.BoolField" sortMissingLast="true"/>
-    <fieldType name="int" class="solr.TrieIntField" precisionStep="0" positionIncrementGap="0"/>
-    <fieldType name="float" class="solr.TrieFloatField" precisionStep="0" positionIncrementGap="0"/>
-    <fieldType name="long" class="solr.TrieLongField" precisionStep="0" positionIncrementGap="0"/>
-    <fieldType name="double" class="solr.TrieDoubleField" precisionStep="0" positionIncrementGap="0"/>
-    <fieldType name="tint" class="solr.TrieIntField" precisionStep="8" positionIncrementGap="0"/>
-    <fieldType name="tfloat" class="solr.TrieFloatField" precisionStep="8" positionIncrementGap="0"/>
-    <fieldType name="tlong" class="solr.TrieLongField" precisionStep="8" positionIncrementGap="0"/>
-    <fieldType name="tdouble" class="solr.TrieDoubleField" precisionStep="8" positionIncrementGap="0"/>
-    <fieldType name="date" class="solr.TrieDateField" precisionStep="0" positionIncrementGap="0"/>
-    <fieldType name="tdate" class="solr.TrieDateField" precisionStep="6" positionIncrementGap="0"/>
-    <fieldtype name="binary" class="solr.BinaryField"/>
-    <fieldType name="pint" class="solr.IntField"/>
-    <fieldType name="plong" class="solr.LongField"/>
-    <fieldType name="pfloat" class="solr.FloatField"/>
-    <fieldType name="pdouble" class="solr.DoubleField"/>
-    <fieldType name="pdate" class="solr.DateField" sortMissingLast="true"/>
-    <fieldType name="random" class="solr.RandomSortField" indexed="true" />
-    <fieldType name="text_ws" class="solr.TextField" positionIncrementGap="100">
-      <analyzer>
-        <tokenizer class="solr.WhitespaceTokenizerFactory"/>
-      </analyzer>
-    </fieldType>
-    <fieldType name="text_general" class="solr.TextField" positionIncrementGap="100">
-      <analyzer type="index">
-        <tokenizer class="solr.StandardTokenizerFactory"/>
-        <filter class="solr.StopFilterFactory" ignoreCase="true" words="stopwords.txt" enablePositionIncrements="true" />
-        <filter class="solr.LowerCaseFilterFactory"/>
-      </analyzer>
-      <analyzer type="query">
-        <tokenizer class="solr.StandardTokenizerFactory"/>
-        <filter class="solr.StopFilterFactory" ignoreCase="true" words="stopwords.txt" enablePositionIncrements="true" />
-        <filter class="solr.SynonymFilterFactory" synonyms="synonyms.txt" ignoreCase="true" expand="true"/>
-        <filter class="solr.LowerCaseFilterFactory"/>
-      </analyzer>
-    </fieldType>
-    <fieldType name="text_it" class="solr.TextField" positionIncrementGap="100">
-      <analyzer type="index">
-        <tokenizer class="solr.StandardTokenizerFactory"/>
-        <filter class="solr.StopFilterFactory"
-                ignoreCase="true"
-                words="lang/stopwords_it.txt"
-                enablePositionIncrements="true"
-                />
-        <filter class="solr.LowerCaseFilterFactory"/>
-    <filter class="solr.EnglishPossessiveFilterFactory"/>
-        <filter class="solr.KeywordMarkerFilterFactory" protected="protwords.txt"/>
-        <filter class="solr.PorterStemFilterFactory"/>
-      </analyzer>
-      <analyzer type="query">
-        <tokenizer class="solr.StandardTokenizerFactory"/>
-        <filter class="solr.SynonymFilterFactory" synonyms="synonyms.txt" ignoreCase="true" expand="true"/>
-        <filter class="solr.StopFilterFactory"
-                ignoreCase="true"
-                words="lang/stopwords_it.txt"
-                enablePositionIncrements="true"
-                />
-        <filter class="solr.LowerCaseFilterFactory"/>
-    <filter class="solr.EnglishPossessiveFilterFactory"/>
-        <filter class="solr.KeywordMarkerFilterFactory" protected="protwords.txt"/>
-        <filter class="solr.PorterStemFilterFactory"/>
-      </analyzer>
-    </fieldType>
-    <fieldType name="text_it_splitting" class="solr.TextField" positionIncrementGap="100" autoGeneratePhraseQueries="true">
-      <analyzer type="index">
-        <tokenizer class="solr.WhitespaceTokenizerFactory"/>
-        <filter class="solr.StopFilterFactory"
-                ignoreCase="true"
-                words="lang/stopwords_it.txt"
-                enablePositionIncrements="true"
-                />
-        <filter class="solr.WordDelimiterFilterFactory" generateWordParts="1" generateNumberParts="1" catenateWords="1" catenateNumbers="1" catenateAll="0" splitOnCaseChange="1"/>
-        <filter class="solr.LowerCaseFilterFactory"/>
-        <filter class="solr.KeywordMarkerFilterFactory" protected="protwords.txt"/>
-        <filter class="solr.PorterStemFilterFactory"/>
-      </analyzer>
-      <analyzer type="query">
-        <tokenizer class="solr.WhitespaceTokenizerFactory"/>
-        <filter class="solr.SynonymFilterFactory" synonyms="synonyms.txt" ignoreCase="true" expand="true"/>
-        <filter class="solr.StopFilterFactory"
-                ignoreCase="true"
-                words="lang/stopwords_it.txt"
-                enablePositionIncrements="true"
-                />
-        <filter class="solr.WordDelimiterFilterFactory" generateWordParts="1" generateNumberParts="1" catenateWords="0" catenateNumbers="0" catenateAll="0" splitOnCaseChange="1"/>
-        <filter class="solr.LowerCaseFilterFactory"/>
-        <filter class="solr.KeywordMarkerFilterFactory" protected="protwords.txt"/>
-        <filter class="solr.PorterStemFilterFactory"/>
-      </analyzer>
-    </fieldType>
-    <fieldType name="text_it_splitting_tight" class="solr.TextField" positionIncrementGap="100" autoGeneratePhraseQueries="true">
-      <analyzer>
-        <tokenizer class="solr.WhitespaceTokenizerFactory"/>
-        <filter class="solr.SynonymFilterFactory" synonyms="synonyms.txt" ignoreCase="true" expand="false"/>
-        <filter class="solr.StopFilterFactory" ignoreCase="true" words="lang/stopwords_it.txt"/>
-        <filter class="solr.WordDelimiterFilterFactory" generateWordParts="0" generateNumberParts="0" catenateWords="1" catenateNumbers="1" catenateAll="0"/>
-        <filter class="solr.LowerCaseFilterFactory"/>
-        <filter class="solr.KeywordMarkerFilterFactory" protected="protwords.txt"/>
-        <filter class="solr.EnglishMinimalStemFilterFactory"/>
-        <filter class="solr.RemoveDuplicatesTokenFilterFactory"/>
-      </analyzer>
-    </fieldType>
-    <fieldType name="text_general_rev" class="solr.TextField" positionIncrementGap="100">
-      <analyzer type="index">
-        <tokenizer class="solr.StandardTokenizerFactory"/>
-        <filter class="solr.StopFilterFactory" ignoreCase="true" words="stopwords.txt" enablePositionIncrements="true" />
-        <filter class="solr.LowerCaseFilterFactory"/>
-        <filter class="solr.ReversedWildcardFilterFactory" withOriginal="true"
-           maxPosAsterisk="3" maxPosQuestion="2" maxFractionAsterisk="0.33"/>
-      </analyzer>
-      <analyzer type="query">
-        <tokenizer class="solr.StandardTokenizerFactory"/>
-        <filter class="solr.SynonymFilterFactory" synonyms="synonyms.txt" ignoreCase="true" expand="true"/>
-        <filter class="solr.StopFilterFactory" ignoreCase="true" words="stopwords.txt" enablePositionIncrements="true" />
-        <filter class="solr.LowerCaseFilterFactory"/>
-      </analyzer>
-    </fieldType>
-    <fieldType name="alphaOnlySort" class="solr.TextField" sortMissingLast="true" omitNorms="true">
-      <analyzer>
-        <tokenizer class="solr.KeywordTokenizerFactory"/>
-        <filter class="solr.LowerCaseFilterFactory" />
-        <filter class="solr.TrimFilterFactory" />
-        <filter class="solr.PatternReplaceFilterFactory"
-                pattern="([^a-z])" replacement="" replace="all"
-        />
-      </analyzer>
-    </fieldType>
+    <?xml version="1.0" encoding="UTF-8" ?>
+    <schema name="example" version="1.5">
+     <fields>
+       <field name="id" type="string" indexed="true" stored="true" required="true" multiValued="false" />
+       <field name="is_building" type="boolean" indexed="true" stored="true"/>
+       <field name="name" type="text_general" indexed="true" stored="true"/>
+       <field name="street_type" type="text_general" indexed="true" stored="true"/>
+       <field name="street_name" type="text_general" indexed="true" stored="true"/>
+       <field name="municipality" type="text_general" indexed="true" stored="true"/>
+       <field name="country_subdivision" type="text_general" indexed="true" stored="true"/>
+       <field name="building_number" type="text_general" indexed="true" stored="true"/>
+       <field name="number" type="text_general" indexed="true" stored="true"/>
+       <field name="number_extension" type="text_general" indexed="true" stored="true"/>
+       <field name="centerline" type="location_rpt" indexed="true" stored="true"/>
+       <field name="centroid" type="location_rpt" indexed="true" stored="true"/>
+       <field name="bounding_box" type="location_rpt" indexed="true" stored="true"/>
+       <field name="_version_" type="long" indexed="true" stored="true"/>   
+     </fields>
+     <uniqueKey>id</uniqueKey>
     
-    <fieldtype name="phonetic" stored="false" indexed="true" class="solr.TextField" >
-      <analyzer>
-        <tokenizer class="solr.StandardTokenizerFactory"/>
-        <filter class="solr.DoubleMetaphoneFilterFactory" inject="false"/>
-      </analyzer>
-    </fieldtype>
-
-    <fieldtype name="payloads" stored="false" indexed="true" class="solr.TextField" >
-      <analyzer>
-        <tokenizer class="solr.WhitespaceTokenizerFactory"/>
-        <filter class="solr.DelimitedPayloadTokenFilterFactory" encoder="float"/>
-      </analyzer>
-    </fieldtype>
-    <fieldType name="lowercase" class="solr.TextField" positionIncrementGap="100">
-      <analyzer>
-        <tokenizer class="solr.KeywordTokenizerFactory"/>
-        <filter class="solr.LowerCaseFilterFactory" />
-      </analyzer>
-    </fieldType>
-    <fieldType name="descendent_path" class="solr.TextField">
-      <analyzer type="index">
-    <tokenizer class="solr.PathHierarchyTokenizerFactory" delimiter="/" />
-      </analyzer>
-      <analyzer type="query">
-    <tokenizer class="solr.KeywordTokenizerFactory" />
-      </analyzer>
-    </fieldType>
-    <fieldType name="ancestor_path" class="solr.TextField">
-      <analyzer type="index">
-    <tokenizer class="solr.KeywordTokenizerFactory" />
-      </analyzer>
-      <analyzer type="query">
-    <tokenizer class="solr.PathHierarchyTokenizerFactory" delimiter="/" />
-      </analyzer>
-    </fieldType> 
-    <fieldtype name="ignored" stored="false" indexed="false" multiValued="true" class="solr.StrField" />
-    <fieldType name="point" class="solr.PointType" dimension="2" subFieldSuffix="_d"/>
-    <fieldType name="location" class="solr.LatLonType" subFieldSuffix="_coordinate"/>
- <fieldType name="location_rpt" class="solr.SpatialRecursivePrefixTreeFieldType"
-               spatialContextFactory="com.spatial4j.core.context.jts.JtsSpatialContextFactory"
-        distErrPct="0.025" maxDistErr="0.000009" units="degrees" />
- </types>
-</schema>`
+      <types>
+        <fieldType name="string" class="solr.StrField" sortMissingLast="true" />
+        <fieldType name="boolean" class="solr.BoolField" sortMissingLast="true"/>
+        <fieldType name="int" class="solr.TrieIntField" precisionStep="0" positionIncrementGap="0"/>
+        <fieldType name="float" class="solr.TrieFloatField" precisionStep="0" positionIncrementGap="0"/>
+        <fieldType name="long" class="solr.TrieLongField" precisionStep="0" positionIncrementGap="0"/>
+        <fieldType name="double" class="solr.TrieDoubleField" precisionStep="0" positionIncrementGap="0"/>
+        <fieldType name="tint" class="solr.TrieIntField" precisionStep="8" positionIncrementGap="0"/>
+        <fieldType name="tfloat" class="solr.TrieFloatField" precisionStep="8" positionIncrementGap="0"/>
+        <fieldType name="tlong" class="solr.TrieLongField" precisionStep="8" positionIncrementGap="0"/>
+        <fieldType name="tdouble" class="solr.TrieDoubleField" precisionStep="8" positionIncrementGap="0"/>
+        <fieldType name="date" class="solr.TrieDateField" precisionStep="0" positionIncrementGap="0"/>
+        <fieldType name="tdate" class="solr.TrieDateField" precisionStep="6" positionIncrementGap="0"/>
+        <fieldtype name="binary" class="solr.BinaryField"/>
+        <fieldType name="pint" class="solr.IntField"/>
+        <fieldType name="plong" class="solr.LongField"/>
+        <fieldType name="pfloat" class="solr.FloatField"/>
+        <fieldType name="pdouble" class="solr.DoubleField"/>
+        <fieldType name="pdate" class="solr.DateField" sortMissingLast="true"/>
+        <fieldType name="random" class="solr.RandomSortField" indexed="true" />
+        <fieldType name="text_ws" class="solr.TextField" positionIncrementGap="100">
+          <analyzer>
+            <tokenizer class="solr.WhitespaceTokenizerFactory"/>
+          </analyzer>
+        </fieldType>
+        <fieldType name="text_general" class="solr.TextField" positionIncrementGap="100">
+          <analyzer type="index">
+            <tokenizer class="solr.StandardTokenizerFactory"/>
+            <filter class="solr.StopFilterFactory" ignoreCase="true" words="stopwords.txt" enablePositionIncrements="true" />
+            <filter class="solr.LowerCaseFilterFactory"/>
+          </analyzer>
+          <analyzer type="query">
+            <tokenizer class="solr.StandardTokenizerFactory"/>
+            <filter class="solr.StopFilterFactory" ignoreCase="true" words="stopwords.txt" enablePositionIncrements="true" />
+            <filter class="solr.SynonymFilterFactory" synonyms="synonyms.txt" ignoreCase="true" expand="true"/>
+            <filter class="solr.LowerCaseFilterFactory"/>
+          </analyzer>
+        </fieldType>
+        <fieldType name="text_it" class="solr.TextField" positionIncrementGap="100">
+          <analyzer type="index">
+            <tokenizer class="solr.StandardTokenizerFactory"/>
+            <filter class="solr.StopFilterFactory"
+                    ignoreCase="true"
+                    words="lang/stopwords_it.txt"
+                    enablePositionIncrements="true"
+                    />
+            <filter class="solr.LowerCaseFilterFactory"/>
+        <filter class="solr.EnglishPossessiveFilterFactory"/>
+            <filter class="solr.KeywordMarkerFilterFactory" protected="protwords.txt"/>
+            <filter class="solr.PorterStemFilterFactory"/>
+          </analyzer>
+          <analyzer type="query">
+            <tokenizer class="solr.StandardTokenizerFactory"/>
+            <filter class="solr.SynonymFilterFactory" synonyms="synonyms.txt" ignoreCase="true" expand="true"/>
+            <filter class="solr.StopFilterFactory"
+                    ignoreCase="true"
+                    words="lang/stopwords_it.txt"
+                    enablePositionIncrements="true"
+                    />
+            <filter class="solr.LowerCaseFilterFactory"/>
+        <filter class="solr.EnglishPossessiveFilterFactory"/>
+            <filter class="solr.KeywordMarkerFilterFactory" protected="protwords.txt"/>
+            <filter class="solr.PorterStemFilterFactory"/>
+          </analyzer>
+        </fieldType>
+        <fieldType name="text_it_splitting" class="solr.TextField" positionIncrementGap="100" autoGeneratePhraseQueries="true">
+          <analyzer type="index">
+            <tokenizer class="solr.WhitespaceTokenizerFactory"/>
+            <filter class="solr.StopFilterFactory"
+                    ignoreCase="true"
+                    words="lang/stopwords_it.txt"
+                    enablePositionIncrements="true"
+                    />
+            <filter class="solr.WordDelimiterFilterFactory" generateWordParts="1" generateNumberParts="1" catenateWords="1" catenateNumbers="1" catenateAll="0" splitOnCaseChange="1"/>
+            <filter class="solr.LowerCaseFilterFactory"/>
+            <filter class="solr.KeywordMarkerFilterFactory" protected="protwords.txt"/>
+            <filter class="solr.PorterStemFilterFactory"/>
+          </analyzer>
+          <analyzer type="query">
+            <tokenizer class="solr.WhitespaceTokenizerFactory"/>
+            <filter class="solr.SynonymFilterFactory" synonyms="synonyms.txt" ignoreCase="true" expand="true"/>
+            <filter class="solr.StopFilterFactory"
+                    ignoreCase="true"
+                    words="lang/stopwords_it.txt"
+                    enablePositionIncrements="true"
+                    />
+            <filter class="solr.WordDelimiterFilterFactory" generateWordParts="1" generateNumberParts="1" catenateWords="0" catenateNumbers="0" catenateAll="0" splitOnCaseChange="1"/>
+            <filter class="solr.LowerCaseFilterFactory"/>
+            <filter class="solr.KeywordMarkerFilterFactory" protected="protwords.txt"/>
+            <filter class="solr.PorterStemFilterFactory"/>
+          </analyzer>
+        </fieldType>
+        <fieldType name="text_it_splitting_tight" class="solr.TextField" positionIncrementGap="100" autoGeneratePhraseQueries="true">
+          <analyzer>
+            <tokenizer class="solr.WhitespaceTokenizerFactory"/>
+            <filter class="solr.SynonymFilterFactory" synonyms="synonyms.txt" ignoreCase="true" expand="false"/>
+            <filter class="solr.StopFilterFactory" ignoreCase="true" words="lang/stopwords_it.txt"/>
+            <filter class="solr.WordDelimiterFilterFactory" generateWordParts="0" generateNumberParts="0" catenateWords="1" catenateNumbers="1" catenateAll="0"/>
+            <filter class="solr.LowerCaseFilterFactory"/>
+            <filter class="solr.KeywordMarkerFilterFactory" protected="protwords.txt"/>
+            <filter class="solr.EnglishMinimalStemFilterFactory"/>
+            <filter class="solr.RemoveDuplicatesTokenFilterFactory"/>
+          </analyzer>
+        </fieldType>
+        <fieldType name="text_general_rev" class="solr.TextField" positionIncrementGap="100">
+          <analyzer type="index">
+            <tokenizer class="solr.StandardTokenizerFactory"/>
+            <filter class="solr.StopFilterFactory" ignoreCase="true" words="stopwords.txt" enablePositionIncrements="true" />
+            <filter class="solr.LowerCaseFilterFactory"/>
+            <filter class="solr.ReversedWildcardFilterFactory" withOriginal="true"
+               maxPosAsterisk="3" maxPosQuestion="2" maxFractionAsterisk="0.33"/>
+          </analyzer>
+          <analyzer type="query">
+            <tokenizer class="solr.StandardTokenizerFactory"/>
+            <filter class="solr.SynonymFilterFactory" synonyms="synonyms.txt" ignoreCase="true" expand="true"/>
+            <filter class="solr.StopFilterFactory" ignoreCase="true" words="stopwords.txt" enablePositionIncrements="true" />
+            <filter class="solr.LowerCaseFilterFactory"/>
+          </analyzer>
+        </fieldType>
+        <fieldType name="alphaOnlySort" class="solr.TextField" sortMissingLast="true" omitNorms="true">
+          <analyzer>
+            <tokenizer class="solr.KeywordTokenizerFactory"/>
+            <filter class="solr.LowerCaseFilterFactory" />
+            <filter class="solr.TrimFilterFactory" />
+            <filter class="solr.PatternReplaceFilterFactory"
+                    pattern="([^a-z])" replacement="" replace="all"
+            />
+          </analyzer>
+        </fieldType>
+        
+        <fieldtype name="phonetic" stored="false" indexed="true" class="solr.TextField" >
+          <analyzer>
+            <tokenizer class="solr.StandardTokenizerFactory"/>
+            <filter class="solr.DoubleMetaphoneFilterFactory" inject="false"/>
+          </analyzer>
+        </fieldtype>
+    
+        <fieldtype name="payloads" stored="false" indexed="true" class="solr.TextField" >
+          <analyzer>
+            <tokenizer class="solr.WhitespaceTokenizerFactory"/>
+            <filter class="solr.DelimitedPayloadTokenFilterFactory" encoder="float"/>
+          </analyzer>
+        </fieldtype>
+        <fieldType name="lowercase" class="solr.TextField" positionIncrementGap="100">
+          <analyzer>
+            <tokenizer class="solr.KeywordTokenizerFactory"/>
+            <filter class="solr.LowerCaseFilterFactory" />
+          </analyzer>
+        </fieldType>
+        <fieldType name="descendent_path" class="solr.TextField">
+          <analyzer type="index">
+        <tokenizer class="solr.PathHierarchyTokenizerFactory" delimiter="/" />
+          </analyzer>
+          <analyzer type="query">
+        <tokenizer class="solr.KeywordTokenizerFactory" />
+          </analyzer>
+        </fieldType>
+        <fieldType name="ancestor_path" class="solr.TextField">
+          <analyzer type="index">
+        <tokenizer class="solr.KeywordTokenizerFactory" />
+          </analyzer>
+          <analyzer type="query">
+        <tokenizer class="solr.PathHierarchyTokenizerFactory" delimiter="/" />
+          </analyzer>
+        </fieldType> 
+        <fieldtype name="ignored" stored="false" indexed="false" multiValued="true" class="solr.StrField" />
+        <fieldType name="point" class="solr.PointType" dimension="2" subFieldSuffix="_d"/>
+        <fieldType name="location" class="solr.LatLonType" subFieldSuffix="_coordinate"/>
+     <fieldType name="location_rpt" class="solr.SpatialRecursivePrefixTreeFieldType"
+                   spatialContextFactory="com.spatial4j.core.context.jts.JtsSpatialContextFactory"
+            distErrPct="0.025" maxDistErr="0.000009" units="degrees" />
+     </types>
+    </schema>
 
 A temporary PostgreSQL database is used to prepare data that will be loaded into SOLR. The steps are:
 load Open Street Map data into PostgreSQL using osm2pgrouting;
