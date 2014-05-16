@@ -1,3 +1,7 @@
+/* Copyright (c) 2001 - 2013 OpenPlans - www.openplans.org. All rights reserved.
+ * This code is licensed under the GPL 2.0 license, available at the root
+ * application directory.
+ */
 package it.phoops.geoserver.ols.web.component;
 
 import it.phoops.geoserver.ols.OLS;
@@ -5,9 +9,7 @@ import it.phoops.geoserver.ols.OLSAbstractServiceProvider;
 import it.phoops.geoserver.ols.OLSInfo;
 import it.phoops.geoserver.ols.OLSInfoImpl;
 import it.phoops.geoserver.ols.OLSService;
-import it.phoops.geoserver.ols.OLSServiceProvider;
 import it.phoops.geoserver.ols.util.ApplicationContextUtil;
-import it.phoops.geoserver.ols.web.OLSAdminPage;
 import it.phoops.geoserver.ols.web.OLSAdminPage.OLSGUIService;
 
 import java.util.ArrayList;
@@ -16,12 +18,10 @@ import java.util.Map;
 
 import org.apache.wicket.extensions.markup.html.tabs.ITab;
 import org.apache.wicket.extensions.markup.html.tabs.TabbedPanel;
-import org.apache.wicket.markup.ComponentTag;
 import org.apache.wicket.markup.html.WebMarkupContainer;
 import org.apache.wicket.markup.html.form.DropDownChoice;
 import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.markup.html.link.Link;
-import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.model.PropertyModel;
 import org.geoserver.config.GeoServer;
 import org.geoserver.config.ServiceInfo;
@@ -30,7 +30,7 @@ import org.geoserver.ows.LocalWorkspace;
 import org.springframework.context.ApplicationContext;
 
 /**
- * DropDownChoice component to select the service OLS
+ * DropDownChoice component to select the OLS service
  *
  */
 public class ServiceDropDownChoice extends DropDownChoice<OLSGUIService>{

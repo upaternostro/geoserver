@@ -4,6 +4,9 @@ GeoServer Open Location Server implementation
 **Sponsor**
 Comune di Prato
 
+**Developer**
+phoops s.r.l.
+
 **Abstract:** this document describes the approach used to implement a OGC OpenLS server into GeoServer.
 The module is designed as a GeoServer plugin and may use various backends for geocoding,
 reverse geocoding and routing.

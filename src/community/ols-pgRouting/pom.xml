@@ -14,6 +14,18 @@
 	<packaging>jar</packaging>
 	<name>Open Location Services pgRouting service provider</name>
 
+	<description>GeoServer module that implements pgRouting provider for OGC OLS services</description>
+	<inceptionYear>2012</inceptionYear>
+	<developers>
+		<developer>
+			<id>phoops</id>
+			<name>phoops s.r.l.</name>
+			<email>geoserver-ols@phoops.it</email>
+			<organization>phoops s.r.l.</organization>
+			<organizationUrl>http://www.phoops.it</organizationUrl>
+		</developer>
+	</developers>
+
 	<dependencies>
 		<dependency>
 			<groupId>org.geoserver</groupId>

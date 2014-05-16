@@ -1,14 +1,29 @@
+/* Copyright (c) 2001 - 2013 OpenPlans - www.openplans.org. All rights reserved.
+ * This code is licensed under the GPL 2.0 license, available at the root
+ * application directory.
+ */
 package it.phoops.geoserver.ols.geocoding.rfc59.mock;
 
+import it.phoops.geoserver.ols.OLSAbstractServiceProvider;
+import it.phoops.geoserver.ols.OLSException;
+import it.phoops.geoserver.ols.OLSService;
+import it.phoops.geoserver.ols.geocoding.GeocodingServiceProvider;
+import it.phoops.geoserver.ols.geocoding.rfc59.DataSource;
+import it.phoops.geoserver.ols.geocoding.rfc59.ResponseType;
+import it.phoops.geoserver.ols.geocoding.rfc59.component.RFC59Tab;
+import it.phoops.geoserver.ols.geocoding.rfc59.component.RFC59TabFactory;
+import it.toscana.regione.normaws.DatiGeoreferenziazioneInd;
+import it.toscana.regione.normaws.DatiNormalizzazioneInd;
+import it.toscana.regione.normaws.DatiNormalizzazioneLoc;
+import it.toscana.regione.normaws.IndirizzoRiconosciuto;
+import it.toscana.regione.normaws.MusumeSoapBindingStub;
+import it.toscana.regione.normaws.RispostaNormalizzataType;
+
 import java.math.BigInteger;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.rmi.RemoteException;
 import java.util.List;
 import java.util.Properties;
 
 import javax.xml.bind.JAXBElement;
-import javax.xml.rpc.ServiceException;
 
 import net.opengis.www.xls.AbstractStreetLocatorType;
 import net.opengis.www.xls.AddressType;
@@ -30,24 +45,6 @@ import org.apache.wicket.extensions.markup.html.tabs.ITab;
 import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.ResourceModel;
 import org.geoserver.config.ServiceInfo;
-
-import it.phoops.geoserver.ols.OLSAbstractServiceProvider;
-import it.phoops.geoserver.ols.OLSException;
-import it.phoops.geoserver.ols.OLSService;
-import it.phoops.geoserver.ols.geocoding.GeocodingServiceProvider;
-import it.phoops.geoserver.ols.geocoding.rfc59.Algorithm;
-import it.phoops.geoserver.ols.geocoding.rfc59.DataSource;
-import it.phoops.geoserver.ols.geocoding.rfc59.ResponseType;
-import it.phoops.geoserver.ols.geocoding.rfc59.component.RFC59Tab;
-import it.phoops.geoserver.ols.geocoding.rfc59.component.RFC59TabFactory;
-import it.toscana.regione.normaws.AmbiguitaIndItem;
-import it.toscana.regione.normaws.DatiGeoreferenziazioneInd;
-import it.toscana.regione.normaws.DatiNormalizzazioneInd;
-import it.toscana.regione.normaws.DatiNormalizzazioneLoc;
-import it.toscana.regione.normaws.IndirizzoRiconosciuto;
-import it.toscana.regione.normaws.MusumeServiceLocator;
-import it.toscana.regione.normaws.MusumeSoapBindingStub;
-import it.toscana.regione.normaws.RispostaNormalizzataType;
 
 public class RFC59ServiceProviderMock extends OLSAbstractServiceProvider implements GeocodingServiceProvider {
 	public static final DataSource DATA_SOURCE = DataSource.REGIONE_TOSCANA;

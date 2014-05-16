@@ -1,3 +1,7 @@
+/* Copyright (c) 2001 - 2013 OpenPlans - www.openplans.org. All rights reserved.
+ * This code is licensed under the GPL 2.0 license, available at the root
+ * application directory.
+ */
 package it.phoops.geoserver.ols.routing.otp.component;
 
 import it.phoops.geoserver.ols.OLS;
@@ -11,13 +15,9 @@ import it.phoops.geoserver.ols.routing.LanguageType;
 import it.phoops.geoserver.ols.routing.otp.OTPServiceProvider;
 import it.phoops.geoserver.ols.web.validator.ValidateCheckboxTab;
 
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.wicket.Application;
-import org.apache.wicket.Component;
-import org.apache.wicket.Localizer;
 import org.apache.wicket.extensions.markup.html.tabs.AbstractTab;
 import org.apache.wicket.markup.html.form.CheckBox;
 import org.apache.wicket.markup.html.form.TextField;

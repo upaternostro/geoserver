@@ -1,5 +1,8 @@
+/* Copyright (c) 2001 - 2013 OpenPlans - www.openplans.org. All rights reserved.
+ * This code is licensed under the GPL 2.0 license, available at the root
+ * application directory.
+ */
 package it.phoops.geoserver.ols;
-
 
 import org.geoserver.catalog.Catalog;
 import org.geoserver.config.GeoServer;
@@ -11,7 +14,6 @@ import org.springframework.context.ApplicationContextAware;
 
 /**
  * A facade providing access to the OLS configuration details
- * 
  */
 public class OLS implements ApplicationContextAware {
     private static ApplicationContext applicationContext;

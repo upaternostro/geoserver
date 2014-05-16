@@ -1,3 +1,7 @@
+/* Copyright (c) 2001 - 2013 OpenPlans - www.openplans.org. All rights reserved.
+ * This code is licensed under the GPL 2.0 license, available at the root
+ * application directory.
+ */
 package it.phoops.geoserver.ols.web;
 
 import it.phoops.geoserver.ols.OLSInfo;
@@ -21,11 +25,6 @@ import org.apache.wicket.model.PropertyModel;
 import org.geoserver.config.ServiceInfo;
 import org.geoserver.web.services.BaseServiceAdminPage;
 
-/**
- * 
- * @author aCasini
- * 
- */
 public class OLSAdminPage extends BaseServiceAdminPage<OLSInfo> {
     private String wsName; 
 
