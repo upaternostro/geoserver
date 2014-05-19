@@ -7,6 +7,9 @@ target
 *.class
 *.pyc
 src/web/app/solr/12I_CPO_TP/data
+src/community/ols/src/test/java/
+src/web/app/solr/12I_CPO_TP/data.UGO/
+
 
 /.metadata/
 
