@@ -58,6 +58,11 @@
       <artifactId>gs-web-sec-ldap</artifactId>
       <version>${project.version}</version>
     </dependency>
+	<dependency>
+      <groupId>org.geoserver.web</groupId>
+      <artifactId>gs-web-rest</artifactId>
+      <version>${project.version}</version>
+    </dependency>
     <dependency>
       <groupId>org.geoserver</groupId>
       <artifactId>gs-platform</artifactId>
@@ -498,7 +503,7 @@
       <id>printing</id>
       <dependencies>
         <dependency>
-          <groupId>org.geoserver.community</groupId>
+          <groupId>org.geoserver.extension</groupId>
           <artifactId>gs-printing</artifactId>
           <version>${project.version}</version> 
         </dependency>
@@ -1082,6 +1087,46 @@
          <artifactId>gs-colormap</artifactId>
          <version>${project.version}</version>
        </dependency>
+      </dependencies>
+    </profile>
+    <profile>
+      <id>grib</id>
+      <dependencies>
+        <dependency>
+          <groupId>org.geoserver.community</groupId>
+          <artifactId>gs-grib</artifactId>
+		  <version>${project.version}</version>
+		  <exclusions>
+			<exclusion>
+				<groupId>org.slf4j</groupId>
+				<artifactId>slf4j-api</artifactId>
+			</exclusion>
+			<exclusion>
+				<groupId>org.slf4j</groupId>
+				<artifactId>jcl-over-slf4j</artifactId>
+			</exclusion>
+		  </exclusions>
+        </dependency>
+      </dependencies>
+    </profile>
+    <profile>
+      <id>dyndimension</id>
+      <dependencies>
+        <dependency>
+          <groupId>org.geoserver.community</groupId>
+          <artifactId>gs-dyndimension</artifactId>
+		  <version>${project.version}</version>
+        </dependency>
+      </dependencies>
+    </profile>
+	<profile>
+      <id>rest-ext</id>
+      <dependencies>
+        <dependency>
+          <groupId>org.geoserver.community</groupId>
+          <artifactId>gs-rest-ext</artifactId>
+		  <version>${project.version}</version>
+        </dependency>
       </dependencies>
     </profile>
     <profile>

@@ -58,7 +58,8 @@ public class Paths {
             return item;
         }
     }
-
+    
+    /** Used to quickly check path extension */
     static String extension(String path) {
         String name = name(path);
         if (name == null) {
@@ -210,7 +211,7 @@ public class Paths {
     public static String convert(File base, File file) {
         if (base == null) {
             if (file.isAbsolute()) {
-                throw new NullPointerException("Unable to determine relative path");
+                throw new IllegalArgumentException("Unable to determine relative path as file was absolute");
             } else {
                 return convert(file.getPath());
             }

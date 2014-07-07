@@ -36,11 +36,12 @@ import org.apache.wicket.model.PropertyModel;
 import org.apache.wicket.protocol.http.WebRequest;
 import org.geoserver.ows.util.ResponseUtils;
 import org.geoserver.platform.GeoServerExtensions;
+import org.geoserver.platform.GeoServerResourceLoader;
+import org.geoserver.platform.resource.Resource;
 import org.geoserver.web.GeoServerBasePage;
 import org.geoserver.web.wicket.CodeMirrorEditor;
 import org.geotools.util.logging.Logging;
 import org.vfny.geoserver.global.ConfigurationException;
-import org.vfny.geoserver.global.GeoserverDataDirectory;
 import org.geoserver.config.GeoServer;
 
 /**
@@ -66,8 +67,10 @@ public class DemoRequestsPage extends GeoServerBasePage {
 
     public DemoRequestsPage() {
         try {
-            demoDir = GeoserverDataDirectory.findCreateConfigDir("demo/");
-        } catch (ConfigurationException e) {
+            GeoServerResourceLoader loader = this.getGeoServer().getCatalog().getResourceLoader();
+            Resource demo = loader.get("demo");
+            demoDir = demo.dir(); // find or create
+        } catch (Exception e) {
             throw new WicketRuntimeException("Can't access demo requests directory: "
                     + e.getMessage());
         }
@@ -252,7 +255,7 @@ public class DemoRequestsPage extends GeoServerBasePage {
                 return new AjaxCallDecorator() {
                     @Override
                     public CharSequence decorateScript(CharSequence script) {
-                        return "document.getElementById('requestBody').value = document.gsEditors.requestBody.getCode();"
+                        return "document.getElementById('requestBody').value = document.gsEditors.requestBody.getValue();"
                                 + script;
                     }
                 };
