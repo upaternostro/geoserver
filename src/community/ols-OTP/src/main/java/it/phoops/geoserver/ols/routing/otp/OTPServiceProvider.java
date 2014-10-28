@@ -322,15 +322,22 @@ public class OTPServiceProvider extends OLSAbstractServiceProvider implements Ro
             break;
         }
         
-        String languageInfo = properties.getProperty(PN_LANGUAGE_INFO);
+        Locale  locale = null;
         
-        if (languageInfo.equals("1")) {
-            Locale.setDefault(Locale.ITALIAN);
-        } else if (languageInfo.equals("2")) {
-            Locale.setDefault(Locale.ENGLISH);
+        if (lang != null) {
+            locale = Locale.forLanguageTag(lang);
         }
         
-        Locale          locale = Locale.getDefault();
+        if (locale == null) {
+            String languageInfo = properties.getProperty(PN_LANGUAGE_INFO);
+            
+            if (languageInfo.equals("1")) {
+                locale = Locale.ITALIAN;
+            } else if (languageInfo.equals("2")) {
+                locale = Locale.ENGLISH;
+            }
+        }
+        
         ResourceBundle  messages = ResourceBundle.getBundle("GeoServerApplication", locale);
         WebResource     resource = client.resource(getEndpointAddress() + "/ws/plan");
         Response        response = resource.queryParams(queryParams).accept(MediaType.TEXT_XML).get(Response.class);
