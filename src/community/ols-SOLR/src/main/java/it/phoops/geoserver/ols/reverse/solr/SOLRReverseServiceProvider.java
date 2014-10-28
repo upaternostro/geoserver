@@ -11,6 +11,7 @@ import it.phoops.geoserver.ols.geocoding.ReverseGeocodingServiceProvider;
 import it.phoops.geoserver.ols.reverse.solr.component.SOLRTabReverse;
 import it.phoops.geoserver.ols.reverse.solr.component.SOLRTabReverseFactory;
 import it.phoops.geoserver.ols.solr.utils.SolrPager;
+import it.phoops.geoserver.ols.util.SRSTransformer;
 
 import java.io.Serializable;
 import java.io.StringReader;
@@ -61,16 +62,32 @@ public class SOLRReverseServiceProvider extends OLSAbstractServiceProvider imple
     /** serialVersionUID */
     private static final long serialVersionUID = 1L;
 
-        public static final String COUNTRY_CODE = "IT";
-        
-	//property name
-	private static final String  PN_ENDPOINT_ADDRESS = "OLS.serviceProvider.reverse.solr.service.endpointAddress";
-	private static final String  PN_ACTIVE_SERVICE = "OLS.serviceProvider.service.active";
-	
-	private String      descriptionKey;
-	private Properties  properties = new Properties();
-	
-	@Override
+    public static final String COUNTRY_CODE = "IT";
+
+    // property name
+    private static final String PN_ENDPOINT_ADDRESS = "OLS.serviceProvider.reverse.solr.service.endpointAddress";
+
+    private static final String PN_ACTIVE_SERVICE = "OLS.serviceProvider.service.active";
+
+    private static final String SOLR_CRS = "EPSG:4326";
+
+    private String descriptionKey;
+
+    private Properties properties = new Properties();
+
+    private CoordinateReferenceSystem   solrCrs;
+    
+    public SOLRReverseServiceProvider() throws OLSException {
+        try {
+            solrCrs = CRS.decode(SOLR_CRS);
+        } catch (NoSuchAuthorityCodeException e) {
+            throw new OLSException("Unknown authority in SRS", e);
+        } catch (FactoryException e) {
+            throw new OLSException("Factory exception converting SRS", e);
+        }
+    }
+
+    @Override
     public String getDescriptionKey() {
         return descriptionKey;
     }
@@ -160,7 +177,6 @@ public class SOLRReverseServiceProvider extends OLSAbstractServiceProvider imple
 	        GeocodeMatchCode                                        geocodeMatchCode;
 	        List<ReverseGeocodedLocationType>                       responseList = output.getReverseGeocodedLocations();
 	        
-	        
 	        solrParams.set("q", "");
 	        positionType = input.getPosition();
 	        //Check if the position exist
@@ -172,32 +188,26 @@ public class SOLRReverseServiceProvider extends OLSAbstractServiceProvider imple
 	        if(pointType == null){
 	            throw new OLSException("Point missing in reverse geocode request");
 	        }
+	        
 	        pos = pointType.getPos();
+	        
+                String  declaredSrs = pos.getSrsName();
+                
+                if (declaredSrs == null) {
+                    declaredSrs = srsName;
+                    
+                    if (declaredSrs == null) {
+                        declaredSrs = "EPSG:4326";
+                    }
+                }
+                
 	        coordinates = pos.getValues();
 	        
-	        CoordinateReferenceSystem      sourceCrs = null;
-                CoordinateReferenceSystem      destionationCrs = null;
-	        
-	        if (pos.getSrsName() != null && !"".equals(pos.getSrsName())) {
-	            try {
-                        sourceCrs = CRS.decode(pos.getSrsName());
-                        destionationCrs = CRS.decode("EPSG:4326");
-                        
-                        if (!sourceCrs.getName().equals(destionationCrs.getName())) {
-                            GeometryBuilder     builder = new GeometryBuilder(sourceCrs);
-                            Point               sourcePoint = builder.createPoint(coordinates.get(0), coordinates.get(1));
-                            Point               destinationPoint = (Point)sourcePoint.transform(destionationCrs);
-                            
-                            coordinates.set(0, destinationPoint.getDirectPosition().getCoordinate()[0]);
-                            coordinates.set(1, destinationPoint.getDirectPosition().getCoordinate()[1]);
-                        }
-                    } catch (NoSuchAuthorityCodeException e) {
-                        throw new OLSException("Unknow authority in SRS", e);
-                    } catch (FactoryException e) {
-                        throw new OLSException("Factory exception converting SRS", e);
-                    } catch (TransformException e) {
-                        throw new OLSException("Error transforming geometry", e);
-                    }
+	        if (!SOLR_CRS.equals(declaredSrs)) {
+	            double     coords[] = SRSTransformer.transform(coordinates.get(0), coordinates.get(1), declaredSrs, solrCrs);
+	            
+                    coordinates.set(0, coords[0]);
+                    coordinates.set(1, coords[1]);
 	        }
 	        
 	        SolrQuery query = new SolrQuery("centerline:\"Intersects(Circle("+coordinates.get(0)+","+coordinates.get(1)+", d=0.0001))\"");
@@ -207,7 +217,7 @@ public class SOLRReverseServiceProvider extends OLSAbstractServiceProvider imple
 	        
 	        //CenterLine
 	        try {
-	            //CAll Solr
+	            //Call Solr
 	            solrDocs = SolrPager.query(solrServer, query);
 
 	            for (SolrDocument solrDoc : solrDocs) {
@@ -227,9 +237,16 @@ public class SOLRReverseServiceProvider extends OLSAbstractServiceProvider imple
 	                        
 	                        coordinates = pos.getValues();
 	                        
-	                        coordinates.add(Double.valueOf(geometry.getCoordinate().getOrdinate(0)));
-	                        coordinates.add(Double.valueOf(geometry.getCoordinate().getOrdinate(1)));
-	                        // pos.setSrsName(value);
+	                        if (!SOLR_CRS.equals(declaredSrs)) {
+	                            double     coords[] = SRSTransformer.transform(coordinates.get(0), coordinates.get(1), solrCrs, declaredSrs);
+	                            
+	                            coordinates.add(coords[0]);
+	                            coordinates.add(coords[1]);
+	                        } else {
+	                            coordinates.add(Double.valueOf(geometry.getCoordinate().getOrdinate(0)));
+	                            coordinates.add(Double.valueOf(geometry.getCoordinate().getOrdinate(1)));
+	                        }
+	                        pos.setSrsName(declaredSrs);
 	                        
 	                        point.setPos(pos);
 	                        // point.setSrsName(value);
@@ -313,9 +330,16 @@ public class SOLRReverseServiceProvider extends OLSAbstractServiceProvider imple
                                 
                                 coordinates = pos.getValues();
                                 
-                                coordinates.add(Double.valueOf(geometry.getCoordinate().getOrdinate(0)));
-                                coordinates.add(Double.valueOf(geometry.getCoordinate().getOrdinate(1)));
-                                // pos.setSrsName(value);
+                                if (!SOLR_CRS.equals(declaredSrs)) {
+                                    double     coords[] = SRSTransformer.transform(coordinates.get(0), coordinates.get(1), solrCrs, declaredSrs);
+                                    
+                                    coordinates.add(coords[0]);
+                                    coordinates.add(coords[1]);
+                                } else {
+                                    coordinates.add(Double.valueOf(geometry.getCoordinate().getOrdinate(0)));
+                                    coordinates.add(Double.valueOf(geometry.getCoordinate().getOrdinate(1)));
+                                }
+                                pos.setSrsName(declaredSrs);
                                 
                                 point.setPos(pos);
                                 // point.setSrsName(value);
