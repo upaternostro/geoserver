@@ -451,7 +451,7 @@ public class OTPServiceProvider extends OLSAbstractServiceProvider implements Ro
                     if (relativeDirection != null) {
                         resultFormatter = MessageFormat.format(properties.getProperty(PN_NAVIGATION_REL), relativeDirection, walkStep.getStreetName(), bdValue);
                         String imgRel = walkStep.getRelativeDirection().toString().toLowerCase();
-                        resultFormatter = "<IMG SRC='../resources/img/navigation/"+imgRel+".png' ALIGN='absmiddle'> "+resultFormatter;
+                        resultFormatter = "<span class='GeoServerOpenLS "+imgRel+"'></span><span class='GeoServerOpenLS routingInstruction'>"+resultFormatter+"</span>";
                     } else {
                         resultFormatter = MessageFormat.format(properties.getProperty(PN_NAVIGATION_INFO), absoluteDirection, bdValue, walkStep.getStreetName());
                     }
@@ -459,7 +459,7 @@ public class OTPServiceProvider extends OLSAbstractServiceProvider implements Ro
                     if (relativeDirection != null) {
                         resultFormatter = MessageFormat.format(properties.getProperty(PN_NAVIGATION_REL), relativeDirection, walkStep.getStreetName(), bdValue);
                         String imgRel = walkStep.getRelativeDirection().toString().toLowerCase();
-                        resultFormatter = "<IMG SRC='../resources/img/navigation/"+imgRel+".png' ALIGN='absmiddle'> "+resultFormatter;
+                        resultFormatter = "<span class='GeoServerOpenLS "+imgRel+"'></span><span class='GeoServerOpenLS routingInstruction'>"+resultFormatter+"</span>";
                     } else {
                         resultFormatter = MessageFormat.format(properties.getProperty(PN_NAVIGATION_S_INFO), absoluteDirection, bdValue);
                     }

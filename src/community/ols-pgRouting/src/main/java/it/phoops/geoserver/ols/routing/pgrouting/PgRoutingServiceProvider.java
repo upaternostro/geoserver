@@ -558,13 +558,13 @@ public class PgRoutingServiceProvider extends OLSAbstractServiceProvider impleme
                         
                         if (edge.getAttribute("name") != null && !edge.getAttribute("name").equals("")) {
                             if (relativeDirection != null) {
-                                resultFormatter = "<IMG SRC='../resources/img/navigation/" + (relativeDirection.toString().toLowerCase()) + ".png' ALIGN='absmiddle'> " + MessageFormat.format(getNavigationInfoRel(), edge.getAttribute("name"), bdValue);
+                                resultFormatter = "<span class='GeoServerOpenLS " + (relativeDirection.toString().toLowerCase()) + "'></span><span class='GeoServerOpenLS routingInstruction'>" + MessageFormat.format(getNavigationInfoRel() + "</span>", edge.getAttribute("name"), bdValue);
                             } else {
                                 resultFormatter = MessageFormat.format(getNavigationInfo(), messages.getString(absoluteDirection.toString()), bdValue, edge.getAttribute("name"));
                             }
                         } else {
                             if (relativeDirection != null) {
-                                resultFormatter = "<IMG SRC='../resources/img/navigation/" + (relativeDirection.toString().toLowerCase()) + ".png' ALIGN='absmiddle'> " + MessageFormat.format(getNavigationInfoRel(), edge.getAttribute("name"), bdValue);
+                                resultFormatter = "<span class='GeoServerOpenLS " + (relativeDirection.toString().toLowerCase()) + "'></span><span class='GeoServerOpenLS routingInstruction'>" + MessageFormat.format(getNavigationInfoRel() + "</span>", edge.getAttribute("name"), bdValue);
                             } else {
                                 resultFormatter = MessageFormat.format(getNavigationInfoShort(), messages.getString(absoluteDirection.toString()), bdValue);
                             }
