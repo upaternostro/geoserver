@@ -29,6 +29,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.ResourceBundle;
 
+import javax.activation.MimeType;
 import javax.xml.bind.JAXBElement;
 
 import net.opengis.www.xls.AbstractLocationType;
@@ -44,6 +45,7 @@ import net.opengis.www.xls.PositionType;
 import net.opengis.www.xls.RouteGeometryType;
 import net.opengis.www.xls.RouteInstruction;
 import net.opengis.www.xls.RouteInstructionsListType;
+import net.opengis.www.xls.RouteInstructionsRequest;
 import net.opengis.www.xls.RoutePlan;
 import net.opengis.www.xls.RoutePreferenceType;
 import net.opengis.www.xls.RouteSummaryType;
@@ -418,6 +420,13 @@ public class PgRoutingServiceProvider extends OLSAbstractServiceProvider impleme
             query = getEdgeQuery();
             break;
         }
+        
+        RouteInstructionsRequest        instructionRequest = input.getRouteInstructionsRequest();
+        String                          format = "text/html";
+        
+        if (instructionRequest != null) {
+            format = instructionRequest.getFormat();
+        }
 
         Map<String, Object>     params = new HashMap<String, Object>();
         
@@ -558,15 +567,31 @@ public class PgRoutingServiceProvider extends OLSAbstractServiceProvider impleme
                         
                         if (edge.getAttribute("name") != null && !edge.getAttribute("name").equals("")) {
                             if (relativeDirection != null) {
-                                resultFormatter = "<span class='GeoServerOpenLS " + (relativeDirection.toString().toLowerCase()) + "'></span><span class='GeoServerOpenLS routingInstruction'>" + MessageFormat.format(getNavigationInfoRel() + "</span>", edge.getAttribute("name"), bdValue);
+                                resultFormatter = MessageFormat.format(getNavigationInfoRel(), edge.getAttribute("name"), bdValue);
+                                
+                                if ("text/html".equals(format)) {
+                                    resultFormatter = "<span class='GeoServerOpenLS " + (relativeDirection.toString().toLowerCase()) + "'></span><span class='GeoServerOpenLS routingInstruction'>" + resultFormatter + "</span>";
+                                }
                             } else {
                                 resultFormatter = MessageFormat.format(getNavigationInfo(), messages.getString(absoluteDirection.toString()), bdValue, edge.getAttribute("name"));
+                                
+                                if ("text/html".equals(format)) {
+                                    resultFormatter = "<span class='GeoServerOpenLS routingInstruction'>" + resultFormatter + "</span>";
+                                }
                             }
                         } else {
                             if (relativeDirection != null) {
-                                resultFormatter = "<span class='GeoServerOpenLS " + (relativeDirection.toString().toLowerCase()) + "'></span><span class='GeoServerOpenLS routingInstruction'>" + MessageFormat.format(getNavigationInfoRel() + "</span>", edge.getAttribute("name"), bdValue);
+                                resultFormatter = MessageFormat.format(getNavigationInfoRel(), edge.getAttribute("name"), bdValue);
+                                
+                                if ("text/html".equals(format)) {
+                                    resultFormatter = "<span class='GeoServerOpenLS " + (relativeDirection.toString().toLowerCase()) + "'></span><span class='GeoServerOpenLS routingInstruction'>" + resultFormatter + "</span>";
+                                }
                             } else {
                                 resultFormatter = MessageFormat.format(getNavigationInfoShort(), messages.getString(absoluteDirection.toString()), bdValue);
+                                
+                                if ("text/html".equals(format)) {
+                                    resultFormatter = "<span class='GeoServerOpenLS routingInstruction'>" + resultFormatter + "</span>";
+                                }
                             }
                         }
                         

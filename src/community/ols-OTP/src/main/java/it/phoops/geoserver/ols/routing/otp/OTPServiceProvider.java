@@ -55,6 +55,7 @@ import net.opengis.www.xls.PositionType;
 import net.opengis.www.xls.RouteGeometryType;
 import net.opengis.www.xls.RouteInstruction;
 import net.opengis.www.xls.RouteInstructionsListType;
+import net.opengis.www.xls.RouteInstructionsRequest;
 import net.opengis.www.xls.RoutePlan;
 import net.opengis.www.xls.RoutePreferenceType;
 import net.opengis.www.xls.RouteSummaryType;
@@ -272,6 +273,13 @@ public class OTPServiceProvider extends OLSAbstractServiceProvider implements Ro
         DateFormat dateFormat = DateFormat.getDateInstance(DateFormat.SHORT);
         DateFormat timeFormat = new SimpleDateFormat("hh:mm a");
         
+        RouteInstructionsRequest        instructionRequest = input.getRouteInstructionsRequest();
+        String                          format = "text/html";
+        
+        if (instructionRequest != null) {
+            format = instructionRequest.getFormat();
+        }
+
         // Build RESTful OPT request
         Client  client = Client.create();
         
@@ -450,18 +458,32 @@ public class OTPServiceProvider extends OLSAbstractServiceProvider implements Ro
                 if (walkStep.getStreetName() != null || !walkStep.getStreetName().equalsIgnoreCase("")) {
                     if (relativeDirection != null) {
                         resultFormatter = MessageFormat.format(properties.getProperty(PN_NAVIGATION_REL), relativeDirection, walkStep.getStreetName(), bdValue);
-                        String imgRel = walkStep.getRelativeDirection().toString().toLowerCase();
-                        resultFormatter = "<span class='GeoServerOpenLS "+imgRel+"'></span><span class='GeoServerOpenLS routingInstruction'>"+resultFormatter+"</span>";
+                        
+                        if ("text/html".equals(format)) {
+                            String imgRel = walkStep.getRelativeDirection().toString().toLowerCase();
+                            resultFormatter = "<span class='GeoServerOpenLS "+imgRel+"'></span><span class='GeoServerOpenLS routingInstruction'>"+resultFormatter+"</span>";
+                        }
                     } else {
                         resultFormatter = MessageFormat.format(properties.getProperty(PN_NAVIGATION_INFO), absoluteDirection, bdValue, walkStep.getStreetName());
+                        
+                        if ("text/html".equals(format)) {
+                            resultFormatter = "<span class='GeoServerOpenLS routingInstruction'>" + resultFormatter + "</span>";
+                        }
                     }
                 } else {
                     if (relativeDirection != null) {
                         resultFormatter = MessageFormat.format(properties.getProperty(PN_NAVIGATION_REL), relativeDirection, walkStep.getStreetName(), bdValue);
-                        String imgRel = walkStep.getRelativeDirection().toString().toLowerCase();
-                        resultFormatter = "<span class='GeoServerOpenLS "+imgRel+"'></span><span class='GeoServerOpenLS routingInstruction'>"+resultFormatter+"</span>";
+                        
+                        if ("text/html".equals(format)) {
+                            String imgRel = walkStep.getRelativeDirection().toString().toLowerCase();
+                            resultFormatter = "<span class='GeoServerOpenLS "+imgRel+"'></span><span class='GeoServerOpenLS routingInstruction'>"+resultFormatter+"</span>";
+                        }
                     } else {
                         resultFormatter = MessageFormat.format(properties.getProperty(PN_NAVIGATION_S_INFO), absoluteDirection, bdValue);
+                        
+                        if ("text/html".equals(format)) {
+                            resultFormatter = "<span class='GeoServerOpenLS routingInstruction'>" + resultFormatter + "</span>";
+                        }
                     }
                 }
                 
