@@ -22,6 +22,7 @@ import it.phoops.geoserver.ols.routing.otp.client.ns0.TripPlan.Itineraries;
 import it.phoops.geoserver.ols.routing.otp.client.ns0.WalkStep;
 import it.phoops.geoserver.ols.routing.otp.component.OTPTab;
 import it.phoops.geoserver.ols.routing.otp.component.OTPTabFactory;
+import it.phoops.geoserver.ols.util.SRSTransformer;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
@@ -253,7 +254,18 @@ public class OTPServiceProvider extends OLSAbstractServiceProvider implements Ro
         }
         
         PositionType                                    startPosition = (PositionType)startLocation.getValue();
-        String                                          declaredSrs = startPosition.getPoint().getPos().getSrsName();
+        String                                          declaredSrs;
+        
+        if (srsName != null) {
+            declaredSrs = srsName;
+        } else {
+            if (startPosition.getPoint().getPos().getSrsName() != null) {
+                declaredSrs = startPosition.getPoint().getPos().getSrsName();
+            } else {
+                declaredSrs = "EPSG:4326";
+            }
+        }
+        
         WayPointType                                    endPoint = wpList.getEndPoint();
         JAXBElement<? extends AbstractLocationType>     endLocation = endPoint.getLocation();
         
@@ -447,12 +459,18 @@ public class OTPServiceProvider extends OLSAbstractServiceProvider implements Ro
                     posList = lineStringType.getPos(); 
                     
                     for (int i = oldIndex ; i <= index; i++) {
-                        transformedCoords = transformPoint(legCoordiantesArray[i].x, legCoordiantesArray[i].y, declaredSrs);
-                        
                         posInstruction = new Pos();
                         posValues = posInstruction.getValues();
-                        posValues.add(transformedCoords[0]);
-                        posValues.add(transformedCoords[1]);
+                        
+                        if (!OTP_CRS.equals(declaredSrs)) {
+                            transformedCoords = SRSTransformer.transform(legCoordiantesArray[i].x, legCoordiantesArray[i].y, otpCrs, declaredSrs);
+                            posValues.add(transformedCoords[0]);
+                            posValues.add(transformedCoords[1]);
+                        } else {
+                            posValues.add(legCoordiantesArray[i].x);
+                            posValues.add(legCoordiantesArray[i].y);
+                        }
+                        
                         posList.add(posInstruction);
                     }
                     
@@ -501,12 +519,18 @@ public class OTPServiceProvider extends OLSAbstractServiceProvider implements Ro
             posList = lineStringType.getPos(); 
             
             for (int i = index ; i < legCoordiantesArray.length; i++) {
-                transformedCoords = transformPoint(legCoordiantesArray[i].x, legCoordiantesArray[i].y, declaredSrs);
-                
                 posInstruction = new Pos();
                 posValues = posInstruction.getValues();
-                posValues.add(transformedCoords[0]);
-                posValues.add(transformedCoords[1]);
+                
+                if (!OTP_CRS.equals(declaredSrs)) {
+                    transformedCoords = SRSTransformer.transform(legCoordiantesArray[i].x, legCoordiantesArray[i].y, otpCrs, declaredSrs);
+                    posValues.add(transformedCoords[0]);
+                    posValues.add(transformedCoords[1]);
+                } else {
+                    posValues.add(legCoordiantesArray[i].x);
+                    posValues.add(legCoordiantesArray[i].y);
+                }
+                
                 posList.add(posInstruction);
             }
             
@@ -531,26 +555,32 @@ public class OTPServiceProvider extends OLSAbstractServiceProvider implements Ro
         posList = lineString.getPos();
         
         for (Coordinate coord : geometry.getCoordinates()) {
-            transformedCoords = transformPoint(coord.x, coord.y, declaredSrs);
-            
             pos = new Pos();
             posValues = pos.getValues();
-            posValues.add(transformedCoords[0]);
-            posValues.add(transformedCoords[1]);
+            
+            if (!OTP_CRS.equals(declaredSrs)) {
+                transformedCoords = SRSTransformer.transform(coord.x, coord.y, otpCrs, declaredSrs);
+                posValues.add(transformedCoords[0]);
+                posValues.add(transformedCoords[1]);
+            } else {
+                posValues.add(coord.x);
+                posValues.add(coord.y);
+            }
+            
             posList.add(pos);
             
             // Bounding box extraction:
-            if (transformedCoords[0] < minX) {
-                minX = transformedCoords[0];
+            if (posValues.get(0) < minX) {
+                minX = posValues.get(0);
             }
-            if (transformedCoords[1] < minY) {
-                minY = transformedCoords[1];
+            if (posValues.get(1) < minY) {
+                minY = posValues.get(1);
             }
-            if (transformedCoords[0] > maxX) {
-                maxX = transformedCoords[0];
+            if (posValues.get(0) > maxX) {
+                maxX = posValues.get(0);
             }
-            if (transformedCoords[1] > maxY) {
-                maxY = transformedCoords[1];
+            if (posValues.get(1) > maxY) {
+                maxY = posValues.get(1);
             }
         }
         
@@ -584,25 +614,6 @@ public class OTPServiceProvider extends OLSAbstractServiceProvider implements Ro
         return retval;
     }
     
-//    private Coordinate[] calculateCoordinatesGeometry(ArrayList<Coordinate> listCoordinate, Coordinate[] geomCoordinates){
-//        ArrayList<Coordinate> result = new ArrayList<Coordinate>();
-//
-//        result.add(listCoordinate.get(listCoordinate.size()-1));
-//        for (Coordinate coordinate : listCoordinate) {
-//            for (int i = 1; i < geomCoordinates.length; i++) {
-//                if(!coordinate.equals(geomCoordinates[i])){
-//                    if(!result.contains(geomCoordinates[i])
-//                            && !listCoordinate.contains(geomCoordinates[i])){
-//                        result.add(geomCoordinates[i]);
-//                    }
-//                }
-//            }
-//        }
-//        
-//        Coordinate[] toReturn = new Coordinate[result.size()];
-//        return result.toArray(toReturn);
-//    }
-    
     private String formatPosition(PositionType position) throws OLSException
     {
         StringBuffer    sb = new StringBuffer();
@@ -610,23 +621,12 @@ public class OTPServiceProvider extends OLSAbstractServiceProvider implements Ro
         String          srsName = pos.getSrsName();
         
         if (!OTP_CRS.equals(srsName)) {
-            try {
-                CoordinateReferenceSystem       sourceCrs = CRS.decode(srsName);
-                List<Double>                    coordinates = pos.getValues();
-                GeometryBuilder                 builder = new GeometryBuilder(sourceCrs);
-                Point                           sourcePoint = builder.createPoint(coordinates.get(0), coordinates.get(1));
-                Point                           destinationPoint = (Point)sourcePoint.transform(otpCrs);
-                
-                sb.append(destinationPoint.getDirectPosition().getCoordinate()[0]).
-                   append(",").
-                   append(destinationPoint.getDirectPosition().getCoordinate()[1]);
-            } catch (NoSuchAuthorityCodeException e) {
-                throw new OLSException("Unknown authority in SRS", e);
-            } catch (FactoryException e) {
-                throw new OLSException("Factory exception converting SRS", e);
-            } catch (TransformException e) {
-                throw new OLSException("Error transforming geometry", e);
-            }
+            List<Double>                    coordinates = pos.getValues();
+            double[] coords = SRSTransformer.transform(coordinates.get(0), coordinates.get(1), srsName, otpCrs);
+            
+            sb.append(coords[0]).
+               append(",").
+               append(coords[1]);
         } else {
             for (Double coord : pos.getValues()) {
                 if (sb.length() != 0) {
@@ -638,35 +638,6 @@ public class OTPServiceProvider extends OLSAbstractServiceProvider implements Ro
         }
         
         return sb.toString();
-    }
-    
-    private double[] transformPoint(double x, double y, String srsName) throws OLSException
-    {
-        double[]        retval;
-        
-        if (!OTP_CRS.equals(srsName)) {
-            try {
-                CoordinateReferenceSystem       destCrs = CRS.decode(srsName);
-                GeometryBuilder                 builder = new GeometryBuilder(otpCrs);
-                Point                           sourcePoint = builder.createPoint(x, y);
-                Point                           destinationPoint = (Point)sourcePoint.transform(destCrs);
-                
-                retval = destinationPoint.getDirectPosition().getCoordinate();
-            } catch (NoSuchAuthorityCodeException e) {
-                throw new OLSException("Unknown authority in SRS", e);
-            } catch (FactoryException e) {
-                throw new OLSException("Factory exception converting SRS", e);
-            } catch (TransformException e) {
-                throw new OLSException("Error transforming geometry", e);
-            }
-        } else {
-            retval = new double[2];
-            
-            retval[0] = x;
-            retval[1] = y;
-        }
-        
-        return retval;
     }
     
     private static List<Coordinate> decode(EncodedPolylineBean polyline)

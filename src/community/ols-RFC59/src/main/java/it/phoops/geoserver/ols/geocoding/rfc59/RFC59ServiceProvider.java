@@ -10,6 +10,7 @@ import it.phoops.geoserver.ols.OLSService;
 import it.phoops.geoserver.ols.geocoding.GeocodingServiceProvider;
 import it.phoops.geoserver.ols.geocoding.rfc59.component.RFC59Tab;
 import it.phoops.geoserver.ols.geocoding.rfc59.component.RFC59TabFactory;
+import it.phoops.geoserver.ols.util.SRSTransformer;
 import it.toscana.regione.normaws.AmbiguitaIndItem;
 import it.toscana.regione.normaws.DatiGeoreferenziazioneInd;
 import it.toscana.regione.normaws.DatiNormalizzazioneInd;
@@ -50,6 +51,10 @@ import org.apache.wicket.extensions.markup.html.tabs.ITab;
 import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.ResourceModel;
 import org.geoserver.config.ServiceInfo;
+import org.geotools.referencing.CRS;
+import org.opengis.referencing.FactoryException;
+import org.opengis.referencing.NoSuchAuthorityCodeException;
+import org.opengis.referencing.crs.CoordinateReferenceSystem;
 
 public class RFC59ServiceProvider extends OLSAbstractServiceProvider implements GeocodingServiceProvider, Serializable {
     /** serialVersionUID */
@@ -63,8 +68,22 @@ public class RFC59ServiceProvider extends OLSAbstractServiceProvider implements 
     public static final String  PN_TIMEOUT = "OLS.serviceProvider.geocoding.rfc59.service.timeout";
     public static final String  PN_ACTIVE_SERVICE = "OLS.serviceProvider.service.active";
     
+    private static final String RFC59_CRS = "EPSG:3003";
+    
     private String      descriptionKey;
     private Properties  properties = new Properties();
+
+    private CoordinateReferenceSystem   rfc59Crs;
+    
+    public RFC59ServiceProvider() throws OLSException {
+        try {
+            rfc59Crs = CRS.decode(RFC59_CRS);
+        } catch (NoSuchAuthorityCodeException e) {
+            throw new OLSException("Unknown authority in SRS", e);
+        } catch (FactoryException e) {
+            throw new OLSException("Factory exception converting SRS", e);
+        }
+    }
 
     @Override
     public String getDescriptionKey() {
@@ -182,6 +201,13 @@ public class RFC59ServiceProvider extends OLSAbstractServiceProvider implements 
         DatiNormalizzazioneInd                                  datiNormalizzazioneInd;
         GeocodeMatchCode                                        geocodeMatchCode;
         DatiNormalizzazioneLoc                                  datiNormalizzazioneLoc;
+        String                                                  declaredSrs;
+        
+        if (srsName != null) {
+            declaredSrs = srsName;
+        } else {
+            declaredSrs = "EPSG:4326";
+        }
 
         for (AddressType address : input.getAddresses()) {
             // We manage only requests regarding Italy (moreover, Tuscany...)
@@ -326,10 +352,18 @@ public class RFC59ServiceProvider extends OLSAbstractServiceProvider implements 
                     
                     coordinates = pos.getValues();
                     datiGeoreferenziazioneInd = indirizzoRiconosciuto.getDatiGeoreferenziazioneInd();
-                    coordinates.add(Double.valueOf(datiGeoreferenziazioneInd.getLongitudine()));
-                    coordinates.add(Double.valueOf(datiGeoreferenziazioneInd.getLatitudine()));
                     
-                    pos.setSrsName("EPSG:3003");
+                    if (!RFC59_CRS.equals(declaredSrs)) {
+                        double[]        coords = SRSTransformer.transform(Double.valueOf(datiGeoreferenziazioneInd.getLongitudine()), Double.valueOf(datiGeoreferenziazioneInd.getLatitudine()), rfc59Crs, declaredSrs);
+                        
+                        coordinates.add(coords[0]);
+                        coordinates.add(coords[1]);
+                    } else {
+                        coordinates.add(Double.valueOf(datiGeoreferenziazioneInd.getLongitudine()));
+                        coordinates.add(Double.valueOf(datiGeoreferenziazioneInd.getLatitudine()));
+                    }
+                    
+                    pos.setSrsName(declaredSrs);
                     
                     point.setPos(pos);
 //                    point.setSrsName(value);

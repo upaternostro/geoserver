@@ -11,6 +11,7 @@ import it.phoops.geoserver.ols.geocoding.GeocodingServiceProvider;
 import it.phoops.geoserver.ols.geocoding.solr.component.SOLRTab;
 import it.phoops.geoserver.ols.geocoding.solr.component.SOLRTabFactory;
 import it.phoops.geoserver.ols.solr.utils.SolrPager;
+import it.phoops.geoserver.ols.util.SRSTransformer;
 
 import java.io.Serializable;
 import java.io.StringReader;
@@ -47,6 +48,10 @@ import org.apache.wicket.extensions.markup.html.tabs.ITab;
 import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.ResourceModel;
 import org.geoserver.config.ServiceInfo;
+import org.geotools.referencing.CRS;
+import org.opengis.referencing.FactoryException;
+import org.opengis.referencing.NoSuchAuthorityCodeException;
+import org.opengis.referencing.crs.CoordinateReferenceSystem;
 
 import com.vividsolutions.jts.geom.Geometry;
 import com.vividsolutions.jts.io.ParseException;
@@ -63,8 +68,22 @@ public class SOLRServiceProvider extends OLSAbstractServiceProvider implements G
     private static final String PN_ENDPOINT_ADDRESS = "OLS.serviceProvider.geocoding.solr.service.endpointAddress";
     private static final String PN_ACTIVE_SERVICE = "OLS.serviceProvider.service.active";
 
+    private static final String SOLR_CRS = "EPSG:4326";
+    
     private String descriptionKey;
     private Properties properties = new Properties();
+
+    private CoordinateReferenceSystem   solrCrs;
+    
+    public SOLRServiceProvider() throws OLSException {
+        try {
+            solrCrs = CRS.decode(SOLR_CRS);
+        } catch (NoSuchAuthorityCodeException e) {
+            throw new OLSException("Unknown authority in SRS", e);
+        } catch (FactoryException e) {
+            throw new OLSException("Factory exception converting SRS", e);
+        }
+    }
 
     @Override
     public String getDescriptionKey() {
@@ -160,6 +179,13 @@ public class SOLRServiceProvider extends OLSAbstractServiceProvider implements G
         Place                                                   place;
         AddressType                                             returnAddress;
         GeocodeMatchCode                                        geocodeMatchCode;
+        String                                                  declaredSrs;
+        
+        if (srsName != null) {
+            declaredSrs = srsName;
+        } else {
+            declaredSrs = "EPSG:4326";
+        }
         
         for (AddressType address : input.getAddresses()) {
             // We manage only requests regarding Italy (moreover, Tuscany...)
@@ -311,9 +337,17 @@ public class SOLRServiceProvider extends OLSAbstractServiceProvider implements G
                         
                         coordinates = pos.getValues();
                         
-                        coordinates.add(Double.valueOf(geometry.getCoordinate().getOrdinate(0)));
-                        coordinates.add(Double.valueOf(geometry.getCoordinate().getOrdinate(1)));
-                        pos.setSrsName("EPSG:4326");
+                        if (!SOLR_CRS.equals(declaredSrs)) {
+                            double[]        coords = SRSTransformer.transform(geometry.getCoordinate().getOrdinate(0), geometry.getCoordinate().getOrdinate(1), solrCrs, declaredSrs);
+                            
+                            coordinates.add(coords[0]);
+                            coordinates.add(coords[1]);
+                        } else {
+                            coordinates.add(Double.valueOf(geometry.getCoordinate().getOrdinate(0)));
+                            coordinates.add(Double.valueOf(geometry.getCoordinate().getOrdinate(1)));
+                        }
+                        
+                        pos.setSrsName(declaredSrs);
                         
                         point.setPos(pos);
 //                        point.setSrsName(value);
