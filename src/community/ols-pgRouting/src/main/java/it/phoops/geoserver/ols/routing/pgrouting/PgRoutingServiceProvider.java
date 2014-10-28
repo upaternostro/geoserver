@@ -62,14 +62,19 @@ import org.geotools.data.simple.SimpleFeatureCollection;
 import org.geotools.data.simple.SimpleFeatureSource;
 import org.geotools.factory.CommonFactoryFinder;
 import org.geotools.feature.FeatureIterator;
+import org.geotools.geometry.GeometryBuilder;
 import org.geotools.jdbc.JDBCDataStore;
+import org.geotools.referencing.CRS;
 import org.opengis.feature.Feature;
 import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.type.FeatureType;
 import org.opengis.feature.type.GeometryDescriptor;
 import org.opengis.filter.Filter;
 import org.opengis.filter.FilterFactory;
+import org.opengis.referencing.FactoryException;
+import org.opengis.referencing.NoSuchAuthorityCodeException;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
+import org.opengis.referencing.operation.TransformException;
 
 import com.vividsolutions.jts.geom.Coordinate;
 import com.vividsolutions.jts.geom.Geometry;
@@ -102,9 +107,23 @@ public class PgRoutingServiceProvider extends OLSAbstractServiceProvider impleme
     private static final String  PN_NAVIGATION_REL      = "OLS.serviceProvider.geocoding.pgrouting.service.navigationInfo.relative";
     private static final String  PN_LANGUAGE_INFO       = "OLS.serviceProvider.geocoding.pgrouting.service.languageInfo";
     
+    private static final String PG_ROUTING_CRS = "EPSG:4326";
+    
     private String      descriptionKey;
     private Properties  properties = new Properties();
     
+    private CoordinateReferenceSystem   pgRoutingCrs;
+    
+    public PgRoutingServiceProvider() throws OLSException {
+        try {
+            pgRoutingCrs = CRS.decode(PG_ROUTING_CRS);
+        } catch (NoSuchAuthorityCodeException e) {
+            throw new OLSException("Unknown authority in SRS", e);
+        } catch (FactoryException e) {
+            throw new OLSException("Factory exception converting SRS", e);
+        }
+    }
+
     public String getEndpointAddress() {
         return properties.getProperty(PN_ENDPOINT_ADDRESS);
     }
@@ -378,6 +397,7 @@ public class PgRoutingServiceProvider extends OLSAbstractServiceProvider impleme
         }
         
         PositionType                                    startPosition = (PositionType)startLocation.getValue();
+        String                                          declaredSrs = startPosition.getPoint().getPos().getSrsName();
         WayPointType                                    endPoint = wpList.getEndPoint();
         JAXBElement<? extends AbstractLocationType>     endLocation = endPoint.getLocation();
         
@@ -445,6 +465,7 @@ public class PgRoutingServiceProvider extends OLSAbstractServiceProvider impleme
             double                      totalDistance = 0.0;
             DistanceType                distance;
             Geometry                    routeGeometry = null;
+            double[]                    transformedCoords;
             
             do {
                 endPosition = viaPosition.remove(0);
@@ -579,15 +600,17 @@ public class PgRoutingServiceProvider extends OLSAbstractServiceProvider impleme
                         List<Double> posValues;
                         List<Pos> posList;
                         
-                        lineStringType.setSrsName("EPSG:4326");
+                        lineStringType.setSrsName(declaredSrs);
                         posValues = posInstruction.getValues();
                         posList = lineStringType.getPos();
                         
                         for (Coordinate coord : edgeGeometry.getCoordinates()) {
+                            transformedCoords = transformPoint(coord.y, coord.x, declaredSrs);
+                            
                             posInstruction = new Pos();
                             posValues = posInstruction.getValues();
-                            posValues.add(coord.y);
-                            posValues.add(coord.x);
+                            posValues.add(transformedCoords[0]);
+                            posValues.add(transformedCoords[1]);
                             posList.add(posInstruction);
                         }
                         
@@ -612,32 +635,34 @@ public class PgRoutingServiceProvider extends OLSAbstractServiceProvider impleme
             List<Pos>               posList = lineString.getPos();
             Pos                     pos;
             List<Double>            posValues;
-            double                  minX = 360;
-            double                  maxX = -360;
-            double                  minY = 360;
-            double                  maxY = -360;
+            double                  minX = Double.POSITIVE_INFINITY;
+            double                  maxX = Double.NEGATIVE_INFINITY;
+            double                  minY = Double.POSITIVE_INFINITY;
+            double                  maxY = Double.NEGATIVE_INFINITY;
             
-            lineString.setSrsName("EPSG:4326");
+            lineString.setSrsName(declaredSrs);
             
             for (Coordinate coord : routeGeometry.getCoordinates()) {
+                transformedCoords = transformPoint(coord.y, coord.x, declaredSrs);
+                
                 pos = new Pos();
                 posValues = pos.getValues();
-                posValues.add(coord.y);
-                posValues.add(coord.x);
+                posValues.add(transformedCoords[0]);
+                posValues.add(transformedCoords[1]);
                 posList.add(pos);
                 
                 // Bounding box extraction:
-                if (coord.x < minX) {
-                    minX = coord.x;
+                if (transformedCoords[0] < minX) {
+                    minX = transformedCoords[0];
                 }
-                if (coord.y < minY) {
-                    minY = coord.y;
+                if (transformedCoords[1] < minY) {
+                    minY = transformedCoords[1];
                 }
-                if (coord.x > maxX) {
-                    maxX = coord.x;
+                if (transformedCoords[0] > maxX) {
+                    maxX = transformedCoords[0];
                 }
-                if (coord.y > maxY) {
-                    maxY = coord.y;
+                if (transformedCoords[1] > maxY) {
+                    maxY = transformedCoords[1];
                 }
             }
             
@@ -645,7 +670,7 @@ public class PgRoutingServiceProvider extends OLSAbstractServiceProvider impleme
             
             EnvelopeType    boundingBox = of.createEnvelopeType();
             
-            boundingBox.setSrsName("EPSG:4326");
+            boundingBox.setSrsName(declaredSrs);
             posList = boundingBox.getPos();
             
             pos = new Pos();
@@ -692,11 +717,35 @@ public class PgRoutingServiceProvider extends OLSAbstractServiceProvider impleme
         return retval;
     }
     
-    private Feature findNearestNode(SimpleFeatureSource nodes, PositionType position) throws IOException
+    private Feature findNearestNode(SimpleFeatureSource nodes, PositionType position) throws IOException, OLSException
     {
-        List<Double>                    ordinates = position.getPoint().getPos().getValues();
-        Double                          y = ordinates.get(0);
-        Double                          x = ordinates.get(1);
+        Pos             pos = position.getPoint().getPos();
+        List<Double>    ordinates = pos.getValues();
+        String          srsName = pos.getSrsName();
+        Double          y;
+        Double          x;
+
+        if (!PG_ROUTING_CRS.equals(srsName)) {
+            try {
+                CoordinateReferenceSystem               sourceCrs = CRS.decode(srsName);
+                GeometryBuilder                         builder = new GeometryBuilder(sourceCrs);
+                org.opengis.geometry.primitive.Point    sourcePoint = builder.createPoint(ordinates.get(0), ordinates.get(1));
+                org.opengis.geometry.primitive.Point    destinationPoint = (org.opengis.geometry.primitive.Point)sourcePoint.transform(pgRoutingCrs);
+                
+                y = destinationPoint.getDirectPosition().getCoordinate()[0];
+                x = destinationPoint.getDirectPosition().getCoordinate()[1];
+            } catch (NoSuchAuthorityCodeException e) {
+                throw new OLSException("Unknown authority in SRS", e);
+            } catch (FactoryException e) {
+                throw new OLSException("Factory exception converting SRS", e);
+            } catch (TransformException e) {
+                throw new OLSException("Error transforming geometry", e);
+            }
+        } else {
+            y = ordinates.get(0);
+            x = ordinates.get(1);
+        }
+        
         GeometryFactory                 gf = new GeometryFactory();
         Geometry                        point = gf.createPoint(new Coordinate(x.doubleValue(), y.doubleValue()));
         double                          radius = 0.0000001; // degrees
@@ -743,6 +792,35 @@ public class PgRoutingServiceProvider extends OLSAbstractServiceProvider impleme
         String  name = featureSource.getName().getLocalPart();
         
         return Integer.valueOf(fid.substring(name.length() + 1));
+    }
+    
+    private double[] transformPoint(double x, double y, String srsName) throws OLSException
+    {
+        double[]        retval;
+        
+        if (!PG_ROUTING_CRS.equals(srsName)) {
+            try {
+                CoordinateReferenceSystem               destCrs = CRS.decode(srsName);
+                GeometryBuilder                         builder = new GeometryBuilder(pgRoutingCrs);
+                org.opengis.geometry.primitive.Point    sourcePoint = builder.createPoint(x, y);
+                org.opengis.geometry.primitive.Point    destinationPoint = (org.opengis.geometry.primitive.Point)sourcePoint.transform(destCrs);
+                
+                retval = destinationPoint.getDirectPosition().getCoordinate();
+            } catch (NoSuchAuthorityCodeException e) {
+                throw new OLSException("Unknown authority in SRS", e);
+            } catch (FactoryException e) {
+                throw new OLSException("Factory exception converting SRS", e);
+            } catch (TransformException e) {
+                throw new OLSException("Error transforming geometry", e);
+            }
+        } else {
+            retval = new double[2];
+            
+            retval[0] = x;
+            retval[1] = y;
+        }
+        
+        return retval;
     }
 }
 
