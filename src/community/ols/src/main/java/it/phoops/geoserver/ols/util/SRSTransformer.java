@@ -4,6 +4,7 @@ import it.phoops.geoserver.ols.OLSException;
 
 import org.geotools.geometry.GeometryBuilder;
 import org.geotools.referencing.CRS;
+import org.opengis.geometry.primitive.Point;
 import org.opengis.referencing.FactoryException;
 import org.opengis.referencing.NoSuchAuthorityCodeException;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
@@ -14,10 +15,10 @@ public class SRSTransformer
     public static double[] transform(double x, double y, CoordinateReferenceSystem sourceCRS, String targetSRSName) throws OLSException
     {
         try {
-            CoordinateReferenceSystem               destCrs = CRS.decode(targetSRSName);
-            GeometryBuilder                         builder = new GeometryBuilder(sourceCRS);
-            org.opengis.geometry.primitive.Point    sourcePoint = builder.createPoint(x, y);
-            org.opengis.geometry.primitive.Point    destinationPoint = (org.opengis.geometry.primitive.Point)sourcePoint.transform(destCrs);
+            CoordinateReferenceSystem   destCrs = CRS.decode(targetSRSName);
+            GeometryBuilder             builder = new GeometryBuilder(sourceCRS);
+            Point                       sourcePoint = builder.createPoint(x, y);
+            Point                       destinationPoint = (Point)sourcePoint.transform(destCrs);
             
             return destinationPoint.getDirectPosition().getCoordinate();
         } catch (NoSuchAuthorityCodeException e) {
@@ -32,10 +33,10 @@ public class SRSTransformer
     public static double[] transform(double x, double y, String sourceSRSName, CoordinateReferenceSystem targetCRS) throws OLSException
     {
         try {
-            CoordinateReferenceSystem               sourceCRS = CRS.decode(sourceSRSName);
-            GeometryBuilder                         builder = new GeometryBuilder(sourceCRS);
-            org.opengis.geometry.primitive.Point    sourcePoint = builder.createPoint(x, y);
-            org.opengis.geometry.primitive.Point    destinationPoint = (org.opengis.geometry.primitive.Point)sourcePoint.transform(targetCRS);
+            CoordinateReferenceSystem   sourceCRS = CRS.decode(sourceSRSName);
+            GeometryBuilder             builder = new GeometryBuilder(sourceCRS);
+            Point                       sourcePoint = builder.createPoint(x, y);
+            Point                       destinationPoint = (Point)sourcePoint.transform(targetCRS);
             
             return destinationPoint.getDirectPosition().getCoordinate();
         } catch (NoSuchAuthorityCodeException e) {
