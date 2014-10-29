@@ -47,6 +47,8 @@ import net.opengis.www.xls.Pos;
 import net.opengis.www.xls.Street;
 import net.opengis.www.xls.StreetAddress;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.wicket.extensions.markup.html.tabs.ITab;
 import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.ResourceModel;
@@ -56,7 +58,12 @@ import org.opengis.referencing.FactoryException;
 import org.opengis.referencing.NoSuchAuthorityCodeException;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
 
-public class RFC59ServiceProvider extends OLSAbstractServiceProvider implements GeocodingServiceProvider, Serializable {
+import com.vividsolutions.jts.geom.Coordinate;
+
+public class RFC59ServiceProvider extends OLSAbstractServiceProvider implements GeocodingServiceProvider, Serializable
+{
+    private final Log logger = LogFactory.getLog(getClass());
+    
     /** serialVersionUID */
     private static final long serialVersionUID = 1L;
     public static final DataSource DATA_SOURCE = DataSource.REGIONE_TOSCANA;
@@ -75,14 +82,27 @@ public class RFC59ServiceProvider extends OLSAbstractServiceProvider implements 
 
     private CoordinateReferenceSystem   rfc59Crs;
     
-    public RFC59ServiceProvider() throws OLSException {
-        try {
-            rfc59Crs = CRS.decode(RFC59_CRS);
-        } catch (NoSuchAuthorityCodeException e) {
-            throw new OLSException("Unknown authority in SRS", e);
-        } catch (FactoryException e) {
-            throw new OLSException("Factory exception converting SRS", e);
+    private CoordinateReferenceSystem getRFC59Crs() throws OLSException
+    {
+        CoordinateReferenceSystem       retval = rfc59Crs;
+        
+        if (retval == null) {
+            synchronized (this) {
+                retval = rfc59Crs;
+                
+                if (retval == null) {
+                    try {
+                        retval = rfc59Crs = CRS.decode(RFC59_CRS);
+                    } catch (NoSuchAuthorityCodeException e) {
+                        throw new OLSException("Unknown authority in SRS", e);
+                    } catch (FactoryException e) {
+                        throw new OLSException("Factory exception converting SRS", e);
+                    }
+                }
+            }
         }
+        
+        return retval;
     }
 
     @Override
@@ -354,10 +374,10 @@ public class RFC59ServiceProvider extends OLSAbstractServiceProvider implements 
                     datiGeoreferenziazioneInd = indirizzoRiconosciuto.getDatiGeoreferenziazioneInd();
                     
                     if (!RFC59_CRS.equals(declaredSrs)) {
-                        double[]        coords = SRSTransformer.transform(Double.valueOf(datiGeoreferenziazioneInd.getLongitudine()), Double.valueOf(datiGeoreferenziazioneInd.getLatitudine()), rfc59Crs, declaredSrs);
+                        Coordinate      coords = SRSTransformer.transform(Double.valueOf(datiGeoreferenziazioneInd.getLongitudine()), Double.valueOf(datiGeoreferenziazioneInd.getLatitudine()), getRFC59Crs(), declaredSrs);
                         
-                        coordinates.add(coords[0]);
-                        coordinates.add(coords[1]);
+                        coordinates.add(coords.x);
+                        coordinates.add(coords.y);
                     } else {
                         coordinates.add(Double.valueOf(datiGeoreferenziazioneInd.getLongitudine()));
                         coordinates.add(Double.valueOf(datiGeoreferenziazioneInd.getLatitudine()));

@@ -11,7 +11,7 @@
 	<bean id="otpServiceProvider" class="it.phoops.geoserver.ols.routing.otp.OTPServiceProvider">
 	   <property name="active" value="false" />
 	   <property name="descriptionKey" value="OLS.serviceProvider.geocoding.otp.description" />
-       <property name="endpointAddress" value="http://localhost/opentripplanner-api-webapp/" />
+       <property name="endpointAddress" value="http://localhost/opentripplanner-api-webapp" />
        <property name="navigationInfo" value="Procedi in direzione {0} per {1}km su {2}" />
        <property name="navigationInfoShort" value="Procedi in direzione {0} per {1}km" />
        <property name="navigationInfoRel" value=" su {0} - {1}km" />

@@ -63,17 +63,16 @@ import net.opengis.www.xls.RouteSummaryType;
 import net.opengis.www.xls.WayPointList;
 import net.opengis.www.xls.WayPointType;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.wicket.extensions.markup.html.tabs.ITab;
 import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.ResourceModel;
 import org.geoserver.config.ServiceInfo;
-import org.geotools.geometry.GeometryBuilder;
 import org.geotools.referencing.CRS;
-import org.opengis.geometry.primitive.Point;
 import org.opengis.referencing.FactoryException;
 import org.opengis.referencing.NoSuchAuthorityCodeException;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
-import org.opengis.referencing.operation.TransformException;
 import org.opentripplanner.util.PolylineEncoder;
 
 import com.sun.jersey.api.client.Client;
@@ -85,6 +84,8 @@ import com.vividsolutions.jts.geom.GeometryFactory;
 
 public class OTPServiceProvider extends OLSAbstractServiceProvider implements RoutingServiceProvider, Serializable {
 
+    private final Log logger = LogFactory.getLog(getClass());
+    
     public static final double EPSILON = 1.0;
     
     /** serialVersionUID */
@@ -102,18 +103,31 @@ public class OTPServiceProvider extends OLSAbstractServiceProvider implements Ro
     private String      descriptionKey;
     private Properties  properties = new Properties();
 
-    private CoordinateReferenceSystem   otpCrs;
+    private CoordinateReferenceSystem   otpCrs = null;
     
-    public OTPServiceProvider() throws OLSException {
-        try {
-            otpCrs = CRS.decode(OTP_CRS);
-        } catch (NoSuchAuthorityCodeException e) {
-            throw new OLSException("Unknown authority in SRS", e);
-        } catch (FactoryException e) {
-            throw new OLSException("Factory exception converting SRS", e);
+    private CoordinateReferenceSystem getOTPCrs() throws OLSException
+    {
+        CoordinateReferenceSystem       retval = otpCrs;
+        
+        if (retval == null) {
+            synchronized (this) {
+                retval = otpCrs;
+                
+                if (retval == null) {
+                    try {
+                        retval = otpCrs = CRS.decode(OTP_CRS);
+                    } catch (NoSuchAuthorityCodeException e) {
+                        throw new OLSException("Unknown authority in SRS", e);
+                    } catch (FactoryException e) {
+                        throw new OLSException("Factory exception converting SRS", e);
+                    }
+                }
+            }
         }
+        
+        return retval;
     }
-
+    
     @Override
     public String getDescriptionKey() {
         return descriptionKey;
@@ -372,7 +386,7 @@ public class OTPServiceProvider extends OLSAbstractServiceProvider implements Ro
         }
         
         ResourceBundle  messages = ResourceBundle.getBundle("GeoServerApplication", locale);
-        WebResource     resource = client.resource(getEndpointAddress() + "/ws/plan");
+        WebResource     resource = client.resource(getEndpointAddress()).path("ws/plan");
         Response        response = resource.queryParams(queryParams).accept(MediaType.TEXT_XML).get(Response.class);
 
         // Parse OTP Response
@@ -426,7 +440,7 @@ public class OTPServiceProvider extends OLSAbstractServiceProvider implements Ro
         RouteGeometryType       routeGeometry = null;
         LineStringType          lineStringType;
         List<Pos>               posList;
-        double[]                transformedCoords;
+        Coordinate              transformedCoords;
         Pos                     posInstruction;
         List<Double>            posValues;
         int                     index = 0;
@@ -478,9 +492,9 @@ public class OTPServiceProvider extends OLSAbstractServiceProvider implements Ro
                         posValues = posInstruction.getValues();
                         
                         if (!OTP_CRS.equals(declaredSrs)) {
-                            transformedCoords = SRSTransformer.transform(legCoordiantesArray[i].x, legCoordiantesArray[i].y, otpCrs, declaredSrs);
-                            posValues.add(transformedCoords[0]);
-                            posValues.add(transformedCoords[1]);
+                            transformedCoords = SRSTransformer.transform(legCoordiantesArray[i].y, legCoordiantesArray[i].x, getOTPCrs(), declaredSrs);
+                            posValues.add(transformedCoords.x);
+                            posValues.add(transformedCoords.y);
                         } else {
                             posValues.add(legCoordiantesArray[i].x);
                             posValues.add(legCoordiantesArray[i].y);
@@ -552,9 +566,9 @@ public class OTPServiceProvider extends OLSAbstractServiceProvider implements Ro
                 posValues = posInstruction.getValues();
                 
                 if (!OTP_CRS.equals(declaredSrs)) {
-                    transformedCoords = SRSTransformer.transform(legCoordiantesArray[i].x, legCoordiantesArray[i].y, otpCrs, declaredSrs);
-                    posValues.add(transformedCoords[0]);
-                    posValues.add(transformedCoords[1]);
+                    transformedCoords = SRSTransformer.transform(legCoordiantesArray[i].y, legCoordiantesArray[i].x, getOTPCrs(), declaredSrs);
+                    posValues.add(transformedCoords.x);
+                    posValues.add(transformedCoords.y);
                 } else {
                     posValues.add(legCoordiantesArray[i].x);
                     posValues.add(legCoordiantesArray[i].y);
@@ -588,9 +602,9 @@ public class OTPServiceProvider extends OLSAbstractServiceProvider implements Ro
             posValues = pos.getValues();
             
             if (!OTP_CRS.equals(declaredSrs)) {
-                transformedCoords = SRSTransformer.transform(coord.x, coord.y, otpCrs, declaredSrs);
-                posValues.add(transformedCoords[0]);
-                posValues.add(transformedCoords[1]);
+                transformedCoords = SRSTransformer.transform(coord.y, coord.x, getOTPCrs(), declaredSrs);
+                posValues.add(transformedCoords.x);
+                posValues.add(transformedCoords.y);
             } else {
                 posValues.add(coord.x);
                 posValues.add(coord.y);
@@ -650,12 +664,12 @@ public class OTPServiceProvider extends OLSAbstractServiceProvider implements Ro
         String          srsName = pos.getSrsName();
         
         if (!OTP_CRS.equals(srsName)) {
-            List<Double>                    coordinates = pos.getValues();
-            double[] coords = SRSTransformer.transform(coordinates.get(0), coordinates.get(1), srsName, otpCrs);
+            List<Double>        coordinates = pos.getValues();
+            Coordinate          coords = SRSTransformer.transform(coordinates.get(0), coordinates.get(1), srsName, getOTPCrs());
             
-            sb.append(coords[0]).
+            sb.append(coords.y).
                append(",").
-               append(coords[1]);
+               append(coords.x);
         } else {
             for (Double coord : pos.getValues()) {
                 if (sb.length() != 0) {

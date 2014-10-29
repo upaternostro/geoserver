@@ -30,7 +30,6 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.ResourceBundle;
 
-import javax.activation.MimeType;
 import javax.xml.bind.JAXBElement;
 
 import net.opengis.www.xls.AbstractLocationType;
@@ -65,7 +64,6 @@ import org.geotools.data.simple.SimpleFeatureCollection;
 import org.geotools.data.simple.SimpleFeatureSource;
 import org.geotools.factory.CommonFactoryFinder;
 import org.geotools.feature.FeatureIterator;
-import org.geotools.geometry.GeometryBuilder;
 import org.geotools.jdbc.JDBCDataStore;
 import org.geotools.referencing.CRS;
 import org.opengis.feature.Feature;
@@ -77,7 +75,6 @@ import org.opengis.filter.FilterFactory;
 import org.opengis.referencing.FactoryException;
 import org.opengis.referencing.NoSuchAuthorityCodeException;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
-import org.opengis.referencing.operation.TransformException;
 
 import com.vividsolutions.jts.geom.Coordinate;
 import com.vividsolutions.jts.geom.Geometry;
@@ -85,8 +82,8 @@ import com.vividsolutions.jts.geom.GeometryFactory;
 import com.vividsolutions.jts.geom.LineString;
 import com.vividsolutions.jts.geom.Point;
 
-public class PgRoutingServiceProvider extends OLSAbstractServiceProvider implements RoutingServiceProvider, Serializable{
-
+public class PgRoutingServiceProvider extends OLSAbstractServiceProvider implements RoutingServiceProvider, Serializable
+{
     /** serialVersionUID */
     private static final long serialVersionUID = 1L;
 
@@ -117,14 +114,27 @@ public class PgRoutingServiceProvider extends OLSAbstractServiceProvider impleme
     
     private CoordinateReferenceSystem   pgRoutingCrs;
     
-    public PgRoutingServiceProvider() throws OLSException {
-        try {
-            pgRoutingCrs = CRS.decode(PG_ROUTING_CRS);
-        } catch (NoSuchAuthorityCodeException e) {
-            throw new OLSException("Unknown authority in SRS", e);
-        } catch (FactoryException e) {
-            throw new OLSException("Factory exception converting SRS", e);
+    private CoordinateReferenceSystem getPgRoutingCrs() throws OLSException
+    {
+        CoordinateReferenceSystem       retval = pgRoutingCrs;
+        
+        if (retval == null) {
+            synchronized (this) {
+                retval = pgRoutingCrs;
+                
+                if (retval == null) {
+                    try {
+                        retval = pgRoutingCrs = CRS.decode(PG_ROUTING_CRS);
+                    } catch (NoSuchAuthorityCodeException e) {
+                        throw new OLSException("Unknown authority in SRS", e);
+                    } catch (FactoryException e) {
+                        throw new OLSException("Factory exception converting SRS", e);
+                    }
+                }
+            }
         }
+        
+        return retval;
     }
 
     public String getEndpointAddress() {
@@ -486,7 +496,7 @@ public class PgRoutingServiceProvider extends OLSAbstractServiceProvider impleme
             double                      totalDistance = 0.0;
             DistanceType                distance;
             Geometry                    routeGeometry = null;
-            double[]                    transformedCoords;
+            Coordinate                  transformedCoords;
             
             do {
                 endPosition = viaPosition.remove(0);
@@ -653,12 +663,12 @@ public class PgRoutingServiceProvider extends OLSAbstractServiceProvider impleme
                             posValues = posInstruction.getValues();
                             
                             if (!PG_ROUTING_CRS.equals(declaredSrs)) {
-                                transformedCoords = SRSTransformer.transform(coord.y, coord.x, pgRoutingCrs, declaredSrs);
-                                posValues.add(transformedCoords[0]);
-                                posValues.add(transformedCoords[1]);
+                                transformedCoords = SRSTransformer.transform(coord.y, coord.x, getPgRoutingCrs(), declaredSrs);
+                                posValues.add(transformedCoords.x);
+                                posValues.add(transformedCoords.y);
                             } else {
-                                posValues.add(coord.y);
                                 posValues.add(coord.x);
+                                posValues.add(coord.y);
                             }
                             
                             posList.add(posInstruction);
@@ -697,12 +707,12 @@ public class PgRoutingServiceProvider extends OLSAbstractServiceProvider impleme
                 posValues = pos.getValues();
                 
                 if (!PG_ROUTING_CRS.equals(declaredSrs)) {
-                    transformedCoords = SRSTransformer.transform(coord.y, coord.x, pgRoutingCrs, declaredSrs);
-                    posValues.add(transformedCoords[0]);
-                    posValues.add(transformedCoords[1]);
+                    transformedCoords = SRSTransformer.transform(coord.y, coord.x, getPgRoutingCrs(), declaredSrs);
+                    posValues.add(transformedCoords.x);
+                    posValues.add(transformedCoords.y);
                 } else {
-                    posValues.add(coord.y);
                     posValues.add(coord.x);
+                    posValues.add(coord.y);
                 }
                 
                 posList.add(pos);
@@ -782,12 +792,12 @@ public class PgRoutingServiceProvider extends OLSAbstractServiceProvider impleme
         Double          x;
 
         if (!PG_ROUTING_CRS.equals(srsName)) {
-            double[] coords = SRSTransformer.transform(ordinates.get(0), ordinates.get(1), srsName, pgRoutingCrs);
+            Coordinate  coords = SRSTransformer.transform(ordinates.get(0), ordinates.get(1), srsName, getPgRoutingCrs());
             
-            y = coords[0];
-            x = coords[1];
+            y = coords.x; // FIXME: reversed?
+            x = coords.y;
         } else {
-            y = ordinates.get(0);
+            y = ordinates.get(0); // FIXME: reversed?
             x = ordinates.get(1);
         }
         

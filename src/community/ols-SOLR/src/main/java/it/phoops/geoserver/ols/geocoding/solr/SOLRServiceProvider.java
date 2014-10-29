@@ -37,6 +37,8 @@ import net.opengis.www.xls.Pos;
 import net.opengis.www.xls.Street;
 import net.opengis.www.xls.StreetAddress;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.solr.client.solrj.SolrServer;
 import org.apache.solr.client.solrj.SolrServerException;
 import org.apache.solr.client.solrj.impl.HttpSolrServer;
@@ -53,11 +55,14 @@ import org.opengis.referencing.FactoryException;
 import org.opengis.referencing.NoSuchAuthorityCodeException;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
 
+import com.vividsolutions.jts.geom.Coordinate;
 import com.vividsolutions.jts.geom.Geometry;
 import com.vividsolutions.jts.io.ParseException;
 import com.vividsolutions.jts.io.WKTReader;
 
-public class SOLRServiceProvider extends OLSAbstractServiceProvider implements GeocodingServiceProvider, Serializable {
+public class SOLRServiceProvider extends OLSAbstractServiceProvider implements GeocodingServiceProvider, Serializable
+{
+    private final Log logger = LogFactory.getLog(getClass());
 
     /** serialVersionUID */
     private static final long serialVersionUID = 1L;
@@ -75,14 +80,27 @@ public class SOLRServiceProvider extends OLSAbstractServiceProvider implements G
 
     private CoordinateReferenceSystem   solrCrs;
     
-    public SOLRServiceProvider() throws OLSException {
-        try {
-            solrCrs = CRS.decode(SOLR_CRS);
-        } catch (NoSuchAuthorityCodeException e) {
-            throw new OLSException("Unknown authority in SRS", e);
-        } catch (FactoryException e) {
-            throw new OLSException("Factory exception converting SRS", e);
+    private CoordinateReferenceSystem getSOLRCrs() throws OLSException
+    {
+        CoordinateReferenceSystem       retval = solrCrs;
+        
+        if (retval == null) {
+            synchronized (this) {
+                retval = solrCrs;
+                
+                if (retval == null) {
+                    try {
+                        retval = solrCrs = CRS.decode(SOLR_CRS);
+                    } catch (NoSuchAuthorityCodeException e) {
+                        throw new OLSException("Unknown authority in SRS", e);
+                    } catch (FactoryException e) {
+                        throw new OLSException("Factory exception converting SRS", e);
+                    }
+                }
+            }
         }
+        
+        return retval;
     }
 
     @Override
@@ -338,10 +356,10 @@ public class SOLRServiceProvider extends OLSAbstractServiceProvider implements G
                         coordinates = pos.getValues();
                         
                         if (!SOLR_CRS.equals(declaredSrs)) {
-                            double[]        coords = SRSTransformer.transform(geometry.getCoordinate().getOrdinate(0), geometry.getCoordinate().getOrdinate(1), solrCrs, declaredSrs);
+                            Coordinate  coords = SRSTransformer.transform(geometry.getCoordinate().getOrdinate(0), geometry.getCoordinate().getOrdinate(1), getSOLRCrs(), declaredSrs);
                             
-                            coordinates.add(coords[0]);
-                            coordinates.add(coords[1]);
+                            coordinates.add(coords.x);
+                            coordinates.add(coords.y);
                         } else {
                             coordinates.add(Double.valueOf(geometry.getCoordinate().getOrdinate(0)));
                             coordinates.add(Double.valueOf(geometry.getCoordinate().getOrdinate(1)));
