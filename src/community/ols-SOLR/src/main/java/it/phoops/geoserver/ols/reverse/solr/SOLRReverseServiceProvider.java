@@ -222,8 +222,8 @@ public class SOLRReverseServiceProvider extends OLSAbstractServiceProvider imple
 	        if (!SOLR_CRS.equals(declaredSrs)) {
 	            Coordinate coords = SRSTransformer.transform(coordinates.get(0), coordinates.get(1), declaredSrs, getSOLRCrs());
 	            
-                    coordinates.set(0, coords.x);
-                    coordinates.set(1, coords.y);
+                    coordinates.set(0, coords.y);
+                    coordinates.set(1, coords.x);
 	        }
 	        
 	        SolrQuery query = new SolrQuery("centerline:\"Intersects(Circle("+coordinates.get(0)+","+coordinates.get(1)+", d=0.0001))\"");
@@ -254,7 +254,7 @@ public class SOLRReverseServiceProvider extends OLSAbstractServiceProvider imple
 	                        coordinates = pos.getValues();
 	                        
 	                        if (!SOLR_CRS.equals(declaredSrs)) {
-	                            Coordinate coords = SRSTransformer.transform(coordinates.get(0), coordinates.get(1), solrCrs, declaredSrs);
+	                            Coordinate coords = SRSTransformer.transform(geometry.getCoordinate().getOrdinate(0), geometry.getCoordinate().getOrdinate(1), solrCrs, declaredSrs);
 	                            
 	                            coordinates.add(coords.x);
 	                            coordinates.add(coords.y);
@@ -347,7 +347,7 @@ public class SOLRReverseServiceProvider extends OLSAbstractServiceProvider imple
                                 coordinates = pos.getValues();
                                 
                                 if (!SOLR_CRS.equals(declaredSrs)) {
-                                    Coordinate  coords = SRSTransformer.transform(coordinates.get(0), coordinates.get(1), solrCrs, declaredSrs);
+                                    Coordinate  coords = SRSTransformer.transform(geometry.getCoordinate().getOrdinate(0), geometry.getCoordinate().getOrdinate(1), solrCrs, declaredSrs);
                                     
                                     coordinates.add(coords.x);
                                     coordinates.add(coords.y);
