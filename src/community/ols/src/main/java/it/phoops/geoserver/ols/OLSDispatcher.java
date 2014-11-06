@@ -162,10 +162,12 @@ public class OLSDispatcher extends AbstractController
                                 outputHeader.setSessionID(sessionId);
                             }
                             
+                            outputBody.setRequestID(((RequestType)input.getBodies().get(0).getValue()).getRequestID());
                             outputBody.setResponseParameters(response);
+                            outputBody.setVersion(OLS_VERSION);
                             
-                            output.setHeader(of.createHeader(outputHeader));
-                            output.getBodies().add(of.createBody(outputBody));
+                            output.setHeader(of.createResponseHeader(outputHeader));
+                            output.getBodies().add(of.createResponse(outputBody));
                             
                             output.setLang(input.getLang());
                             output.setVersion(new BigDecimal(OLS_VERSION));
