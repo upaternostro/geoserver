@@ -1,7 +1,5 @@
 package it.phoops.geoserver.ols.solr.utils;
 
-import java.net.MalformedURLException;
-
 import org.apache.http.client.HttpClient;
 import org.apache.solr.client.solrj.ResponseParser;
 import org.apache.solr.client.solrj.impl.LBHttpSolrServer;
