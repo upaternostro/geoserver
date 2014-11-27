@@ -166,9 +166,9 @@ public class SolrGeocodingFacadeImpl implements SolrGeocodingFacade {
         if (numberDelimiterIndex != -1) {
             if (numberAfterAddress) {
                 number = freeFormAddress.substring(numberDelimiterIndex+1);
-                freeFormAddress = freeFormAddress.substring(0, numberDelimiterIndex-1);
+                freeFormAddress = freeFormAddress.substring(0, numberDelimiterIndex);
             } else {
-                number = freeFormAddress.substring(0, numberDelimiterIndex-1);
+                number = freeFormAddress.substring(0, numberDelimiterIndex);
                 freeFormAddress = freeFormAddress.substring(numberDelimiterIndex+1);
             }
         }
@@ -208,9 +208,9 @@ public class SolrGeocodingFacadeImpl implements SolrGeocodingFacade {
         if (numberDelimiterIndex != -1) {
             if (numberAfterAddress) {
                 number = streetName.substring(numberDelimiterIndex+1);
-                streetName = streetName.substring(0, numberDelimiterIndex-1);
+                streetName = streetName.substring(0, numberDelimiterIndex);
             } else {
-                number = streetName.substring(0, numberDelimiterIndex-1);
+                number = streetName.substring(0, numberDelimiterIndex);
                 streetName = streetName.substring(numberDelimiterIndex+1);
             }
         }
@@ -225,7 +225,7 @@ public class SolrGeocodingFacadeImpl implements SolrGeocodingFacade {
         String          token;
         
         if (typePrefix != null && !"".equals(typePrefix)) {
-            queryBuffer.append("street_type:").append(typePrefix).append("~2^").append(streetTypeWeigth).append(" AND ");
+            queryBuffer.append("street_type:").append(typePrefix.trim()).append("~2^").append(streetTypeWeigth).append(" AND ");
         }
         
         while (st.hasMoreTokens()) {
@@ -248,21 +248,21 @@ public class SolrGeocodingFacadeImpl implements SolrGeocodingFacade {
     private SolrDocumentList callSolr(StringBuffer queryBuffer, String number, String subdivision, String municipality, String countrySubdivision) throws SolrServerException, SolrGeocodingFacadeException {
         if (number != null && !"".equals(number)) {
             if (subdivision != null && !"".equals(subdivision)) {
-                number = number + numberSubdivisionSeparator + subdivision;
+                number = number.trim() + numberSubdivisionSeparator + subdivision.trim();
             }
             
             String  addressQuery = queryBuffer.toString();
             
             queryBuffer.setLength(0);
-            queryBuffer.append("((").append(addressQuery).append(") OR (").append(addressQuery).append(" AND full_number:").append(number).append("~2^").append(numberWeigth).append("))");
+            queryBuffer.append("((").append(addressQuery).append(") OR (").append(addressQuery).append(" AND full_number:").append(number.trim()).append("~2^").append(numberWeigth).append("))");
         }
         
         if (municipality != null && !"".equals(municipality)) {
-            queryBuffer.append(" AND municipality:").append(municipality).append("~2^").append(municipalityWeigth);
+            queryBuffer.append(" AND municipality:").append(municipality.trim()).append("~2^").append(municipalityWeigth);
         }
         
         if (countrySubdivision != null && !"".equals(countrySubdivision)) {
-            queryBuffer.append(" AND countrySubdivision:").append(municipality).append("~2^").append(countrySubdivisionWeigth);
+            queryBuffer.append(" AND country_subdivision:").append(countrySubdivision.trim()).append("~2^").append(countrySubdivisionWeigth);
         }
         
         if (solrServer == null) {
