@@ -15,10 +15,13 @@ import org.apache.solr.client.solrj.impl.CloudSolrServer;
 import org.apache.solr.client.solrj.impl.ConcurrentUpdateSolrServer;
 import org.apache.solr.client.solrj.impl.HttpSolrServer;
 import org.apache.solr.client.solrj.impl.LBHttpSolrServer;
+import org.apache.solr.client.solrj.response.QueryResponse;
 import org.apache.solr.common.SolrDocumentList;
 import org.apache.solr.common.params.ModifiableSolrParams;
 
 public class SolrGeocodingFacadeImpl implements SolrGeocodingFacade {
+    private static final int    MAX_DOCS_PER_REQUEST    = 100;
+    
     private SolrServer  solrServer;
     private String      numberDelimiter;
     private boolean     numberAfterAddress;
@@ -284,7 +287,27 @@ public class SolrGeocodingFacadeImpl implements SolrGeocodingFacade {
         
         solrParams.set("q", queryBuffer.toString());
         
-        return SolrPager.query(solrServer, solrParams, maxRows);
+        SolrDocumentList        retval = new SolrDocumentList();
+        int                     start = 0;
+        QueryResponse           qr;
+        SolrDocumentList        list;
+        
+        if (maxRows > 0) {
+            solrParams.set("rows", maxRows > MAX_DOCS_PER_REQUEST ? MAX_DOCS_PER_REQUEST : maxRows);
+        }
+        
+        do {
+            solrParams.set("start", start);
+            
+            qr = solrServer.query(solrParams);
+            list = qr.getResults();
+            
+            retval.addAll(list);
+            retval.setNumFound(list.getNumFound());
+            start = retval.size();
+        } while (start < list.getNumFound() && maxRows != SolrGeocodingFacade.MAX_ROWS_SOLR_DEFAULT && (maxRows == SolrGeocodingFacade.MAX_ROWS_ALL || start < maxRows));
+        
+        return retval;
     }
     
     private boolean isStringEmpty(String string)
