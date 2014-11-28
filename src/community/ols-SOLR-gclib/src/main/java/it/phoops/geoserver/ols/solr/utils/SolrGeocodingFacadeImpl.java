@@ -235,7 +235,7 @@ public class SolrGeocodingFacadeImpl implements SolrGeocodingFacade {
         StringTokenizer st = addressTokenDelim == null ? new StringTokenizer(streetName) : new StringTokenizer(streetName, addressTokenDelim);
         String          token;
         
-        if (typePrefix != null && !"".equals(typePrefix)) {
+        if (!isStringEmpty(typePrefix)) {
             queryBuffer.append("street_type:").append(typePrefix.trim()).append("~2^").append(streetTypeWeigth).append(" AND ");
         }
         
@@ -257,8 +257,8 @@ public class SolrGeocodingFacadeImpl implements SolrGeocodingFacade {
     }
     
     private SolrDocumentList callSolr(StringBuffer queryBuffer, String number, String subdivision, String municipality, String countrySubdivision) throws SolrServerException, SolrGeocodingFacadeException {
-        if (number != null && !"".equals(number)) {
-            if (subdivision != null && !"".equals(subdivision)) {
+        if (!isStringEmpty(number)) {
+            if (!isStringEmpty(subdivision)) {
                 number = number.trim() + numberSubdivisionSeparator + subdivision.trim();
             }
             
@@ -268,11 +268,11 @@ public class SolrGeocodingFacadeImpl implements SolrGeocodingFacade {
             queryBuffer.append("((").append(addressQuery).append(") OR (").append(addressQuery).append(" AND full_number:").append(number.trim()).append("~2^").append(numberWeigth).append("))");
         }
         
-        if (municipality != null && !"".equals(municipality)) {
+        if (!isStringEmpty(municipality)) {
             queryBuffer.append(" AND municipality:").append(municipality.trim()).append("~2^").append(municipalityWeigth);
         }
         
-        if (countrySubdivision != null && !"".equals(countrySubdivision)) {
+        if (!isStringEmpty(countrySubdivision)) {
             queryBuffer.append(" AND country_subdivision:").append(countrySubdivision.trim()).append("~2^").append(countrySubdivisionWeigth);
         }
         
@@ -285,5 +285,10 @@ public class SolrGeocodingFacadeImpl implements SolrGeocodingFacade {
         solrParams.set("q", queryBuffer.toString());
         
         return SolrPager.query(solrServer, solrParams, maxRows);
+    }
+    
+    private boolean isStringEmpty(String string)
+    {
+        return string == null || "".equals(string);
     }
 }
