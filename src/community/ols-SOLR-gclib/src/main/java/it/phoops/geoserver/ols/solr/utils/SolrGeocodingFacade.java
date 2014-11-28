@@ -10,6 +10,9 @@ import org.apache.solr.client.solrj.impl.LBHttpSolrServer;
 import org.apache.solr.common.SolrDocumentList;
 
 public interface SolrGeocodingFacade {
+    public static final int     MAX_ROWS_ALL            = -1;
+    public static final int     MAX_ROWS_SOLR_DEFAULT   = 0;
+    
     // HttpSolrServer
     public abstract void setSolrServerURL(String baseURL);
     public abstract void setSolrServerURL(String baseURL, HttpClient client);

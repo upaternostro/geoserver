@@ -30,7 +30,7 @@ public class SolrPager {
             retval.addAll(list);
             retval.setNumFound(list.getNumFound());
             start = retval.size();
-        } while (start < list.getNumFound() && (maxRows < 1 || start < maxRows));
+        } while (start < list.getNumFound() && maxRows != SolrGeocodingFacade.MAX_ROWS_SOLR_DEFAULT && (maxRows == SolrGeocodingFacade.MAX_ROWS_ALL || start < maxRows));
         
         return retval;
     }

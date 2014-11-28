@@ -45,7 +45,7 @@ public class SolrGeocodingFacadeImpl implements SolrGeocodingFacade {
         numberWeigth = 5.0f;
         municipalityWeigth = 3.0f;
         countrySubdivisionWeigth = 1.0f;
-        maxRows = 0;
+        maxRows = MAX_ROWS_SOLR_DEFAULT;
     }
     
     @Override
