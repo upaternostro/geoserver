@@ -33,6 +33,11 @@ public class SolrGeocodingFacadeImpl implements SolrGeocodingFacade {
     private float       municipalityWeigth;
     private float       countrySubdivisionWeigth;
     private int         maxRows;
+    private boolean     fuzzySearchStreetType;
+    private boolean     fuzzySearchStreetName;
+    private boolean     fuzzySearchNumber;
+    private boolean     fuzzySearchMunicipality;
+    private boolean     fuzzySearchCountrySubdivision;
 
     public SolrGeocodingFacadeImpl() {
         super();
@@ -49,6 +54,11 @@ public class SolrGeocodingFacadeImpl implements SolrGeocodingFacade {
         municipalityWeigth = 3.0f;
         countrySubdivisionWeigth = 1.0f;
         maxRows = MAX_ROWS_SOLR_DEFAULT;
+        fuzzySearchStreetType = false;
+        fuzzySearchStreetName = false;
+        fuzzySearchNumber = false;
+        fuzzySearchMunicipality = false;
+        fuzzySearchCountrySubdivision = false;
     }
     
     @Override
@@ -173,6 +183,31 @@ public class SolrGeocodingFacadeImpl implements SolrGeocodingFacade {
     }
     
     @Override
+    public void setFuzzySearchStreetType(boolean fuzzySearchStreetType) {
+        this.fuzzySearchStreetType = fuzzySearchStreetType;
+    }
+    
+    @Override
+    public void setFuzzySearchStreetName(boolean fuzzySearchStreetName) {
+        this.fuzzySearchStreetName = fuzzySearchStreetName;
+    }
+    
+    @Override
+    public void setFuzzySearchNumber(boolean fuzzySearchNumber) {
+        this.fuzzySearchNumber = fuzzySearchNumber;
+    }
+    
+    @Override
+    public void setFuzzySearchMunicipality(boolean fuzzySearchMunicipality) {
+        this.fuzzySearchMunicipality = fuzzySearchMunicipality;
+    }
+    
+    @Override
+    public void setFuzzySearchCountrySubdivision(boolean fuzzySearchCountrySubdivision) {
+        this.fuzzySearchCountrySubdivision = fuzzySearchCountrySubdivision;
+    }
+    
+    @Override
     public SolrDocumentList geocodeAddress(String freeFormAddress, String municipality, String countrySubdivision) throws SolrGeocodingFacadeException {
         String  number = null;
         int     numberDelimiterIndex = numberAfterAddress ? freeFormAddress.lastIndexOf(numberDelimiter) : freeFormAddress.indexOf(numberDelimiter);
@@ -203,8 +238,19 @@ public class SolrGeocodingFacadeImpl implements SolrGeocodingFacade {
                 queryBuffer.append(" AND ");
             }
             
-            queryBuffer.append("(street_type:").append(token).append("~2^").append(streetTypeWeigth).append(" OR")
-                       .append(" street_name:").append(token).append("~2^").append(streetNameWeigth).append(")");
+            queryBuffer.append("(street_type:").append(token);
+            
+            if (fuzzySearchStreetType) {
+                queryBuffer.append("~2");
+            }
+            
+            queryBuffer.append("^").append(streetTypeWeigth).append(" OR street_name:").append(token);
+            
+            if (fuzzySearchStreetName) {
+                queryBuffer.append("~2");
+            }
+            
+            queryBuffer.append("^").append(streetNameWeigth).append(")");
         }
         
         try {
@@ -239,13 +285,25 @@ public class SolrGeocodingFacadeImpl implements SolrGeocodingFacade {
         String          token;
         
         if (!isStringEmpty(typePrefix)) {
-            queryBuffer.append("street_type:").append(typePrefix.trim()).append("~2^").append(streetTypeWeigth).append(" AND ");
+            queryBuffer.append("street_type:").append(typePrefix.trim());
+            
+            if (fuzzySearchStreetType) {
+                queryBuffer.append("~2");
+            }
+            
+            queryBuffer.append("^").append(streetTypeWeigth).append(" AND ");
         }
         
         while (st.hasMoreTokens()) {
             token = st.nextToken();
             
-            queryBuffer.append("street_name:").append(token).append("~2^").append(streetNameWeigth);
+            queryBuffer.append("street_name:").append(token);
+            
+            if (fuzzySearchStreetName) {
+                queryBuffer.append("~2");
+            }
+            
+            queryBuffer.append("^").append(streetNameWeigth);
             
             if (st.hasMoreTokens()) {
                 queryBuffer.append(" AND ");
@@ -268,15 +326,33 @@ public class SolrGeocodingFacadeImpl implements SolrGeocodingFacade {
             String  addressQuery = queryBuffer.toString();
             
             queryBuffer.setLength(0);
-            queryBuffer.append("((").append(addressQuery).append(") OR (").append(addressQuery).append(" AND full_number:\"").append(number.trim()).append("\"~2^").append(numberWeigth).append("))");
+            queryBuffer.append("((").append(addressQuery).append(") OR (").append(addressQuery).append(" AND full_number:\"").append(number.trim()).append("\"");
+            
+            if (fuzzySearchNumber) {
+                queryBuffer.append("~2");
+            }
+            
+            queryBuffer.append("^").append(numberWeigth).append("))");
         }
         
         if (!isStringEmpty(municipality)) {
-            queryBuffer.append(" AND municipality:\"").append(municipality.trim()).append("\"~2^").append(municipalityWeigth);
+            queryBuffer.append(" AND municipality:\"").append(municipality.trim()).append("\"");
+            
+            if (fuzzySearchMunicipality) {
+                queryBuffer.append("~2");
+            }
+            
+            queryBuffer.append("^").append(municipalityWeigth);
         }
         
         if (!isStringEmpty(countrySubdivision)) {
-            queryBuffer.append(" AND country_subdivision:\"").append(countrySubdivision.trim()).append("\"~2^").append(countrySubdivisionWeigth);
+            queryBuffer.append(" AND country_subdivision:\"").append(countrySubdivision.trim()).append("\"");
+            
+            if (fuzzySearchCountrySubdivision) {
+                queryBuffer.append("~2");
+            }
+            
+            queryBuffer.append("^").append(countrySubdivisionWeigth);
         }
         
         if (solrServer == null) {
