@@ -11,11 +11,15 @@ import org.apache.solr.common.SolrDocumentList;
 import org.apache.solr.common.params.ModifiableSolrParams;
 
 public class SolrPager {
-    public static SolrDocumentList query(SolrServer server, ModifiableSolrParams params) throws SolrServerException {
+    public static SolrDocumentList query(SolrServer server, ModifiableSolrParams params, int maxRows) throws SolrServerException {
         SolrDocumentList        retval = new SolrDocumentList();
         int                     start = 0;
         QueryResponse           qr;
         SolrDocumentList        list;
+        
+        if (maxRows > 0) {
+            params.set("rows", maxRows > 100 ? 100 : maxRows);
+        }
         
         do {
             params.set("start", start);
@@ -26,7 +30,7 @@ public class SolrPager {
             retval.addAll(list);
             retval.setNumFound(list.getNumFound());
             start = retval.size();
-        } while (start < list.getNumFound());
+        } while (start < list.getNumFound() && (maxRows < 1 || start < maxRows));
         
         return retval;
     }

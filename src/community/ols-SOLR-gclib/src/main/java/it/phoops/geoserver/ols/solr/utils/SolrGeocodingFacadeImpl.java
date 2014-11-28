@@ -29,6 +29,7 @@ public class SolrGeocodingFacadeImpl implements SolrGeocodingFacade {
     private float       numberWeigth;
     private float       municipalityWeigth;
     private float       countrySubdivisionWeigth;
+    private int         maxRows;
 
     public SolrGeocodingFacadeImpl() {
         super();
@@ -44,6 +45,7 @@ public class SolrGeocodingFacadeImpl implements SolrGeocodingFacade {
         numberWeigth = 5.0f;
         municipalityWeigth = 3.0f;
         countrySubdivisionWeigth = 1.0f;
+        maxRows = 0;
     }
     
     @Override
@@ -163,6 +165,11 @@ public class SolrGeocodingFacadeImpl implements SolrGeocodingFacade {
     }
     
     @Override
+    public void setMaxRows(int maxRows) {
+        this.maxRows = maxRows;
+    }
+    
+    @Override
     public SolrDocumentList geocodeAddress(String freeFormAddress, String municipality, String countrySubdivision) throws SolrGeocodingFacadeException {
         String  number = null;
         int     numberDelimiterIndex = numberAfterAddress ? freeFormAddress.lastIndexOf(numberDelimiter) : freeFormAddress.indexOf(numberDelimiter);
@@ -277,6 +284,6 @@ public class SolrGeocodingFacadeImpl implements SolrGeocodingFacade {
         
         solrParams.set("q", queryBuffer.toString());
         
-        return SolrPager.query(solrServer, solrParams);
+        return SolrPager.query(solrServer, solrParams, maxRows);
     }
 }

@@ -39,6 +39,7 @@ public interface SolrGeocodingFacade {
     public abstract void setNumberWeigth(float numberWeigth);
     public abstract void setMunicipalityWeigth(float municipalityWeigth);
     public abstract void setCountrySubdivisionWeigth(float countrySubdivisionWeigth);
+    public abstract void setMaxRows(int maxRows);
     
     // Functions
     public abstract SolrDocumentList geocodeAddress(String freeFormAddress, String municipality, String countrySubdivision) throws SolrGeocodingFacadeException;
