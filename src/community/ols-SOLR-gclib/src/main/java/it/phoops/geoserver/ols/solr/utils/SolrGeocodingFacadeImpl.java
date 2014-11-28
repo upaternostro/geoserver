@@ -265,15 +265,15 @@ public class SolrGeocodingFacadeImpl implements SolrGeocodingFacade {
             String  addressQuery = queryBuffer.toString();
             
             queryBuffer.setLength(0);
-            queryBuffer.append("((").append(addressQuery).append(") OR (").append(addressQuery).append(" AND full_number:").append(number.trim()).append("~2^").append(numberWeigth).append("))");
+            queryBuffer.append("((").append(addressQuery).append(") OR (").append(addressQuery).append(" AND full_number:\"").append(number.trim()).append("\"~2^").append(numberWeigth).append("))");
         }
         
         if (!isStringEmpty(municipality)) {
-            queryBuffer.append(" AND municipality:").append(municipality.trim()).append("~2^").append(municipalityWeigth);
+            queryBuffer.append(" AND municipality:\"").append(municipality.trim()).append("\"~2^").append(municipalityWeigth);
         }
         
         if (!isStringEmpty(countrySubdivision)) {
-            queryBuffer.append(" AND country_subdivision:").append(countrySubdivision.trim()).append("~2^").append(countrySubdivisionWeigth);
+            queryBuffer.append(" AND country_subdivision:\"").append(countrySubdivision.trim()).append("\"~2^").append(countrySubdivisionWeigth);
         }
         
         if (solrServer == null) {
