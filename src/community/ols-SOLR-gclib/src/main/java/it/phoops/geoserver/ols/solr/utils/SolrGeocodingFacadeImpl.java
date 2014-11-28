@@ -38,6 +38,7 @@ public class SolrGeocodingFacadeImpl implements SolrGeocodingFacade {
     private boolean     fuzzySearchNumber;
     private boolean     fuzzySearchMunicipality;
     private boolean     fuzzySearchCountrySubdivision;
+    private boolean     andNameTerms;
 
     public SolrGeocodingFacadeImpl() {
         super();
@@ -59,6 +60,7 @@ public class SolrGeocodingFacadeImpl implements SolrGeocodingFacade {
         fuzzySearchNumber = false;
         fuzzySearchMunicipality = false;
         fuzzySearchCountrySubdivision = false;
+        andNameTerms = true;
     }
     
     @Override
@@ -208,6 +210,11 @@ public class SolrGeocodingFacadeImpl implements SolrGeocodingFacade {
     }
     
     @Override
+    public void setAndNameTerms(boolean andNameTerms) {
+        this.andNameTerms = andNameTerms;
+    }
+    
+    @Override
     public SolrDocumentList geocodeAddress(String freeFormAddress, String municipality, String countrySubdivision) throws SolrGeocodingFacadeException {
         String  number = null;
         int     numberDelimiterIndex = numberAfterAddress ? freeFormAddress.lastIndexOf(numberDelimiter) : freeFormAddress.indexOf(numberDelimiter);
@@ -235,7 +242,7 @@ public class SolrGeocodingFacadeImpl implements SolrGeocodingFacade {
             token = st.nextToken();
             
             if (queryBuffer.length() > 0) {
-                queryBuffer.append(" AND ");
+                queryBuffer.append(andNameTerms ? " AND " : " OR ");
             }
             
             queryBuffer.append("(street_type:").append(token);
@@ -306,7 +313,7 @@ public class SolrGeocodingFacadeImpl implements SolrGeocodingFacade {
             queryBuffer.append("^").append(streetNameWeigth);
             
             if (st.hasMoreTokens()) {
-                queryBuffer.append(" AND ");
+                queryBuffer.append(andNameTerms ? " AND " : " OR ");
             }
         }
         
@@ -326,7 +333,7 @@ public class SolrGeocodingFacadeImpl implements SolrGeocodingFacade {
             String  addressQuery = queryBuffer.toString();
             
             queryBuffer.setLength(0);
-            queryBuffer.append("((").append(addressQuery).append(") OR (").append(addressQuery).append(" AND full_number:\"").append(number.trim()).append("\"");
+            queryBuffer.append("((").append(addressQuery).append(") OR (").append(addressQuery).append(" AND building_number:\"").append(number.trim()).append("\"");
             
             if (fuzzySearchNumber) {
                 queryBuffer.append("~2");
@@ -362,6 +369,7 @@ public class SolrGeocodingFacadeImpl implements SolrGeocodingFacade {
         ModifiableSolrParams    solrParams = new ModifiableSolrParams();
         
         solrParams.set("q", queryBuffer.toString());
+        solrParams.set("fl", "*,score");
         
         SolrDocumentList        retval = new SolrDocumentList();
         int                     start = 0;

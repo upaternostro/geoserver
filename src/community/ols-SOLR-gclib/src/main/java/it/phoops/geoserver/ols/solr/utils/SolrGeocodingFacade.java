@@ -48,6 +48,7 @@ public interface SolrGeocodingFacade {
     public abstract void setFuzzySearchNumber(boolean fuzzySearchNumber);
     public abstract void setFuzzySearchMunicipality(boolean fuzzySearchMunicipality);
     public abstract void setFuzzySearchCountrySubdivision(boolean fuzzySearchCountrySubdivision);
+    public abstract void setAndNameTerms(boolean andNameTerms);
     
     // Functions
     public abstract SolrDocumentList geocodeAddress(String freeFormAddress, String municipality, String countrySubdivision) throws SolrGeocodingFacadeException;
