@@ -1,4 +1,5 @@
-/* Copyright (c) 2001 - 2014 OpenPlans - www.openplans.org. All rights reserved.
+/* (c) 2014 Open Source Geospatial Foundation - all rights reserved
+ * (c) 2001 - 2014 OpenPlans
  * This code is licensed under the GPL 2.0 license, available at the root
  * application directory.
  */
@@ -9,6 +10,7 @@ import static org.geoserver.ows.util.ResponseUtils.buildSchemaURL;
 import static org.geoserver.ows.util.ResponseUtils.buildURL;
 import static org.geoserver.ows.util.ResponseUtils.params;
 
+import java.awt.Dimension;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -40,17 +42,18 @@ import org.geoserver.catalog.KeywordInfo;
 import org.geoserver.catalog.LayerGroupInfo;
 import org.geoserver.catalog.LayerIdentifierInfo;
 import org.geoserver.catalog.LayerInfo;
-import org.geoserver.catalog.LayerInfo.Type;
 import org.geoserver.catalog.LegendInfo;
 import org.geoserver.catalog.MetadataLinkInfo;
 import org.geoserver.catalog.PublishedInfo;
 import org.geoserver.catalog.ResourceInfo;
 import org.geoserver.catalog.StyleInfo;
+import org.geoserver.catalog.PublishedType;
 import org.geoserver.catalog.WMSLayerInfo;
 import org.geoserver.config.ContactInfo;
 import org.geoserver.config.GeoServer;
 import org.geoserver.config.ResourceErrorHandling;
 import org.geoserver.ows.URLMangler.URLType;
+import org.geoserver.platform.GeoServerExtensions;
 import org.geoserver.platform.ServiceException;
 import org.geoserver.sld.GetStylesResponse;
 import org.geoserver.wms.ExtendedCapabilitiesProvider;
@@ -79,6 +82,7 @@ import org.xml.sax.helpers.AttributesImpl;
 
 import com.google.common.collect.Iterables;
 import com.vividsolutions.jts.geom.Envelope;
+import org.geoserver.catalog.DataLinkInfo;
 
 /**
  * Geotools xml framework based encoder for a Capabilities WMS 1.1.1 document.
@@ -95,9 +99,8 @@ public class GetCapabilitiesTransformer extends TransformerBase {
 
     /** the WMS supported exception formats */
     static final String[] EXCEPTION_FORMATS = { "application/vnd.ogc.se_xml",
-            "application/vnd.ogc.se_inimage", };
+            "application/vnd.ogc.se_inimage", "application/vnd.ogc.se_blank" };
 
-    
     /**
      * Set of supported metadta link types. Links of any other type will be ignored to honor the DTD
      * rule: {@code <!ATTLIST MetadataURL type ( TC211 | FGDC ) #REQUIRED>}
@@ -194,7 +197,7 @@ public class GetCapabilitiesTransformer extends TransformerBase {
     private static class CapabilitiesTranslator extends  TranslatorSupport {
 
 
-		private static final Logger LOGGER = org.geotools.util.logging.Logging
+        private static final Logger LOGGER = org.geotools.util.logging.Logging
                 .getLogger(CapabilitiesTranslator.class.getPackage().getName());
 
         private static final String MIN_DENOMINATOR_ATTR = "min";
@@ -208,6 +211,9 @@ public class GetCapabilitiesTransformer extends TransformerBase {
         private static final String XLINK_NS = "http://www.w3.org/1999/xlink";
         
         DimensionHelper dimensionHelper;
+        
+        private LegendSample legendSample;
+        
 
         static {
             wmsVersion.addAttribute("", "version", "version", "", "1.1.1");
@@ -229,6 +235,8 @@ public class GetCapabilitiesTransformer extends TransformerBase {
         
         private final boolean skipping;
 
+        private WMSInfo serviceInfo;
+
         /**
          * Creates a new CapabilitiesTranslator object.
          * 
@@ -244,6 +252,7 @@ public class GetCapabilitiesTransformer extends TransformerBase {
             this.getMapFormats = getMapFormats;
             this.getLegendGraphicFormats = getLegendGraphicFormats;
             this.extCapsProviders = extCapsProviders;
+            this.serviceInfo = wmsConfig.getServiceInfo();
             
             this.dimensionHelper = new DimensionHelper(Mode.WMS11, wmsConfig) {
                 
@@ -258,6 +267,7 @@ public class GetCapabilitiesTransformer extends TransformerBase {
                     CapabilitiesTranslator.this.element(element, content);
                 }
             };
+            legendSample = GeoServerExtensions.bean(LegendSample.class);
             this.skipping = ResourceErrorHandling.SKIP_MISCONFIGURED_LAYERS.equals(
                 wmsConfig.getGeoServer().getGlobal().getResourceErrorHandling());
         }
@@ -295,7 +305,6 @@ public class GetCapabilitiesTransformer extends TransformerBase {
         private void handleService() {
             start("Service");
 
-            final WMSInfo serviceInfo = wmsConfig.getServiceInfo();
             element("Name", "OGC:WMS");
             element("Title", serviceInfo.getTitle());
             element("Abstract", serviceInfo.getAbstract());
@@ -409,6 +418,34 @@ public class GetCapabilitiesTransformer extends TransformerBase {
                 element("OnlineResource", null, orAtts);
 
                 end("MetadataURL");
+            }
+        }
+
+        /**
+         * Turns the data URL list to XML
+         * 
+         * @param keywords
+         */
+        private void handleDataList(Collection<DataLinkInfo> dataURLs) {
+            if (dataURLs == null) {
+                return;
+            }
+
+            for (DataLinkInfo link : dataURLs) {
+
+                start("DataURL");
+
+                element("Format", link.getType());
+
+                String content = ResponseUtils.proxifyDataLink(link, request.getBaseUrl());
+
+                AttributesImpl orAtts = new AttributesImpl();
+                orAtts.addAttribute("", "xmlns:xlink", "xmlns:xlink", "", XLINK_NS);
+                orAtts.addAttribute(XLINK_NS, "xlink:type", "xlink:type", "", "simple");
+                orAtts.addAttribute("", "xlink:href", "xlink:href", "", content);
+                element("OnlineResource", null, orAtts);
+
+                end("DataURL");
             }
         }
 
@@ -584,7 +621,7 @@ public class GetCapabilitiesTransformer extends TransformerBase {
                         public void end(String element) {
                             CapabilitiesTranslator.this.end(element);
                         }
-                    }, wmsConfig.getServiceInfo(), request);
+                    }, serviceInfo, request);
                 } catch (Exception e) {
                     throw new ServiceException("Extended capabilities provider threw error", e);
                 }
@@ -634,7 +671,7 @@ public class GetCapabilitiesTransformer extends TransformerBase {
                 layers = wmsConfig.getLayers();
             }
 
-            WMSInfo serviceInfo = wmsConfig.getServiceInfo();
+            //WMSInfo serviceInfo = wmsConfig.getServiceInfo();
             element("Title", serviceInfo.getTitle());
             element("Abstract", serviceInfo.getAbstract());
 
@@ -744,11 +781,11 @@ public class GetCapabilitiesTransformer extends TransformerBase {
 
         private boolean isExposable(LayerInfo layer) {
             boolean wmsExposable = false;
-            if (layer.getType() == Type.RASTER || layer.getType() == Type.WMS) {
+            if (layer.getType() == PublishedType.RASTER || layer.getType() == PublishedType.WMS) {
                 wmsExposable = true;
             } else {
                 try {
-                    wmsExposable = layer.getType() == Type.VECTOR
+                    wmsExposable = layer.getType() == PublishedType.VECTOR
                             && ((FeatureTypeInfo) layer.getResource()).getFeatureType()
                                     .getGeometryDescriptor() != null;
                 } catch (Exception e) {
@@ -876,9 +913,9 @@ public class GetCapabilitiesTransformer extends TransformerBase {
             }
 
             // handle dimensions
-            if (layer.getType() == Type.VECTOR) {
+            if (layer.getType() == PublishedType.VECTOR) {
                 dimensionHelper.handleVectorLayerDimensions(layer);
-            } else if (layer.getType() == Type.RASTER) {
+            } else if (layer.getType() == PublishedType.RASTER) {
                 dimensionHelper.handleRasterLayerDimensions(layer);
             }
 
@@ -893,6 +930,9 @@ public class GetCapabilitiesTransformer extends TransformerBase {
             
             // handle metadata URLs
             handleMetadataList(layer.getResource().getMetadataLinks());
+
+            // handle DataURLs
+            handleDataList(layer.getResource().getDataLinks());
 
             if (layer.getResource() instanceof WMSLayerInfo) {
                 // do nothing for the moment, we may want to list the set of cascaded named styles
@@ -915,7 +955,7 @@ public class GetCapabilitiesTransformer extends TransformerBase {
                 element("Name", defaultStyle.getName());
                 element("Title", ftStyle.getTitle());
                 element("Abstract", ftStyle.getAbstract());
-                handleLegendURL(layer.getName(), layer.getLegend(), null);
+                handleLegendURL(layer, layer.getLegend(), null ,layer.getDefaultStyle());
                 end("Style");
 
                 Set<StyleInfo> styles = layer.getStyles();
@@ -930,7 +970,7 @@ public class GetCapabilitiesTransformer extends TransformerBase {
                     element("Name", styleInfo.getName());
                     element("Title", ftStyle.getTitle());
                     element("Abstract", ftStyle.getAbstract());
-                    handleLegendURL(layer.getName(), null, styleInfo);
+                    handleLegendURL(layer, null, styleInfo, styleInfo);
                     end("Style");
                 }
             }
@@ -1042,9 +1082,9 @@ public class GetCapabilitiesTransformer extends TransformerBase {
                LayerInfo rootLayer = layerGroup.getRootLayer();
                
                // handle dimensions
-               if (rootLayer.getType() == Type.VECTOR) {
+               if (rootLayer.getType() == PublishedType.VECTOR) {
                    dimensionHelper.handleVectorLayerDimensions(rootLayer);
-               } else if (rootLayer.getType() == Type.RASTER) {
+               } else if (rootLayer.getType() == PublishedType.RASTER) {
                    dimensionHelper.handleRasterLayerDimensions(rootLayer);
                }
                
@@ -1206,7 +1246,8 @@ public class GetCapabilitiesTransformer extends TransformerBase {
          * 
          * @task TODO: figure out how to unhack legend parameters such as WIDTH, HEIGHT and FORMAT
          */
-        protected void handleLegendURL(String layerName, LegendInfo legend, StyleInfo style) {
+        protected void handleLegendURL(LayerInfo layer, LegendInfo legend,
+                StyleInfo style, StyleInfo sampleStyle) {
             if (legend != null) {
                 if (LOGGER.isLoggable(Level.FINE)) {
                     LOGGER.fine("using user supplied legend URL");
@@ -1228,6 +1269,24 @@ public class GetCapabilitiesTransformer extends TransformerBase {
 
                 end("LegendURL");
             } else {
+                int legendWidth = GetLegendGraphicRequest.DEFAULT_WIDTH;
+                int legendHeight = GetLegendGraphicRequest.DEFAULT_HEIGHT;
+                
+                if(sampleStyle != null) {
+                    // delegate to legendSample the calculus of proper legend size for
+                    // the given style
+                    Dimension dimension;
+                    try {
+                        dimension = legendSample.getLegendURLSize(sampleStyle);
+                        if(dimension != null) {
+                            legendWidth = (int)dimension.getWidth();
+                            legendHeight = (int)dimension.getHeight();
+                        }
+                    } catch (Exception e) {
+                        LOGGER.log(Level.WARNING, "Error getting LegendURL dimensions from sample", e);
+                    }
+                    
+                }
                 String defaultFormat = GetLegendGraphicRequest.DEFAULT_FORMAT;
 
                 if (null == wmsConfig.getLegendGraphicOutputFormat(defaultFormat)) {
@@ -1247,33 +1306,17 @@ public class GetCapabilitiesTransformer extends TransformerBase {
 
                 AttributesImpl attrs = new AttributesImpl();
                 attrs.addAttribute("", "width", "width", "",
-                        String.valueOf(GetLegendGraphicRequest.DEFAULT_WIDTH));
+                        String.valueOf(legendWidth));
 
-                // DJB: problem here is that we do not know the size of the
-                // legend apriori - we need
-                // to make one and find its height. Not the best way, but it
-                // would work quite well.
-                // This was advertising a 20*20 icon, but actually producing
-                // ones of a different size.
-                // An alternative is to just scale the resulting icon to what
-                // the server requested, but this isnt
-                // the nicest thing since warped images dont look nice. The
-                // client should do the warping.
-
-                // however, to actually estimate the size is a bit difficult.
-                // I'm going to do the scaling
-                // so it obeys the what the request says. For people with a
-                // problem with that should consider
-                // changing the default size here so that the request is for the
-                // correct size.
                 attrs.addAttribute("", "height", "height", "",
-                        String.valueOf(GetLegendGraphicRequest.DEFAULT_HEIGHT));
+                        String.valueOf(legendHeight));
 
                 start("LegendURL", attrs);
 
                 element("Format", defaultFormat);
                 attrs.clear();
 
+                String layerName = layer.prefixedName();
                 Map<String, String> params = params("request", "GetLegendGraphic", "format",
                         defaultFormat, "width",
                         String.valueOf(GetLegendGraphicRequest.DEFAULT_WIDTH), "height",
@@ -1336,10 +1379,10 @@ public class GetCapabilitiesTransformer extends TransformerBase {
         private void handleAdditionalBBox(ReferencedEnvelope bbox, String srs, LayerInfo layer) {
             //TODO: this method is copied from wms 1.3 caps (along with a lot of things), we 
             // should refactor
-            WMSInfo info = wmsConfig.getServiceInfo();
-            if (info.isBBOXForEachCRS() && !info.getSRS().isEmpty()) {
+            //WMSInfo info = wmsConfig.getServiceInfo();
+            if (serviceInfo.isBBOXForEachCRS() && !serviceInfo.getSRS().isEmpty()) {
                 //output bounding box for each supported service srs
-                for (String crs : info.getSRS()) {
+                for (String crs : serviceInfo.getSRS()) {
                     crs = qualifySRS(crs);
                     if (srs != null && crs.equals(srs)) {
                         continue; //already did this one

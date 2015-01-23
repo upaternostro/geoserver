@@ -1,4 +1,5 @@
-/* Copyright (c) 2001 - 2013 OpenPlans - www.openplans.org. All rights reserved.
+/* (c) 2014 Open Source Geospatial Foundation - all rights reserved
+ * (c) 2001 - 2013 OpenPlans
  * This code is licensed under the GPL 2.0 license, available at the root
  * application directory.
  */
@@ -52,9 +53,10 @@ public class StyleEditPageTest extends GeoServerWicketTestSupport {
     public void testLoad() throws Exception {
         tester.assertRenderedPage(StyleEditPage.class);
         tester.assertNoErrorMessage();
-        
+
+        tester.debugComponentTrees();
         tester.assertComponent("form:name", TextField.class);
-        tester.assertComponent("form:SLD:editorContainer:editorParent:editor", TextArea.class);
+        tester.assertComponent("form:styleEditor:editorContainer:editorParent:editor", TextArea.class);
         
         tester.assertModelValue("form:name", "Buildings");
         
@@ -69,7 +71,7 @@ public class StyleEditPageTest extends GeoServerWicketTestSupport {
 
         //GEOS-3257, actually drag into xml and compare with xmlunit to avoid 
         // line ending problems
-        String xml = tester.getComponentFromLastRenderedPage("form:SLD").getDefaultModelObjectAsString();
+        String xml = tester.getComponentFromLastRenderedPage("form:styleEditor").getDefaultModelObjectAsString();
         xml = xml.replaceAll("&lt;","<").replaceAll("&gt;",">").replaceAll("&quot;", "\"");
         Document d2 = db.parse( new ByteArrayInputStream(xml
             .getBytes()));
@@ -95,5 +97,24 @@ public class StyleEditPageTest extends GeoServerWicketTestSupport {
         
         assertNull(getCatalog().getStyleByName("Buildings"));
         assertNotNull(getCatalog().getStyleByName("BuildingsNew"));
+    }
+
+    @Test
+    public void testValidate() throws Exception {
+        String xml =
+            "<StyledLayerDescriptor version='1.0.0' " +
+                " xsi:schemaLocation='http://www.opengis.net/sld StyledLayerDescriptor.xsd' " +
+                " xmlns='http://www.opengis.net/sld' " +
+                " xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance'>" +
+                "  <NamedLayer>" +
+                "    <Name>Style</Name>" +
+                "  </NamedLayer>" +
+            "</StyledLayerDescriptor>";
+
+        tester.debugComponentTrees();
+        tester.newFormTester("form").setValue("styleEditor:editorContainer:editorParent:editor", xml);
+
+        tester.executeAjaxEvent("validate", "onclick");
+        tester.assertNoErrorMessage();
     }
 }
