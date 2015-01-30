@@ -32,6 +32,11 @@
 			<artifactId>gs-ols</artifactId>
 			<version>${project.version}</version>
 		</dependency>
+        <dependency>
+            <groupId>org.geoserver</groupId>
+            <artifactId>gs-ols-SOLR-gclib</artifactId>
+            <version>${project.version}</version>
+        </dependency>
 		<dependency>
 			<groupId>org.geoserver.web</groupId>
 			<artifactId>gs-web-ols</artifactId>

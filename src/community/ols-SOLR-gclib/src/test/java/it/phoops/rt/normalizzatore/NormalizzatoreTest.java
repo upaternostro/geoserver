@@ -1,6 +1,12 @@
 package it.phoops.rt.normalizzatore;
 
-import it.phoops.geoserver.ols.solr.utils.*;
+import it.phoops.geoserver.ols.solr.utils.AddressParser;
+import it.phoops.geoserver.ols.solr.utils.OLSAddressBean;
+import it.phoops.geoserver.ols.solr.utils.SolrBeanResultsList;
+import it.phoops.geoserver.ols.solr.utils.SolrGeocodingFacade;
+import it.phoops.geoserver.ols.solr.utils.SolrGeocodingFacadeException;
+import it.phoops.geoserver.ols.solr.utils.SolrGeocodingFacadeFactory;
+import it.phoops.geoserver.ols.solr.utils.SolrManager;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -20,12 +26,10 @@ import au.com.bytecode.opencsv.CSVWriter;
 public class NormalizzatoreTest
 {
 	private String solrUrl;
-	private SolrManager solrManager;
 
 	@Before
 	public void init(){
 		solrUrl = "http://jarpa.phoops.priv:8081/solr/SINS";
-		solrManager = new SolrManager(solrUrl);
 	}
 
 	@Test
@@ -40,79 +44,79 @@ public class NormalizzatoreTest
 		List<String[]> lines = reader.readAll();
 		Assert.assertNotNull(lines);
 		
-        SolrGeocodingFacadeFactory      factory = new SolrGeocodingFacadeFactory();
-        Assert.assertNotNull(factory);
+                SolrGeocodingFacadeFactory factory = new SolrGeocodingFacadeFactory();
+                Assert.assertNotNull(factory);
         
-        SolrGeocodingFacade facade = null;
+                SolrGeocodingFacade facade = null;
         
-        try {
-            facade = factory.getSolrGeocodingFacade();
-        } catch (SolrGeocodingFacadeException e) {
-            e.printStackTrace();
-        }
+                try {
+                    facade = factory.getSolrGeocodingFacade();
+                } catch (SolrGeocodingFacadeException e) {
+                    e.printStackTrace();
+                }
         
-        Assert.assertNotNull(facade);
+                Assert.assertNotNull(facade);
         
-        facade.setSolrServerURL("http://jarpa.phoops.priv:8081/solr/SINS");
-        facade.setAddressTokenDelim(" \t\n\r\f-()^");
+                facade.setSolrServerURL("http://jarpa.phoops.priv:8081/solr/SINS");
+                facade.setAddressTokenDelim(" \t\n\r\f-()^");
         
-        SolrBeanResultsList docs = null;
-        File	file = File.createTempFile("normalizzatore", ".csv");
-        CSVWriter	writer = new CSVWriter(new FileWriter(file), '|');
-        String[]	newLine = new String[5 + 2 + 8 + 8];
-        int			i;
-        OLSAddressBean doc;
-        String		tipoRicerca;
-        String		ambiguita;
-        Float		punteggio;
+                SolrBeanResultsList docs = null;
+                File file = File.createTempFile("normalizzatore", ".csv");
+                CSVWriter writer = new CSVWriter(new FileWriter(file), '|');
+                String[] newLine = new String[5 + 2 + 8 + 8];
+                int i;
+                OLSAddressBean doc;
+                String tipoRicerca;
+                String ambiguita;
+                Float punteggio;
 		
 		for (String[] line : lines) {
 			// Inizio con la ricerca piu' stringente
 			tipoRicerca = "AND";
 			
-	        facade.setFuzzySearchNumber(false);
-	        facade.setFuzzySearchStreetName(false);
-	        facade.setFuzzySearchStreetType(false);
-	        facade.setFuzzySearchMunicipality(false);
-	        facade.setAndNameTerms(true);
+        	        facade.setFuzzySearchNumber(false);
+        	        facade.setFuzzySearchStreetName(false);
+        	        facade.setFuzzySearchStreetType(false);
+        	        facade.setFuzzySearchMunicipality(false);
+        	        facade.setAndNameTerms(true);
 
 			AddressParser dugExtractor = new AddressParser(line[0], solrUrl);
-	        try {
-				docs = getResponse(dugExtractor, facade, line);
-	        } catch (SolrGeocodingFacadeException e) {
-	            e.printStackTrace();
-	        }
-	        
-	        Assert.assertNotNull(docs);
-
-	        if (docs.getNumFound() == 0) {
+        	        try {
+        				docs = getResponse(dugExtractor, facade, line);
+        	        } catch (SolrGeocodingFacadeException e) {
+        	            e.printStackTrace();
+        	        }
+        	        
+        	        Assert.assertNotNull(docs);
+        
+        	        if (docs.getNumFound() == 0) {
 				// Provo la ricerca fuzzy
 				tipoRicerca = "FUZZY AND";
 				
-	            facade.setFuzzySearchNumber(true);
-	            facade.setFuzzySearchStreetName(true);
-	            facade.setFuzzySearchStreetType(true);
-	            facade.setFuzzySearchMunicipality(true);
+                                facade.setFuzzySearchNumber(true);
+                                facade.setFuzzySearchStreetName(true);
+                                facade.setFuzzySearchStreetType(true);
+                                facade.setFuzzySearchMunicipality(true);
 		        
-		        try {
-					docs = getResponse(dugExtractor, facade, line);
-		        } catch (SolrGeocodingFacadeException e) {
-		            e.printStackTrace();
-		        }
-		        
-		        Assert.assertNotNull(docs);
-		        
-		        if (docs.getNumFound() == 0) {
-					tipoRicerca = "NO DUG";
+            		        try {
+            					docs = getResponse(dugExtractor, facade, line);
+            		        } catch (SolrGeocodingFacadeException e) {
+            		            e.printStackTrace();
+            		        }
+            		        
+            		        Assert.assertNotNull(docs);
+            		        
+            		        if (docs.getNumFound() == 0) {
+            				tipoRicerca = "NO DUG";
 
-			        try {
+            				try {
 						dugExtractor.setDug(null);
 						docs = getResponse(dugExtractor, facade, line);
-			        } catch (SolrGeocodingFacadeException e) {
-			            e.printStackTrace();
-			        }
+        			        } catch (SolrGeocodingFacadeException e) {
+        			            e.printStackTrace();
+        			        }
 			        
-			        Assert.assertNotNull(docs);
+            				Assert.assertNotNull(docs);
 
 					if (docs.getNumFound() == 0) {
 						// Sbraco completamente con la ricerca in OR (fuzzy)
@@ -128,31 +132,31 @@ public class NormalizzatoreTest
 
 						Assert.assertNotNull(docs);
 					}
-		        }
-	        }
-
-	        for (i = 0; i < line.length; i++) {
-	        	newLine[i] = line[i];
-	        }
-
-	        newLine[i++] = tipoRicerca;
-
-	        if (docs.getNumFound() > 0) {
-		        doc = docs.get(0);
-		        
-		        newLine[i++] = toString(doc.getStreetType());
-		        newLine[i++] = toString(doc.getStreetName());
-		        newLine[i++] = toString(doc.getMunicipality());
-		        newLine[i++] = toString(doc.getCountrySubdivision());
-		        newLine[i++] = toString(doc.getNumber());
-		        newLine[i++] = toString(doc.getNumberExtension());
-		        newLine[i++] = toString(doc.getNumberColor());
-		        newLine[i++] = toString(doc.getScore());
-		        
-		        punteggio = (Float)doc.getScore();
-		        
-		        if (docs.getNumFound() > 1) {
-			        doc = docs.get(1);
+        		        }
+        	        }
+        
+        	        for (i = 0; i < line.length; i++) {
+        	        	newLine[i] = line[i];
+        	        }
+        
+        	        newLine[i++] = tipoRicerca;
+        
+        	        if (docs.getNumFound() > 0) {
+        		        doc = docs.get(0);
+        		        
+        		        newLine[i++] = toString(doc.getStreetType());
+        		        newLine[i++] = toString(doc.getStreetName());
+        		        newLine[i++] = toString(doc.getMunicipality());
+        		        newLine[i++] = toString(doc.getCountrySubdivision());
+        		        newLine[i++] = toString(doc.getNumber());
+        		        newLine[i++] = toString(doc.getNumberExtension());
+        		        newLine[i++] = toString(doc.getNumberColor());
+        		        newLine[i++] = toString(doc.getScore());
+        		        
+        		        punteggio = (Float)doc.getScore();
+        		        
+        		        if (docs.getNumFound() > 1) {
+        			        doc = docs.get(1);
 
 					newLine[i++] = toString(doc.getStreetType());
 					newLine[i++] = toString(doc.getStreetName());
@@ -163,45 +167,45 @@ public class NormalizzatoreTest
 					newLine[i++] = toString(doc.getNumberColor());
 					newLine[i++] = toString(doc.getScore());
 			        
-			        ambiguita = punteggio.equals(doc.getScore()) ? "AMBIGUO" : "NON AMBIGUO";
-		        } else {
-			        newLine[i++] = "";
-			        newLine[i++] = "";
-			        newLine[i++] = "";
-			        newLine[i++] = "";
-			        newLine[i++] = "";
-			        newLine[i++] = "";
-			        newLine[i++] = "";
-			        newLine[i++] = "";
-			        
-			        ambiguita = "SOLO UNO";
-		        }
-	        } else {
-		        newLine[i++] = "";
-		        newLine[i++] = "";
-		        newLine[i++] = "";
-		        newLine[i++] = "";
-		        newLine[i++] = "";
-		        newLine[i++] = "";
-		        newLine[i++] = "";
-		        newLine[i++] = "";
-		        
-		        newLine[i++] = "";
-		        newLine[i++] = "";
-		        newLine[i++] = "";
-		        newLine[i++] = "";
-		        newLine[i++] = "";
-		        newLine[i++] = "";
-		        newLine[i++] = "";
-		        newLine[i++] = "";
-		        
-		        ambiguita = "NON TROVATO";
-	        }
+        			        ambiguita = punteggio.equals(doc.getScore()) ? "AMBIGUO" : "NON AMBIGUO";
+        		        } else {
+        			        newLine[i++] = "";
+        			        newLine[i++] = "";
+        			        newLine[i++] = "";
+        			        newLine[i++] = "";
+        			        newLine[i++] = "";
+        			        newLine[i++] = "";
+        			        newLine[i++] = "";
+        			        newLine[i++] = "";
+        			        
+        			        ambiguita = "SOLO UNO";
+        		        }
+        	        } else {
+        		        newLine[i++] = "";
+        		        newLine[i++] = "";
+        		        newLine[i++] = "";
+        		        newLine[i++] = "";
+        		        newLine[i++] = "";
+        		        newLine[i++] = "";
+        		        newLine[i++] = "";
+        		        newLine[i++] = "";
+        		        
+        		        newLine[i++] = "";
+        		        newLine[i++] = "";
+        		        newLine[i++] = "";
+        		        newLine[i++] = "";
+        		        newLine[i++] = "";
+        		        newLine[i++] = "";
+        		        newLine[i++] = "";
+        		        newLine[i++] = "";
+        		        
+        		        ambiguita = "NON TROVATO";
+        	        }
 
-	        newLine[i++] = ambiguita;
-	        
+        	        newLine[i++] = ambiguita;
+        	        
 //			System.out.println(Arrays.toString(newLine));
-	        writer.writeNext(newLine);
+        	        writer.writeNext(newLine);
 		}
 		
 		writer.close();
