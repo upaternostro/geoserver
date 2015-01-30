@@ -6,8 +6,8 @@ package it.phoops.geoserver.ols.solr.utils;
 
 import org.apache.http.client.HttpClient;
 import org.apache.solr.client.solrj.ResponseParser;
+import org.apache.solr.client.solrj.SolrServerException;
 import org.apache.solr.client.solrj.impl.LBHttpSolrServer;
-import org.apache.solr.common.SolrDocumentList;
 
 public interface SolrGeocodingFacade {
     public static final int     MAX_ROWS_ALL            = -1;
@@ -51,8 +51,12 @@ public interface SolrGeocodingFacade {
     public abstract void setAndNameTerms(boolean andNameTerms);
     
     // Functions
-    public abstract SolrDocumentList geocodeAddress(String freeFormAddress, String municipality, String countrySubdivision) throws SolrGeocodingFacadeException;
-    public abstract SolrDocumentList geocodeAddress(String freeFormAddress, String number, String subdivision, String municipality, String countrySubdivision) throws SolrGeocodingFacadeException;
-    public abstract SolrDocumentList geocodeAddress(String typePrefix, String streetName, String municipality, String countrySubdivision) throws SolrGeocodingFacadeException;
-    public abstract SolrDocumentList geocodeAddress(String typePrefix, String streetName, String number, String subdivision, String municipality, String countrySubdivision) throws SolrGeocodingFacadeException;
-}
+    public abstract SolrBeanResultsList geocodeAddress(String freeFormAddress, String municipality, String countrySubdivision) throws SolrGeocodingFacadeException;
+    public abstract SolrBeanResultsList geocodeAddress(String freeFormAddress, String number, String subdivision, String municipality, String countrySubdivision) throws SolrGeocodingFacadeException;
+    public abstract SolrBeanResultsList geocodeAddress(String typePrefix, String streetName, String municipality, String countrySubdivision) throws SolrGeocodingFacadeException;
+    public abstract SolrBeanResultsList geocodeAddress(String typePrefix, String streetName, String number, String subdivision, String municipality, String countrySubdivision) throws SolrGeocodingFacadeException;
+
+    public abstract SolrBeanResultsList solrQuery(String dug, String address, String number, String municipality, String countrySubdivision) throws SolrServerException, SolrGeocodingFacadeException;
+
+
+    }

@@ -4,9 +4,6 @@
  */
 package it.phoops.geoserver.ols.solr.utils;
 
-import java.net.MalformedURLException;
-import java.util.StringTokenizer;
-
 import org.apache.http.client.HttpClient;
 import org.apache.solr.client.solrj.ResponseParser;
 import org.apache.solr.client.solrj.SolrServer;
@@ -18,6 +15,9 @@ import org.apache.solr.client.solrj.impl.LBHttpSolrServer;
 import org.apache.solr.client.solrj.response.QueryResponse;
 import org.apache.solr.common.SolrDocumentList;
 import org.apache.solr.common.params.ModifiableSolrParams;
+
+import java.net.MalformedURLException;
+import java.util.StringTokenizer;
 
 public class SolrGeocodingFacadeImpl implements SolrGeocodingFacade {
     private static final int    MAX_DOCS_PER_REQUEST    = 100;
@@ -39,6 +39,7 @@ public class SolrGeocodingFacadeImpl implements SolrGeocodingFacade {
     private boolean     fuzzySearchMunicipality;
     private boolean     fuzzySearchCountrySubdivision;
     private boolean     andNameTerms;
+    private boolean     ignoreDug;
 
     public SolrGeocodingFacadeImpl() {
         super();
@@ -61,6 +62,7 @@ public class SolrGeocodingFacadeImpl implements SolrGeocodingFacade {
         fuzzySearchMunicipality = false;
         fuzzySearchCountrySubdivision = false;
         andNameTerms = true;
+        ignoreDug = false;
     }
     
     @Override
@@ -213,9 +215,10 @@ public class SolrGeocodingFacadeImpl implements SolrGeocodingFacade {
     public void setAndNameTerms(boolean andNameTerms) {
         this.andNameTerms = andNameTerms;
     }
-    
+
+
     @Override
-    public SolrDocumentList geocodeAddress(String freeFormAddress, String municipality, String countrySubdivision) throws SolrGeocodingFacadeException {
+    public SolrBeanResultsList geocodeAddress(String freeFormAddress, String municipality, String countrySubdivision) throws SolrGeocodingFacadeException {
         String  number = null;
         int     numberDelimiterIndex = numberAfterAddress ? freeFormAddress.lastIndexOf(numberDelimiter) : freeFormAddress.indexOf(numberDelimiter);
         
@@ -233,7 +236,7 @@ public class SolrGeocodingFacadeImpl implements SolrGeocodingFacade {
     }
     
     @Override
-    public SolrDocumentList geocodeAddress(String freeFormAddress, String number, String subdivision, String municipality, String countrySubdivision) throws SolrGeocodingFacadeException {
+    public SolrBeanResultsList geocodeAddress(String freeFormAddress, String number, String subdivision, String municipality, String countrySubdivision) throws SolrGeocodingFacadeException {
         StringBuffer    queryBuffer = new StringBuffer();
         StringTokenizer st = addressTokenDelim == null ? new StringTokenizer(freeFormAddress) : new StringTokenizer(freeFormAddress, addressTokenDelim);
         String          token;
@@ -268,7 +271,7 @@ public class SolrGeocodingFacadeImpl implements SolrGeocodingFacade {
     }
     
     @Override
-    public SolrDocumentList geocodeAddress(String typePrefix, String streetName, String municipality, String countrySubdivision) throws SolrGeocodingFacadeException {
+    public SolrBeanResultsList geocodeAddress(String typePrefix, String streetName, String municipality, String countrySubdivision) throws SolrGeocodingFacadeException {
         String  number = null;
         int     numberDelimiterIndex = numberAfterAddress ? streetName.lastIndexOf(numberDelimiter) : streetName.indexOf(numberDelimiter);
         
@@ -286,11 +289,12 @@ public class SolrGeocodingFacadeImpl implements SolrGeocodingFacade {
     }
     
     @Override
-    public SolrDocumentList geocodeAddress(String typePrefix, String streetName, String number, String subdivision, String municipality, String countrySubdivision) throws SolrGeocodingFacadeException {
+    public SolrBeanResultsList geocodeAddress(String typePrefix, String streetName, String number, String subdivision, String municipality, String countrySubdivision) throws SolrGeocodingFacadeException {
+
         StringBuffer    queryBuffer = new StringBuffer();
         StringTokenizer st = addressTokenDelim == null ? new StringTokenizer(streetName) : new StringTokenizer(streetName, addressTokenDelim);
         String          token;
-        
+
         if (!isStringEmpty(typePrefix)) {
             queryBuffer.append("street_type:").append(typePrefix.trim());
             
@@ -316,15 +320,15 @@ public class SolrGeocodingFacadeImpl implements SolrGeocodingFacade {
                 queryBuffer.append(andNameTerms ? " AND " : " OR ");
             }
         }
-        
+
         try {
             return callSolr(queryBuffer, number, subdivision, municipality, countrySubdivision);
         } catch (SolrServerException e) {
             throw new SolrGeocodingFacadeException("Cannot call Solr", e);
         }
     }
-    
-    private SolrDocumentList callSolr(StringBuffer queryBuffer, String number, String subdivision, String municipality, String countrySubdivision) throws SolrServerException, SolrGeocodingFacadeException {
+
+    private SolrBeanResultsList callSolr(StringBuffer queryBuffer, String number, String subdivision, String municipality, String countrySubdivision) throws SolrServerException, SolrGeocodingFacadeException {
         if (!isStringEmpty(number)) {
             if (!isStringEmpty(subdivision)) {
                 number = number.trim() + numberSubdivisionSeparator + subdivision.trim();
@@ -365,13 +369,15 @@ public class SolrGeocodingFacadeImpl implements SolrGeocodingFacade {
         if (solrServer == null) {
             throw new SolrGeocodingFacadeException("SolrServer not initialized");
         }
-        
+
+        System.out.println(queryBuffer.toString());
+
         ModifiableSolrParams    solrParams = new ModifiableSolrParams();
         
         solrParams.set("q", queryBuffer.toString());
         solrParams.set("fl", "*,score");
         
-        SolrDocumentList        retval = new SolrDocumentList();
+        SolrBeanResultsList     retval = new SolrBeanResultsList();
         int                     start = 0;
         QueryResponse           qr;
         SolrDocumentList        list;
@@ -385,15 +391,102 @@ public class SolrGeocodingFacadeImpl implements SolrGeocodingFacade {
             
             qr = solrServer.query(solrParams);
             list = qr.getResults();
-            
-            retval.addAll(list);
+
+            retval.addAll(qr.getBeans(OLSAddressBean.class));
             retval.setNumFound(list.getNumFound());
+
+
             start = retval.size();
         } while (start < list.getNumFound() && maxRows != SolrGeocodingFacade.MAX_ROWS_SOLR_DEFAULT && (maxRows == SolrGeocodingFacade.MAX_ROWS_ALL || start < maxRows));
         
         return retval;
     }
-    
+
+    public SolrBeanResultsList solrQuery(String dug, String address, String number, String municipality, String countrySubdivision) throws SolrServerException, SolrGeocodingFacadeException {
+        address = address.replaceAll("\"", "");
+        municipality = municipality.replaceAll("\"", "");
+
+        StringBuffer queryBuffer = new StringBuffer("");
+        if (!isStringEmpty(dug)) {
+            queryBuffer.append("(street_type:").append(dug)
+                    .append(" OR street_type:").append(dug).append("~1")
+                    .append(" OR street_type:").append(dug).append("~2")
+                    .append(" OR (-street_type:[* TO *] AND *:*) OR street_type:*)").append("^").append(streetTypeWeigth)
+                    .append(" AND ");
+        }
+
+        queryBuffer.append("(street_name:\"").append(address.trim()).append("\"").append("^").append(streetNameWeigth);
+        StringTokenizer stringTokenizer = new StringTokenizer(address, " \t\n\r\f-()^");
+        String          token;
+        while (stringTokenizer.hasMoreTokens()) {
+            token = stringTokenizer.nextToken();
+            if (!token.equals("DI") && !token.equals("DELLO") && !token.equals("DELLA") && !token.equals("DELLE") && !token.equals("DEGLI")) {
+                String weight = String.valueOf(token.length());
+                queryBuffer.append(" OR street_name:").append(token).append("^").append(weight)
+                        .append(" OR street_name:").append(token).append("^").append(weight).append("~1")
+                        .append(" OR street_name:").append(token).append("^").append(weight).append("~2");
+            }
+        }
+        queryBuffer.append(")");
+
+        if (!isStringEmpty(number)) {
+            queryBuffer.append(" AND (building_number:\"").append(number.trim()).append("\"")
+                    .append(" OR building_number:\"").append(number.trim()).append("\"").append("~2")
+                    .append(" OR (-building_number:[* TO *] AND *:*) OR building_number:*")
+                    .append(")").append("^").append(numberWeigth);
+        }
+
+        queryBuffer.append(" AND (municipality:\"").append(municipality).append("\"").append("^").append(municipalityWeigth);
+        StringTokenizer municipalityTokenizer = new StringTokenizer(municipality, " \t\n\r\f-()^");
+        String          municipalityToken;
+        while (municipalityTokenizer.hasMoreTokens()) {
+            municipalityToken = municipalityTokenizer.nextToken();
+            queryBuffer.append(" OR municipality:").append(municipalityToken).append("^").append(municipalityWeigth).append(" OR municipality:").append(municipalityToken).append("^").append(municipalityWeigth).append("~1").append(" OR municipality:").append(municipalityToken).append("^").append(municipalityWeigth).append("~2");
+        }
+        queryBuffer.append(")");
+
+        if (!isStringEmpty(countrySubdivision)) {
+            queryBuffer.append(" AND country_subdivision:").append(countrySubdivision.trim()).append("^").append(countrySubdivisionWeigth);
+        }
+
+        System.out.println(queryBuffer.toString());
+
+        if (solrServer == null) {
+            throw new SolrGeocodingFacadeException("SolrServer not initialized");
+        }
+
+
+
+        ModifiableSolrParams    solrParams = new ModifiableSolrParams();
+
+        solrParams.set("q", queryBuffer.toString());
+        solrParams.set("fl", "*,score");
+
+        SolrBeanResultsList     retval = new SolrBeanResultsList();
+        int                     start = 0;
+        QueryResponse           qr;
+        SolrDocumentList        list;
+
+        if (maxRows > 0) {
+            solrParams.set("rows", maxRows > MAX_DOCS_PER_REQUEST ? MAX_DOCS_PER_REQUEST : maxRows);
+        }
+
+        do {
+            solrParams.set("start", start);
+
+            qr = solrServer.query(solrParams);
+            list = qr.getResults();
+
+            retval.addAll(qr.getBeans(OLSAddressBean.class));
+            retval.setNumFound(list.getNumFound());
+
+
+            start = retval.size();
+        } while (start < list.getNumFound() && maxRows != SolrGeocodingFacade.MAX_ROWS_SOLR_DEFAULT && (maxRows == SolrGeocodingFacade.MAX_ROWS_ALL || start < maxRows));
+
+        return retval;
+    }
+
     private boolean isStringEmpty(String string)
     {
         return string == null || "".equals(string);
