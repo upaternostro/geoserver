@@ -28,20 +28,26 @@ public class SolrGeocodingFacadeFactory {
                 // use defaults, Luke ;)
             }
         }
-        
-        try {
+    
+	try {
             clazz = (Class<? extends SolrGeocodingFacade>)Class.forName(p.getProperty(CLASS_PROPERTY, CLASS_DEFAULT));
-        } catch (ClassNotFoundException | ClassCastException e) {
+        } catch (ClassNotFoundException  e) {
+            clazz = (Class<? extends SolrGeocodingFacade>)SolrGeocodingFacadeImpl.class;
+        } catch (ClassCastException e ){
             clazz = (Class<? extends SolrGeocodingFacade>)SolrGeocodingFacadeImpl.class;
         }
+    
     }
     
-    public SolrGeocodingFacade getSolrGeocodingFacade() throws SolrGeocodingFacadeException
-    {
-        try {
+    public SolrGeocodingFacade getSolrGeocodingFacade() throws SolrGeocodingFacadeException {
+
+	try {
             return clazz.newInstance();
-        } catch (InstantiationException | IllegalAccessException e) {
+        } catch (InstantiationException e) {
+            throw new SolrGeocodingFacadeException("Cannot instantiate SolrGeocodingFacade", e);
+        } catch (IllegalAccessException e) {
             throw new SolrGeocodingFacadeException("Cannot instantiate SolrGeocodingFacade", e);
         }
+
     }
 }
