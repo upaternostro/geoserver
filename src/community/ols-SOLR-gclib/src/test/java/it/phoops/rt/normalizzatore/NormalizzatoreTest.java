@@ -1,6 +1,13 @@
 package it.phoops.rt.normalizzatore;
 
-import it.phoops.geoserver.ols.solr.utils.*;
+import it.phoops.geoserver.ols.solr.utils.AddressParser;
+import it.phoops.geoserver.ols.solr.utils.AddressParserFactory;
+import it.phoops.geoserver.ols.solr.utils.OLSAddressBean;
+import it.phoops.geoserver.ols.solr.utils.SolrBeanResultsList;
+import it.phoops.geoserver.ols.solr.utils.SolrGeocodingFacade;
+import it.phoops.geoserver.ols.solr.utils.SolrGeocodingFacadeException;
+import it.phoops.geoserver.ols.solr.utils.SolrGeocodingFacadeFactory;
+import it.phoops.geoserver.ols.solr.utils.SolrManager;
 
 import java.io.File;
 import java.io.FileWriter;

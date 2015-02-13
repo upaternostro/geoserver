@@ -59,7 +59,7 @@ public class NormalizzatorePunteggioTest
 		for (String[] line : lines) {
 			addressParser.setAddress(line[0]);
 			
-			SolrBeanResultsList res = facade.solrQuery(addressParser.getStreetType(), addressParser.getStreetName(), addressParser.getNumber(), line[1], line[2]);
+			SolrBeanResultsList res = facade.geocodeAddress(addressParser.getStreetType(), addressParser.getStreetName(), addressParser.getNumber(), null, line[1], line[2]);
 
 	        Assert.assertNotNull(res);
 

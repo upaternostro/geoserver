@@ -6,7 +6,6 @@ package it.phoops.geoserver.ols.solr.utils;
 
 import org.apache.http.client.HttpClient;
 import org.apache.solr.client.solrj.ResponseParser;
-import org.apache.solr.client.solrj.SolrServerException;
 import org.apache.solr.client.solrj.impl.LBHttpSolrServer;
 
 public interface SolrGeocodingFacade {
@@ -55,8 +54,4 @@ public interface SolrGeocodingFacade {
     public abstract SolrBeanResultsList geocodeAddress(String freeFormAddress, String number, String subdivision, String municipality, String countrySubdivision) throws SolrGeocodingFacadeException;
     public abstract SolrBeanResultsList geocodeAddress(String typePrefix, String streetName, String municipality, String countrySubdivision) throws SolrGeocodingFacadeException;
     public abstract SolrBeanResultsList geocodeAddress(String typePrefix, String streetName, String number, String subdivision, String municipality, String countrySubdivision) throws SolrGeocodingFacadeException;
-
-    public abstract SolrBeanResultsList solrQuery(String dug, String address, String number, String municipality, String countrySubdivision) throws SolrServerException, SolrGeocodingFacadeException;
-
-
     }

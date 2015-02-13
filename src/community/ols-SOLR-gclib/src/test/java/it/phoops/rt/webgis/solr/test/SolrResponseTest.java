@@ -1,6 +1,13 @@
 package it.phoops.rt.webgis.solr.test;
 
-import it.phoops.geoserver.ols.solr.utils.*;
+import it.phoops.geoserver.ols.solr.utils.AddressParser;
+import it.phoops.geoserver.ols.solr.utils.AddressParserFactory;
+import it.phoops.geoserver.ols.solr.utils.OLSAddressBean;
+import it.phoops.geoserver.ols.solr.utils.SolrBeanResultsList;
+import it.phoops.geoserver.ols.solr.utils.SolrGeocodingFacade;
+import it.phoops.geoserver.ols.solr.utils.SolrGeocodingFacadeException;
+import it.phoops.geoserver.ols.solr.utils.SolrGeocodingFacadeFactory;
+import it.phoops.geoserver.ols.solr.utils.SolrManager;
 import junit.framework.Assert;
 
 import org.apache.solr.client.solrj.SolrServerException;
@@ -26,9 +33,9 @@ public class SolrResponseTest {
 	        AddressParserFactory    apf = new AddressParserFactory();
 	        AddressParser           addressParser = apf.getSolrGeocodingFacade(solrUrl);
 	        
-                addressParser.setAddress("via pasquale pocianti");
+                addressParser.setAddress("via paqsuale pocianti, 16");
 
-		String municipality = "scandicci";
+		String municipality = "scadnicci";
 		String subdivision = "fi";
 
 		SolrBeanResultsList res = new SolrBeanResultsList();
@@ -36,7 +43,7 @@ public class SolrResponseTest {
 		SolrGeocodingFacadeFactory factory = new SolrGeocodingFacadeFactory();
 		SolrGeocodingFacade facade = factory.getSolrGeocodingFacade();
 		facade.setSolrServerURL(solrUrl);
-		res = facade.solrQuery(addressParser.getStreetType(), addressParser.getStreetName(), addressParser.getNumber(), municipality, subdivision);
+		res = facade.geocodeAddress(addressParser.getStreetType(), addressParser.getStreetName(), addressParser.getNumber(), null, municipality, subdivision);
 
 		System.out.printf("Numero risultati trovati: %d%n", res.size());
 		if (res.size() > 0) {
@@ -52,14 +59,7 @@ public class SolrResponseTest {
 				System.out.println("+++++++++++++++++++++++++++");
 				System.out.println(olsAddressBean.getStreetType());
 				System.out.println(olsAddressBean.getStreetName());
-				String number = olsAddressBean.getNumber();
-				if (olsAddressBean.getNumberExtension()!=null) {
-					number = number + olsAddressBean.getNumberExtension();
-				}
-				if (olsAddressBean.getNumberColor() != null) {
-					number = number + olsAddressBean.getNumberColor();
-				}
-				System.out.println(number);
+				System.out.println(olsAddressBean.getBuildingNumber());
 				System.out.println(olsAddressBean.getMunicipality());
 				System.out.println(olsAddressBean.getCountrySubdivision());
 				System.out.println(olsAddressBean.getScore());
