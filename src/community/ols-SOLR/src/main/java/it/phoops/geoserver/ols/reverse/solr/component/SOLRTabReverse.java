@@ -13,9 +13,11 @@ import org.apache.wicket.model.Model;
 import org.apache.wicket.model.PropertyModel;
 
 public class SOLRTabReverse extends AbstractTab{
-	private String 					urlSOLRReverse;
-	private String          		activeSOLRReverse;
-	private SOLRReversePanel 		instancePanel;
+	private String 			urlSOLRReverse;
+	private String          	activeSOLRReverse;
+	private String                 crsNameReverse;
+        private String                 radiusReverse;
+	private SOLRReversePanel 	instancePanel;
 	
 	public String getUrlSOLRReverse() {
 		if(instancePanel != null)
@@ -41,7 +43,31 @@ public class SOLRTabReverse extends AbstractTab{
 		this.activeSOLRReverse = activeSOLRReverse;
 	}
 
-	public SOLRReversePanel getInstancePanel() {
+	public String getCrsNameReverse() {
+            if(instancePanel != null)
+                return instancePanel.getCrsNameReverse();
+            return crsNameReverse;
+        }
+    
+        public void setCrsNameReverse(String crsNameReverse) {
+            if(instancePanel != null)
+                instancePanel.setCrsNameReverse(crsNameReverse);
+            this.crsNameReverse = crsNameReverse;
+        }
+    
+        public String getRadiusReverse() {
+            if(instancePanel != null)
+                return instancePanel.getRadiusReverse();
+            return radiusReverse;
+        }
+    
+        public void setRadiusReverse(String radiusReverse) {
+            if(instancePanel != null)
+                instancePanel.setRadiusReverse(crsNameReverse);
+            this.radiusReverse = radiusReverse;
+        }
+    
+        public SOLRReversePanel getInstancePanel() {
 		return instancePanel;
 	}
 
@@ -60,12 +86,15 @@ public class SOLRTabReverse extends AbstractTab{
 	    instancePanel.setActiveSOLRReverse(activeSOLRReverse);
 	    instancePanel.getCheckboxSOLRReverse().setModelObject(Boolean.parseBoolean(activeSOLRReverse));
 	    instancePanel.setUrlSOLRReverse(urlSOLRReverse);
+            instancePanel.setCrsNameReverse(crsNameReverse);
 	    return instancePanel;
 	}
 	
 	private static class SOLRReversePanel extends Panel{
 	    private String             urlSOLRReverse;
 	    private String     		activeSOLRReverse;
+            private String              crsNameReverse;
+            private String              radiusReverse;
 	    private CheckBox   		checkboxSOLRReverse;
 	
 	    
@@ -86,6 +115,8 @@ public class SOLRTabReverse extends AbstractTab{
                 };
                 add(checkboxSOLRReverse);
 	        add(new TextField("urlSOLRReverse",new PropertyModel(this,"urlSOLRReverse")));
+                add(new TextField("crsNameReverse",new PropertyModel(this,"crsNameReverse")));
+                add(new TextField("radiusReverse",new PropertyModel(this,"radiusReverse")));
     	    }
 	    
 		    public String getUrlSOLRReverse() {
@@ -110,6 +141,22 @@ public class SOLRTabReverse extends AbstractTab{
     
             public void setCheckboxSOLRReverse(CheckBox checkboxSOLRReverse) {
                 this.checkboxSOLRReverse = checkboxSOLRReverse;
+            }
+
+            public String getCrsNameReverse() {
+                return crsNameReverse;
+            }
+
+            public void setCrsNameReverse(String crsNameReverse) {
+                this.crsNameReverse = crsNameReverse;
+            }
+
+            public String getRadiusReverse() {
+                return radiusReverse;
+            }
+
+            public void setRadiusReverse(String radiusReverse) {
+                this.radiusReverse = radiusReverse;
             }
 	}
 	

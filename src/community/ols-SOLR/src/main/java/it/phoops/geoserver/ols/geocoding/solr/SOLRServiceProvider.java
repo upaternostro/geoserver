@@ -71,9 +71,8 @@ public class SOLRServiceProvider extends OLSAbstractServiceProvider implements G
     // Properties Name
     private static final String PN_ENDPOINT_ADDRESS = "OLS.serviceProvider.geocoding.solr.service.endpointAddress";
     private static final String PN_ACTIVE_SERVICE = "OLS.serviceProvider.service.active";
+    private static final String PN_CRS = "OLS.serviceProvider.geocoding.solr.crs";
 
-    private static final String SOLR_CRS = "EPSG:4326";
-    
     private String descriptionKey;
     private Properties properties = new Properties();
 
@@ -89,7 +88,7 @@ public class SOLRServiceProvider extends OLSAbstractServiceProvider implements G
                 
                 if (retval == null) {
                     try {
-                        retval = solrCrs = CRS.decode(SOLR_CRS);
+                        retval = solrCrs = CRS.decode(getSolrCrsName());
                     } catch (NoSuchAuthorityCodeException e) {
                         throw new OLSException("Unknown authority in SRS", e);
                     } catch (FactoryException e) {
@@ -127,6 +126,14 @@ public class SOLRServiceProvider extends OLSAbstractServiceProvider implements G
         properties.setProperty(PN_ACTIVE_SERVICE, activeService);
     }
 
+    public String getSolrCrsName() {
+        return properties.getProperty(PN_CRS);
+    }
+
+    public void setSolrCrsName(String solrCrsName) {
+        properties.setProperty(PN_CRS, solrCrsName);
+    }
+
     @Override
     public OLSService getServiceType() {
         return OLSService.GEOCODING;
@@ -147,9 +154,11 @@ public class SOLRServiceProvider extends OLSAbstractServiceProvider implements G
     public void handleServiceChange(ServiceInfo service, List<String> propertyNames,
             List<Object> oldValues, List<Object> newValues) {
         String url = ((SOLRTab) getTab()).getUrlSOLR();
+        String crs = ((SOLRTab) getTab()).getCrsName();
         String active = ((SOLRTab) getTab()).getActiveSOLR();
 
         setEndpointAddress(url);
+        setSolrCrsName(crs);
         setActive(active);
 
     }
@@ -157,6 +166,7 @@ public class SOLRServiceProvider extends OLSAbstractServiceProvider implements G
     @Override
     public void setPropertiesTab(ITab solrTab) {
         ((SOLRTab) solrTab).setUrlSOLR(this.getEndpointAddress());
+        ((SOLRTab) solrTab).setCrsName(this.getSolrCrsName());
         ((SOLRTab) solrTab).setActiveSOLR(this.getActive());
     }
 
@@ -388,7 +398,7 @@ public class SOLRServiceProvider extends OLSAbstractServiceProvider implements G
                         
                         coordinates = pos.getValues();
                         
-                        if (!SOLR_CRS.equals(declaredSrs)) {
+                        if (!getSolrCrsName().equals(declaredSrs)) {
                             Coordinate  coords = SRSTransformer.transform(geometry.getCoordinate().getOrdinate(0), geometry.getCoordinate().getOrdinate(1), getSOLRCrs(), declaredSrs);
                             
                             coordinates.add(coords.x);

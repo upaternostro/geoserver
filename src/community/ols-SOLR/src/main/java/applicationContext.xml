@@ -12,6 +12,7 @@
 	   <property name="active" value="false" />
 	   <property name="descriptionKey" value="OLS.serviceProvider.geocoding.solr.description" />
        <property name="endpointAddress" value="http://localhost/solr/" />
+       <property name="solrCrsName" value="EPSG:4326" />
     </bean>
     
     <!-- Service Provider Reverse Geocoding SOLR -->
@@ -19,5 +20,7 @@
 	   <property name="active" value="false" />
 	   <property name="descriptionKey" value="OLS.serviceProvider.reverse.solr.description" />
        <property name="endpointAddress" value="http://localhost/solr/" />
+       <property name="solrCrsName" value="EPSG:4326" />
+       <property name="radius" value="0.0001" />
     </bean>
 </beans>

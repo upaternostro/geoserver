@@ -8,6 +8,7 @@ import it.phoops.geoserver.ols.OLSAbstractServiceProvider;
 import it.phoops.geoserver.ols.OLSException;
 import it.phoops.geoserver.ols.OLSService;
 import it.phoops.geoserver.ols.geocoding.ReverseGeocodingServiceProvider;
+import it.phoops.geoserver.ols.geocoding.solr.component.SOLRTab;
 import it.phoops.geoserver.ols.reverse.solr.component.SOLRTabReverse;
 import it.phoops.geoserver.ols.reverse.solr.component.SOLRTabReverseFactory;
 import it.phoops.geoserver.ols.solr.utils.SolrPager;
@@ -69,13 +70,12 @@ public class SOLRReverseServiceProvider extends OLSAbstractServiceProvider imple
 
     // property name
     private static final String PN_ENDPOINT_ADDRESS = "OLS.serviceProvider.reverse.solr.service.endpointAddress";
+    private static final String PN_CRS = "OLS.serviceProvider.reverse.solr.crs";
+    private static final String PN_RADIUS = "OLS.serviceProvider.reverse.radius";
 
     private static final String PN_ACTIVE_SERVICE = "OLS.serviceProvider.service.active";
 
-    private static final String SOLR_CRS = "EPSG:4326";
-
     private String descriptionKey;
-
     private Properties properties = new Properties();
 
     private CoordinateReferenceSystem   solrCrs;
@@ -90,7 +90,7 @@ public class SOLRReverseServiceProvider extends OLSAbstractServiceProvider imple
                 
                 if (retval == null) {
                     try {
-                        retval = solrCrs = CRS.decode(SOLR_CRS);
+                        retval = solrCrs = CRS.decode(getSolrCrsName());
                     } catch (NoSuchAuthorityCodeException e) {
                         throw new OLSException("Unknown authority in SRS", e);
                     } catch (FactoryException e) {
@@ -120,6 +120,22 @@ public class SOLRReverseServiceProvider extends OLSAbstractServiceProvider imple
         properties.setProperty(PN_ENDPOINT_ADDRESS, endpointAddress);
     }
     
+    public String getSolrCrsName() {
+        return properties.getProperty(PN_CRS);
+    }
+
+    public void setSolrCrsName(String solrCrsName) {
+        properties.setProperty(PN_CRS, solrCrsName);
+    }
+    
+    public String getRadius() {
+        return properties.getProperty(PN_RADIUS);
+    }
+
+    public void setRadius(String radius) {
+        properties.setProperty(PN_RADIUS, radius);
+    }
+    
     public String getActive(){
         return properties.getProperty(PN_ACTIVE_SERVICE);
     }
@@ -147,6 +163,8 @@ public class SOLRReverseServiceProvider extends OLSAbstractServiceProvider imple
 	@Override
 	public void setPropertiesTab(ITab solrTabReverse) {
 	    ((SOLRTabReverse)solrTabReverse).setUrlSOLRReverse(this.getEndpointAddress());
+	    ((SOLRTabReverse)solrTabReverse).setCrsNameReverse(this.getSolrCrsName());
+            ((SOLRTabReverse)solrTabReverse).setRadiusReverse(this.getRadius());
 	    ((SOLRTabReverse)solrTabReverse).setActiveSOLRReverse(this.getActive());
 	}
 
@@ -155,9 +173,13 @@ public class SOLRReverseServiceProvider extends OLSAbstractServiceProvider imple
 			List<String> propertyNames, List<Object> oldValues,
 			List<Object> newValues) {
         String url = ((SOLRTabReverse)getTab()).getUrlSOLRReverse();
+        String crs = ((SOLRTabReverse)getTab()).getCrsNameReverse();
+        String radius = ((SOLRTabReverse)getTab()).getRadiusReverse();
         String active = ((SOLRTabReverse)getTab()).getActiveSOLRReverse();
         
         setEndpointAddress(url);
+        setSolrCrsName(crs);
+        setRadius(radius);
         setActive(active);
 	}
 	
@@ -219,18 +241,32 @@ public class SOLRReverseServiceProvider extends OLSAbstractServiceProvider imple
                 
 	        coordinates = pos.getValues();
 	        
-	        if (!SOLR_CRS.equals(declaredSrs)) {
+	        if (!getSolrCrsName().equals(declaredSrs)) {
 	            Coordinate coords = SRSTransformer.transform(coordinates.get(0), coordinates.get(1), declaredSrs, getSOLRCrs());
 	            
                     coordinates.set(0, coords.y);
                     coordinates.set(1, coords.x);
 	        }
 	        
-	        SolrQuery query = new SolrQuery("centerline:\"Intersects(Circle("+coordinates.get(0)+","+coordinates.get(1)+", d=0.0001))\"");
-//	        SolrQuery query = new SolrQuery("(is_building: true and centroid:\"Intersects(Circle("+coordinates.get(0)+","+coordinates.get(1)+", d=0.001))\") and (is_building: false and centerline:\"Intersects(Circle("+coordinates.get(0)+","+coordinates.get(1)+", d=0.0001))\")");
-	        SolrQuery queryBuilding = new SolrQuery("is_building: true && centroid:\"Intersects(Circle("+coordinates.get(0)+","+coordinates.get(1)+", d=0.0002))\"");
+//	        SolrQuery query = new SolrQuery("centerline:\"Intersects(Circle("+coordinates.get(0)+","+coordinates.get(1)+", d=0.0001))\"");
+////	        SolrQuery query = new SolrQuery("(is_building: true and centroid:\"Intersects(Circle("+coordinates.get(0)+","+coordinates.get(1)+", d=0.001))\") and (is_building: false and centerline:\"Intersects(Circle("+coordinates.get(0)+","+coordinates.get(1)+", d=0.0001))\")");
+//	        SolrQuery queryBuilding = new SolrQuery("is_building: true && centroid:\"Intersects(Circle("+coordinates.get(0)+","+coordinates.get(1)+", d=0.0002))\"");
 	        
+//	        http://jarpa.phoops.priv:8081/solr/SINS/select?q={!geofilt}&sort=geodist%28%29+asc&wt=json&indent=true&debugQuery=true&spatial=true&pt=1682234+4848804&sfield=centroid&d=1500
+	            
+                SolrQuery query = new SolrQuery("{!geofilt}");
+                SolrQuery queryBuilding = new SolrQuery("is_building: true && {!geofilt}");
 	        
+                query.set("spatial", true);
+                query.set("d", getRadius());
+                query.set("sfield", "centerline");
+                query.set("pt", coordinates.get(0)+" "+coordinates.get(1));
+	        
+                queryBuilding.set("spatial", true);
+                queryBuilding.set("d", getRadius());
+                queryBuilding.set("sfield", "centerline");
+                queryBuilding.set("pt", coordinates.get(0)+" "+coordinates.get(1));
+                
 	        //CenterLine
 	        try {
 	            //Call Solr
@@ -253,7 +289,7 @@ public class SOLRReverseServiceProvider extends OLSAbstractServiceProvider imple
 	                        
 	                        coordinates = pos.getValues();
 	                        
-	                        if (!SOLR_CRS.equals(declaredSrs)) {
+	                        if (!getSolrCrsName().equals(declaredSrs)) {
 	                            Coordinate coords = SRSTransformer.transform(geometry.getCoordinate().getOrdinate(0), geometry.getCoordinate().getOrdinate(1), solrCrs, declaredSrs);
 	                            
 	                            coordinates.add(coords.x);
@@ -346,7 +382,7 @@ public class SOLRReverseServiceProvider extends OLSAbstractServiceProvider imple
                                 
                                 coordinates = pos.getValues();
                                 
-                                if (!SOLR_CRS.equals(declaredSrs)) {
+                                if (!getSolrCrsName().equals(declaredSrs)) {
                                     Coordinate  coords = SRSTransformer.transform(geometry.getCoordinate().getOrdinate(0), geometry.getCoordinate().getOrdinate(1), solrCrs, declaredSrs);
                                     
                                     coordinates.add(coords.x);

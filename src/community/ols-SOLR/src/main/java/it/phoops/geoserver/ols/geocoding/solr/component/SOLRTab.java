@@ -26,6 +26,7 @@ import org.geoserver.config.GeoServer;
 public class SOLRTab extends AbstractTab implements ValidateCheckboxTab{
 	private String 			urlSOLR;
 	private String                 activeSOLR;
+        private String                 crsName;
 	private SOLR9Panel 		instancePanel;
 	
 	public String getUrlSOLR() {
@@ -52,6 +53,18 @@ public class SOLRTab extends AbstractTab implements ValidateCheckboxTab{
             this.activeSOLR = activeSOLR;
         }
 
+        public String getCrsName() {
+            if(instancePanel != null)
+                return instancePanel.getCrsName();
+            return crsName;
+        }
+    
+        public void setCrsName(String crsName) {
+            if(instancePanel != null)
+                instancePanel.setCrsName(crsName);
+            this.crsName = crsName;
+        }
+    
         public SOLR9Panel getInstancePanel() {
 	    return instancePanel;
 	}
@@ -84,6 +97,7 @@ public class SOLRTab extends AbstractTab implements ValidateCheckboxTab{
 	    instancePanel.setActiveSOLR(activeSOLR);
 	    instancePanel.getCheckboxSOLR().setModelObject(Boolean.parseBoolean(activeSOLR));
 	    instancePanel.setUrlSOLR(urlSOLR);
+            instancePanel.setCrsName(crsName);
 	    return instancePanel;
 	}
     
@@ -94,6 +108,7 @@ public class SOLRTab extends AbstractTab implements ValidateCheckboxTab{
 	private static class SOLR9Panel extends Panel{
 	    private String 	urlSOLR;
 	    private String     activeSOLR;
+            private String     crsName;
 	    private CheckBox   checkboxSOLR;
 	
 	    
@@ -135,6 +150,7 @@ public class SOLRTab extends AbstractTab implements ValidateCheckboxTab{
                 };
                 add(checkboxSOLR);
 	        add(new TextField("urlSOLR",new PropertyModel(this,"urlSOLR")));
+                add(new TextField("crsName",new PropertyModel(this,"crsName")));
     	    }
 	    
 	    public String getUrlSOLR() {
@@ -159,6 +175,14 @@ public class SOLRTab extends AbstractTab implements ValidateCheckboxTab{
     
             public void setCheckboxSOLR(CheckBox checkboxSOLR) {
                 this.checkboxSOLR = checkboxSOLR;
+            }
+            
+            public String getCrsName() {
+                return crsName;
+            }
+
+            public void setCrsName(String crsName) {
+                this.crsName = crsName;
             }
 	}
 }
