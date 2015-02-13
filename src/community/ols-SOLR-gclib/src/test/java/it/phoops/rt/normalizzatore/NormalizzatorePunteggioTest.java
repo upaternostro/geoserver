@@ -3,6 +3,7 @@ package it.phoops.rt.normalizzatore;
 import au.com.bytecode.opencsv.CSVReader;
 import au.com.bytecode.opencsv.CSVWriter;
 import it.phoops.geoserver.ols.solr.utils.*;
+
 import org.apache.solr.client.solrj.SolrServerException;
 import org.junit.Assert;
 import org.junit.Before;
@@ -14,12 +15,10 @@ import java.util.List;
 public class NormalizzatorePunteggioTest
 {
 	private String solrUrl;
-	private SolrManager solrManager;
 
 	@Before
 	public void init(){
 		solrUrl = "http://jarpa.phoops.priv:8081/solr/SINS";
-		solrManager = new SolrManager(solrUrl);
 	}
 
 	@Test
@@ -47,18 +46,20 @@ public class NormalizzatorePunteggioTest
         
         Assert.assertNotNull(facade);
         
-        facade.setSolrServerURL("http://jarpa.phoops.priv:8081/solr/SINS");
+        facade.setSolrServerURL(solrUrl);
 
         File	file = File.createTempFile("normalizzatore", ".csv");
         CSVWriter	writer = new CSVWriter(new FileWriter(file), '|');
         String[]	newLine = new String[5 + 2 + 8 + 8];
         int			i;
         OLSAddressBean doc;
+        AddressParserFactory    apf = new AddressParserFactory();
+        AddressParser           addressParser = apf.getSolrGeocodingFacade(solrUrl);
 		
 		for (String[] line : lines) {
-
-			AddressParser addressParser = new AddressParser(line[0], solrUrl);
-			SolrBeanResultsList res = facade.solrQuery(addressParser.getDug(), addressParser.getAddress(), addressParser.getNumber(), line[1], line[2]);
+			addressParser.setAddress(line[0]);
+			
+			SolrBeanResultsList res = facade.solrQuery(addressParser.getStreetType(), addressParser.getStreetName(), addressParser.getNumber(), line[1], line[2]);
 
 	        Assert.assertNotNull(res);
 
@@ -114,10 +115,5 @@ public class NormalizzatorePunteggioTest
 	private String toString(Object o)
 	{
 		return o == null ? null : o.toString();
-	}
-
-	private SolrBeanResultsList getResponse(AddressParser addressParser, SolrGeocodingFacade facade, String[] line) throws SolrGeocodingFacadeException {
-
-		return facade.geocodeAddress(addressParser.getDug(), addressParser.getAddress(), line[1], line[2]);
 	}
 }

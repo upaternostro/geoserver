@@ -20,12 +20,10 @@ import au.com.bytecode.opencsv.CSVWriter;
 public class NormalizzatoreTest
 {
 	private String solrUrl;
-	private SolrManager solrManager;
 
 	@Before
 	public void init(){
 		solrUrl = "http://jarpa.phoops.priv:8081/solr/SINS";
-		solrManager = new SolrManager(solrUrl);
 	}
 
 	@Test
@@ -53,7 +51,7 @@ public class NormalizzatoreTest
         
         Assert.assertNotNull(facade);
         
-        facade.setSolrServerURL("http://jarpa.phoops.priv:8081/solr/SINS");
+        facade.setSolrServerURL(solrUrl);
         facade.setAddressTokenDelim(" \t\n\r\f-()^");
         
         SolrBeanResultsList docs = null;
@@ -65,6 +63,8 @@ public class NormalizzatoreTest
         String		tipoRicerca;
         String		ambiguita;
         Float		punteggio;
+        AddressParserFactory    apf = new AddressParserFactory();
+        AddressParser           dugExtractor = apf.getSolrGeocodingFacade(solrUrl);
 		
 		for (String[] line : lines) {
 			// Inizio con la ricerca piu' stringente
@@ -76,7 +76,7 @@ public class NormalizzatoreTest
 	        facade.setFuzzySearchMunicipality(false);
 	        facade.setAndNameTerms(true);
 
-			AddressParser dugExtractor = new AddressParser(line[0], solrUrl);
+	        dugExtractor.setAddress(line[0]);
 	        try {
 				docs = getResponse(dugExtractor, facade, line);
 	        } catch (SolrGeocodingFacadeException e) {
@@ -106,7 +106,7 @@ public class NormalizzatoreTest
 					tipoRicerca = "NO DUG";
 
 			        try {
-						dugExtractor.setDug(null);
+						dugExtractor.resetStreetType();
 						docs = getResponse(dugExtractor, facade, line);
 			        } catch (SolrGeocodingFacadeException e) {
 			            e.printStackTrace();
@@ -215,6 +215,6 @@ public class NormalizzatoreTest
 
 	private SolrBeanResultsList getResponse(AddressParser dugExtractor, SolrGeocodingFacade facade, String[] line) throws SolrGeocodingFacadeException {
 
-		return facade.geocodeAddress(dugExtractor.getDug(), dugExtractor.getAddress(), line[1], line[2]);
+		return facade.geocodeAddress(dugExtractor.getStreetType(), dugExtractor.getStreetName(), line[1], line[2]);
 	}
 }

@@ -2,6 +2,7 @@ package it.phoops.rt.webgis.solr.test;
 
 import it.phoops.geoserver.ols.solr.utils.*;
 import junit.framework.Assert;
+
 import org.apache.solr.client.solrj.SolrServerException;
 import org.junit.Before;
 import org.junit.Test;
@@ -12,28 +13,30 @@ import org.junit.Test;
 public class SolrResponseTest {
 
 	private String solrUrl;
-	private SolrManager solrManager;
 
 	@Before
 	public void init(){
 		solrUrl = "http://jarpa.phoops.priv:8081/solr/SINS";
-		solrManager = new SolrManager(solrUrl);
 	}
 
 	@Test
 	public void testGetResults()
 			throws SolrGeocodingFacadeException, SolrManager.SolrInvalidFieldException, SolrServerException {
 
-		AddressParser addressParser = new AddressParser("VIA ROMA, 26", solrUrl);
-		String municipality = "PRATO";
-		String subdivision = "PO";
+	        AddressParserFactory    apf = new AddressParserFactory();
+	        AddressParser           addressParser = apf.getSolrGeocodingFacade(solrUrl);
+	        
+                addressParser.setAddress("via pasquale pocianti");
+
+		String municipality = "scandicci";
+		String subdivision = "fi";
 
 		SolrBeanResultsList res = new SolrBeanResultsList();
 
 		SolrGeocodingFacadeFactory factory = new SolrGeocodingFacadeFactory();
 		SolrGeocodingFacade facade = factory.getSolrGeocodingFacade();
-		facade.setSolrServerURL("http://jarpa.phoops.priv:8081/solr/SINS");
-		res = facade.solrQuery(addressParser.getDug(), addressParser.getAddress(), addressParser.getNumber(), municipality, subdivision);
+		facade.setSolrServerURL(solrUrl);
+		res = facade.solrQuery(addressParser.getStreetType(), addressParser.getStreetName(), addressParser.getNumber(), municipality, subdivision);
 
 		System.out.printf("Numero risultati trovati: %d%n", res.size());
 		if (res.size() > 0) {
