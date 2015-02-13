@@ -223,9 +223,11 @@ public class SolrGeocodingFacadeImpl implements SolrGeocodingFacade {
 
     @Override
     public SolrBeanResultsList geocodeAddress(String freeFormAddress, String municipality, String countrySubdivision) throws SolrGeocodingFacadeException {
-        // SOLR 2 ff @@@
         AddressParserFactory    apf = new AddressParserFactory();
         AddressParser           addressParser = apf.getSolrGeocodingFacade(baseUrl);
+        
+        addressParser.setNumberDelimiter(numberDelimiter);
+        addressParser.setNumberAfterAddress(numberAfterAddress);
         
         addressParser.setAddress(freeFormAddress);
         
@@ -234,9 +236,11 @@ public class SolrGeocodingFacadeImpl implements SolrGeocodingFacade {
     
     @Override
     public SolrBeanResultsList geocodeAddress(String freeFormAddress, String number, String subdivision, String municipality, String countrySubdivision) throws SolrGeocodingFacadeException {
-        // SOLR 1 ff + bn @@@
         AddressParserFactory    apf = new AddressParserFactory();
         AddressParser           addressParser = apf.getSolrGeocodingFacade(baseUrl);
+        
+        addressParser.setNumberDelimiter(numberDelimiter);
+        addressParser.setNumberAfterAddress(numberAfterAddress);
         
         addressParser.setAddress(freeFormAddress);
         
@@ -245,9 +249,11 @@ public class SolrGeocodingFacadeImpl implements SolrGeocodingFacade {
     
     @Override
     public SolrBeanResultsList geocodeAddress(String typePrefix, String streetName, String municipality, String countrySubdivision) throws SolrGeocodingFacadeException {
-        // SOLR 4 addr @@@
         AddressParserFactory    apf = new AddressParserFactory();
         AddressParser           addressParser = apf.getSolrGeocodingFacade(baseUrl);
+        
+        addressParser.setNumberDelimiter(numberDelimiter);
+        addressParser.setNumberAfterAddress(numberAfterAddress);
         
         addressParser.setAddress(streetName);
         
@@ -256,7 +262,6 @@ public class SolrGeocodingFacadeImpl implements SolrGeocodingFacade {
     
     @Override
     public SolrBeanResultsList geocodeAddress(String typePrefix, String streetName, String number, String subdivision, String municipality, String countrySubdivision) throws SolrGeocodingFacadeException {
-        // SOLR 3 addr + bn @@@
         streetName = streetName.replaceAll("\"", "");
         municipality = municipality.replaceAll("\"", "");
 
