@@ -3,6 +3,7 @@ package it.phoops.rt.normalizzatore;
 import au.com.bytecode.opencsv.CSVReader;
 import au.com.bytecode.opencsv.CSVWriter;
 import it.phoops.geoserver.ols.solr.utils.*;
+
 import org.apache.solr.client.solrj.SolrServerException;
 import org.junit.Assert;
 import org.junit.Before;
@@ -45,18 +46,20 @@ public class NormalizzatorePunteggioTest
         
                 Assert.assertNotNull(facade);
         
-                facade.setSolrServerURL("http://jarpa.phoops.priv:8081/solr/SINS");
-        
-                File file = File.createTempFile("normalizzatore", ".csv");
-                CSVWriter writer = new CSVWriter(new FileWriter(file), '|');
-                String[] newLine = new String[5 + 2 + 8 + 8];
-                int i;
-                OLSAddressBean doc;
+        facade.setSolrServerURL(solrUrl);
+
+        File	file = File.createTempFile("normalizzatore", ".csv");
+        CSVWriter	writer = new CSVWriter(new FileWriter(file), '|');
+        String[]	newLine = new String[5 + 2 + 8 + 8];
+        int			i;
+        OLSAddressBean doc;
+        AddressParserFactory    apf = new AddressParserFactory();
+        AddressParser           addressParser = apf.getSolrGeocodingFacade(solrUrl);
 		
 		for (String[] line : lines) {
-
-			AddressParser addressParser = new AddressParser(line[0], solrUrl);
-			SolrBeanResultsList res = facade.solrQuery(addressParser.getDug(), addressParser.getAddress(), addressParser.getNumber(), line[1], line[2]);
+			addressParser.setAddress(line[0]);
+			
+			SolrBeanResultsList res = facade.geocodeAddress(addressParser.getStreetType(), addressParser.getStreetName(), addressParser.getNumber(), null, line[1], line[2]);
 
 	        Assert.assertNotNull(res);
 

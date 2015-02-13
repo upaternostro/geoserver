@@ -1,6 +1,7 @@
 package it.phoops.rt.normalizzatore;
 
 import it.phoops.geoserver.ols.solr.utils.AddressParser;
+import it.phoops.geoserver.ols.solr.utils.AddressParserFactory;
 import it.phoops.geoserver.ols.solr.utils.OLSAddressBean;
 import it.phoops.geoserver.ols.solr.utils.SolrBeanResultsList;
 import it.phoops.geoserver.ols.solr.utils.SolrGeocodingFacade;
@@ -57,18 +58,20 @@ public class NormalizzatoreTest
         
                 Assert.assertNotNull(facade);
         
-                facade.setSolrServerURL("http://jarpa.phoops.priv:8081/solr/SINS");
-                facade.setAddressTokenDelim(" \t\n\r\f-()^");
+        facade.setSolrServerURL(solrUrl);
+        facade.setAddressTokenDelim(" \t\n\r\f-()^");
         
-                SolrBeanResultsList docs = null;
-                File file = File.createTempFile("normalizzatore", ".csv");
-                CSVWriter writer = new CSVWriter(new FileWriter(file), '|');
-                String[] newLine = new String[5 + 2 + 8 + 8];
-                int i;
-                OLSAddressBean doc;
-                String tipoRicerca;
-                String ambiguita;
-                Float punteggio;
+        SolrBeanResultsList docs = null;
+        File	file = File.createTempFile("normalizzatore", ".csv");
+        CSVWriter	writer = new CSVWriter(new FileWriter(file), '|');
+        String[]	newLine = new String[5 + 2 + 8 + 8];
+        int			i;
+        OLSAddressBean doc;
+        String		tipoRicerca;
+        String		ambiguita;
+        Float		punteggio;
+        AddressParserFactory    apf = new AddressParserFactory();
+        AddressParser           dugExtractor = apf.getSolrGeocodingFacade(solrUrl);
 		
 		for (String[] line : lines) {
 			// Inizio con la ricerca piu' stringente
@@ -80,16 +83,16 @@ public class NormalizzatoreTest
         	        facade.setFuzzySearchMunicipality(false);
         	        facade.setAndNameTerms(true);
 
-			AddressParser dugExtractor = new AddressParser(line[0], solrUrl);
-        	        try {
-        				docs = getResponse(dugExtractor, facade, line);
-        	        } catch (SolrGeocodingFacadeException e) {
-        	            e.printStackTrace();
-        	        }
-        	        
-        	        Assert.assertNotNull(docs);
-        
-        	        if (docs.getNumFound() == 0) {
+	        dugExtractor.setAddress(line[0]);
+	        try {
+				docs = getResponse(dugExtractor, facade, line);
+	        } catch (SolrGeocodingFacadeException e) {
+	            e.printStackTrace();
+	        }
+	        
+	        Assert.assertNotNull(docs);
+
+	        if (docs.getNumFound() == 0) {
 				// Provo la ricerca fuzzy
 				tipoRicerca = "FUZZY AND";
 				
@@ -98,19 +101,11 @@ public class NormalizzatoreTest
                                 facade.setFuzzySearchStreetType(true);
                                 facade.setFuzzySearchMunicipality(true);
 		        
-            		        try {
-            					docs = getResponse(dugExtractor, facade, line);
-            		        } catch (SolrGeocodingFacadeException e) {
-            		            e.printStackTrace();
-            		        }
-            		        
-            		        Assert.assertNotNull(docs);
-            		        
-            		        if (docs.getNumFound() == 0) {
-            				tipoRicerca = "NO DUG";
+		        if (docs.getNumFound() == 0) {
+					tipoRicerca = "NO DUG";
 
-            				try {
-						dugExtractor.setDug(null);
+			        try {
+						dugExtractor.resetStreetType();
 						docs = getResponse(dugExtractor, facade, line);
         			        } catch (SolrGeocodingFacadeException e) {
         			            e.printStackTrace();
@@ -219,6 +214,6 @@ public class NormalizzatoreTest
 
 	private SolrBeanResultsList getResponse(AddressParser dugExtractor, SolrGeocodingFacade facade, String[] line) throws SolrGeocodingFacadeException {
 
-		return facade.geocodeAddress(dugExtractor.getDug(), dugExtractor.getAddress(), line[1], line[2]);
+		return facade.geocodeAddress(dugExtractor.getStreetType(), dugExtractor.getStreetName(), line[1], line[2]);
 	}
 }
