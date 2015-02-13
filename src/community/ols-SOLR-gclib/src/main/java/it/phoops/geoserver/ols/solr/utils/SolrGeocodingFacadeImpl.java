@@ -420,12 +420,10 @@ public class SolrGeocodingFacadeImpl implements SolrGeocodingFacade {
         String          token;
         while (stringTokenizer.hasMoreTokens()) {
             token = stringTokenizer.nextToken();
-            if (!token.equals("DI") && !token.equals("DELLO") && !token.equals("DELLA") && !token.equals("DELLE") && !token.equals("DEGLI")) {
-                String weight = String.valueOf(token.length());
-                queryBuffer.append(" OR street_name:").append(token).append("^").append(weight)
-                        .append(" OR street_name:").append(token).append("^").append(weight).append("~1")
-                        .append(" OR street_name:").append(token).append("^").append(weight).append("~2");
-            }
+            String weight = String.valueOf(token.length());
+            queryBuffer.append(" OR street_name:").append(token).append("^").append(weight)
+                    .append(" OR street_name:").append(token).append("^").append(weight).append("~1")
+                    .append(" OR street_name:").append(token).append("^").append(weight).append("~2");
         }
         queryBuffer.append(")");
 
