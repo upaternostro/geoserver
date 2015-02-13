@@ -15,14 +15,14 @@ import org.apache.solr.client.solrj.request.QueryRequest;
 import org.apache.solr.client.solrj.response.FacetField;
 import org.apache.solr.client.solrj.response.QueryResponse;
 
-public class SolrDugInspector {
+public class SolrStreetTypesInspector {
     private SolrServer solrServer;
 
-    public SolrDugInspector(String baseURL) {
+    public SolrStreetTypesInspector(String baseURL) {
         solrServer = new HttpSolrServer(baseURL);
     }
 
-    public ArrayList<String> distinctDugs() throws SolrGeocodingFacadeException
+    public ArrayList<String> getDistinctStreetTypes() throws SolrGeocodingFacadeException
     {
         if (solrServer == null) {
             throw new SolrGeocodingFacadeException("SolrServer not initialized");

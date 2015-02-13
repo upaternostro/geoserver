@@ -26,8 +26,8 @@ public class AddressParserImpl implements AddressParser
     @Override
     public void setSolrServerURL(String solrUrl) throws SolrGeocodingFacadeException {
         //elenco tutti i dug
-        SolrDugInspector dugInspector = new SolrDugInspector(solrUrl);
-        streetTypes = dugInspector.distinctDugs();
+        SolrStreetTypesInspector streetTypesInspector = new SolrStreetTypesInspector(solrUrl);
+        streetTypes = streetTypesInspector.getDistinctStreetTypes();
     }
 
     @Override
