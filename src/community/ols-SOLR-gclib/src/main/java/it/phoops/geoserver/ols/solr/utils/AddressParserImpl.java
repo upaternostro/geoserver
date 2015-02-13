@@ -10,6 +10,9 @@ public class AddressParserImpl implements AddressParser
 {
     private ArrayList<String>   streetTypes;
     
+    private String              numberDelimiter;
+    private boolean             numberAfterAddress;
+    
     private String              streetType;
     private String              streetName;
     private String              number;
@@ -17,6 +20,9 @@ public class AddressParserImpl implements AddressParser
     public AddressParserImpl()
     {
         streetTypes = null;
+        
+        numberDelimiter = ",";
+        numberAfterAddress = true;
         
         streetType = null;
         streetName = null;
@@ -27,9 +33,20 @@ public class AddressParserImpl implements AddressParser
     public void setSolrServerURL(String solrUrl) throws SolrGeocodingFacadeException {
         //elenco tutti i dug
         SolrStreetTypesInspector streetTypesInspector = new SolrStreetTypesInspector(solrUrl);
+        
         streetTypes = streetTypesInspector.getDistinctStreetTypes();
     }
 
+    @Override
+    public void setNumberDelimiter(String numberDelimiter) {
+        this.numberDelimiter = numberDelimiter;
+    }
+    
+    @Override
+    public void setNumberAfterAddress(boolean numberAfterAddress) {
+        this.numberAfterAddress = numberAfterAddress;
+    }
+    
     @Override
     public void setAddress(String freeformString) throws SolrGeocodingFacadeException
     {
@@ -38,11 +55,17 @@ public class AddressParserImpl implements AddressParser
         number = null;
 
         //ricerco il numero
-        int     numberDelimiterIndex = freeformString.indexOf(",");
+        int     numberDelimiterIndex = numberAfterAddress ? freeformString.lastIndexOf(numberDelimiter) : freeformString.indexOf(numberDelimiter);
+        
         if (numberDelimiterIndex != -1) {
-            number = freeformString.substring(numberDelimiterIndex+1);
+            if (numberAfterAddress) {
+                number = freeformString.substring(numberDelimiterIndex+1);
+                freeformString = freeformString.substring(0, numberDelimiterIndex);
+            } else {
+                number = freeformString.substring(0, numberDelimiterIndex);
+                freeformString = freeformString.substring(numberDelimiterIndex+1);
+            }
             number = number.trim();
-            freeformString = freeformString.substring(0, numberDelimiterIndex);
         }
 
         if (freeformString != null) {

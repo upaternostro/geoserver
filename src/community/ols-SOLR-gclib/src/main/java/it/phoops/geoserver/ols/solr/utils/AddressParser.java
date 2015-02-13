@@ -6,6 +6,8 @@ package it.phoops.geoserver.ols.solr.utils;
 
 public interface AddressParser {
     public abstract void setSolrServerURL(String solrUrl) throws SolrGeocodingFacadeException;
+    public abstract void setNumberDelimiter(String numberDelimiter);
+    public abstract void setNumberAfterAddress(boolean numberAfterAddress);
     
     public abstract void setAddress(String freeformString) throws SolrGeocodingFacadeException;
     
