@@ -4,10 +4,11 @@
  */
 package it.phoops.geoserver.ols.solr.utils;
 
-import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.StringTokenizer;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.http.client.HttpClient;
 import org.apache.solr.client.solrj.ResponseParser;
 import org.apache.solr.client.solrj.SolrServer;
@@ -21,6 +22,8 @@ import org.apache.solr.common.SolrDocumentList;
 import org.apache.solr.common.params.ModifiableSolrParams;
 
 public class SolrGeocodingFacadeImpl implements SolrGeocodingFacade {
+    private final Log logger = LogFactory.getLog(getClass());
+    
     private static final int    MAX_DOCS_PER_REQUEST    = 100;
     
     private SolrServer  solrServer;
@@ -35,13 +38,6 @@ public class SolrGeocodingFacadeImpl implements SolrGeocodingFacade {
     private float       municipalityWeigth;
     private float       countrySubdivisionWeigth;
     private int         maxRows;
-    private boolean     fuzzySearchStreetType;
-    private boolean     fuzzySearchStreetName;
-    private boolean     fuzzySearchNumber;
-    private boolean     fuzzySearchMunicipality;
-    private boolean     fuzzySearchCountrySubdivision;
-    private boolean     andNameTerms;
-    private boolean     ignoreDug;
 
     public SolrGeocodingFacadeImpl() {
         super();
@@ -59,13 +55,6 @@ public class SolrGeocodingFacadeImpl implements SolrGeocodingFacade {
         municipalityWeigth = 3.0f;
         countrySubdivisionWeigth = 1.0f;
         maxRows = MAX_ROWS_SOLR_DEFAULT;
-        fuzzySearchStreetType = false;
-        fuzzySearchStreetName = false;
-        fuzzySearchNumber = false;
-        fuzzySearchMunicipality = false;
-        fuzzySearchCountrySubdivision = false;
-        andNameTerms = true;
-        ignoreDug = false;
     }
     
     @Override
@@ -191,37 +180,6 @@ public class SolrGeocodingFacadeImpl implements SolrGeocodingFacade {
     }
     
     @Override
-    public void setFuzzySearchStreetType(boolean fuzzySearchStreetType) {
-        this.fuzzySearchStreetType = fuzzySearchStreetType;
-    }
-    
-    @Override
-    public void setFuzzySearchStreetName(boolean fuzzySearchStreetName) {
-        this.fuzzySearchStreetName = fuzzySearchStreetName;
-    }
-    
-    @Override
-    public void setFuzzySearchNumber(boolean fuzzySearchNumber) {
-        this.fuzzySearchNumber = fuzzySearchNumber;
-    }
-    
-    @Override
-    public void setFuzzySearchMunicipality(boolean fuzzySearchMunicipality) {
-        this.fuzzySearchMunicipality = fuzzySearchMunicipality;
-    }
-    
-    @Override
-    public void setFuzzySearchCountrySubdivision(boolean fuzzySearchCountrySubdivision) {
-        this.fuzzySearchCountrySubdivision = fuzzySearchCountrySubdivision;
-    }
-    
-    @Override
-    public void setAndNameTerms(boolean andNameTerms) {
-        this.andNameTerms = andNameTerms;
-    }
-
-
-    @Override
     public SolrBeanResultsList geocodeAddress(String freeFormAddress, String municipality, String countrySubdivision) throws SolrGeocodingFacadeException {
         AddressParserFactory    apf = new AddressParserFactory();
         AddressParser           addressParser = apf.getSolrGeocodingFacade(baseUrl);
@@ -275,7 +233,7 @@ public class SolrGeocodingFacadeImpl implements SolrGeocodingFacade {
         }
 
         queryBuffer.append("(street_name:\"").append(streetName.trim()).append("\"").append("^").append(streetNameWeigth);
-        StringTokenizer stringTokenizer = new StringTokenizer(streetName, " \t\n\r\f-()^");
+        StringTokenizer stringTokenizer = new StringTokenizer(streetName, addressTokenDelim);
         String          token;
         while (stringTokenizer.hasMoreTokens()) {
             token = stringTokenizer.nextToken();
@@ -298,7 +256,7 @@ public class SolrGeocodingFacadeImpl implements SolrGeocodingFacade {
         }
 
         queryBuffer.append(" AND (municipality:\"").append(municipality).append("\"").append("^").append(municipalityWeigth);
-        StringTokenizer municipalityTokenizer = new StringTokenizer(municipality, " \t\n\r\f-()^");
+        StringTokenizer municipalityTokenizer = new StringTokenizer(municipality, addressTokenDelim);
         String          municipalityToken;
         while (municipalityTokenizer.hasMoreTokens()) {
             municipalityToken = municipalityTokenizer.nextToken();
@@ -310,7 +268,7 @@ public class SolrGeocodingFacadeImpl implements SolrGeocodingFacade {
             queryBuffer.append(" AND country_subdivision:").append(countrySubdivision.trim()).append("^").append(countrySubdivisionWeigth);
         }
 
-        System.out.println(queryBuffer.toString());
+        logger.debug("SOLR query: " + queryBuffer.toString());
 
         if (solrServer == null) {
             throw new SolrGeocodingFacadeException("SolrServer not initialized");

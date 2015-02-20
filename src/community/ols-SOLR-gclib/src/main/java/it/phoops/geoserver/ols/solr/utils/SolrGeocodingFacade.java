@@ -42,12 +42,6 @@ public interface SolrGeocodingFacade {
     public abstract void setMunicipalityWeigth(float municipalityWeigth);
     public abstract void setCountrySubdivisionWeigth(float countrySubdivisionWeigth);
     public abstract void setMaxRows(int maxRows);
-    public abstract void setFuzzySearchStreetType(boolean fuzzySearchStreetType);
-    public abstract void setFuzzySearchStreetName(boolean fuzzySearchStreetName);
-    public abstract void setFuzzySearchNumber(boolean fuzzySearchNumber);
-    public abstract void setFuzzySearchMunicipality(boolean fuzzySearchMunicipality);
-    public abstract void setFuzzySearchCountrySubdivision(boolean fuzzySearchCountrySubdivision);
-    public abstract void setAndNameTerms(boolean andNameTerms);
     
     // Functions
     public abstract SolrBeanResultsList geocodeAddress(String freeFormAddress, String municipality, String countrySubdivision) throws SolrGeocodingFacadeException;
