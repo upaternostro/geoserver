@@ -1,13 +1,11 @@
 package it.phoops.geoserver.ols.solr.utils;
 
+import java.io.IOException;
+
 import org.apache.solr.client.solrj.SolrServer;
 import org.apache.solr.client.solrj.SolrServerException;
 import org.apache.solr.client.solrj.impl.HttpSolrServer;
 import org.apache.solr.client.solrj.response.UpdateResponse;
-
-import java.io.IOException;
-import java.util.Iterator;
-import java.util.Map;
 
 /**
  * Created by davide.cesaroni on 22/12/14.
@@ -109,40 +107,8 @@ public class SolrManager {
 		facade.setSolrServerURL(solrURL);
 
 
-		String tipoRicerca = "AND";
-		facade.setFuzzySearchNumber(false);
-		facade.setFuzzySearchStreetName(false);
-		facade.setFuzzySearchStreetType(false);
-		facade.setFuzzySearchMunicipality(false);
-		facade.setAndNameTerms(true);
-
 		docsResult = facade.geocodeAddress(freeFormAddress, municipality,
 				countrySubdisvision);
-
-
-		if (docsResult.getNumFound() == 0) {
-			// fuzzy search
-			tipoRicerca = "FUZZY AND";
-
-			facade.setFuzzySearchNumber(true);
-			facade.setFuzzySearchStreetName(true);
-			facade.setFuzzySearchStreetType(true);
-			facade.setFuzzySearchMunicipality(true);
-
-			docsResult = facade.geocodeAddress(freeFormAddress, municipality,
-					countrySubdisvision);
-
-
-			if (docsResult.getNumFound() == 0) {
-				// // fuzzy search in OR
-				tipoRicerca = "OR";
-
-				facade.setAndNameTerms(false);
-
-				docsResult = facade.geocodeAddress(freeFormAddress, municipality,
-						countrySubdisvision);
-			}
-		}
 
 		return docsResult;
 
@@ -164,41 +130,7 @@ public class SolrManager {
 
 		facade.setSolrServerURL(solrURL);
 
-
-		String tipoRicerca = "AND";
-		facade.setFuzzySearchNumber(false);
-		facade.setFuzzySearchStreetName(false);
-		facade.setFuzzySearchStreetType(false);
-		facade.setFuzzySearchMunicipality(false);
-		facade.setAndNameTerms(true);
-
 		docsResult = facade.geocodeAddress(dug, address, municipality, countrySubdisvision);
-
-
-		if (docsResult.getNumFound() == 0) {
-			// fuzzy search
-			tipoRicerca = "FUZZY AND";
-
-			facade.setFuzzySearchNumber(true);
-			facade.setFuzzySearchStreetName(true);
-			facade.setFuzzySearchStreetType(true);
-			facade.setFuzzySearchMunicipality(true);
-
-			docsResult = facade.geocodeAddress(dug, address, municipality, countrySubdisvision);
-
-			if (docsResult.getNumFound() == 0) {
-				docsResult = facade.geocodeAddress(null,address, municipality, countrySubdisvision);
-
-				if (docsResult.getNumFound() == 0) {
-					// // fuzzy search in OR
-					tipoRicerca = "OR";
-					facade.setAndNameTerms(false);
-
-					docsResult = facade.geocodeAddress(null, address, municipality, countrySubdisvision);
-				}
-			}
-
-		}
 
 		return docsResult;
 
@@ -209,55 +141,6 @@ public class SolrManager {
 		// now is only a stub!!
 		return true;
 	}
-
-	private StringBuffer generateQueryString(Map<String, String> fields,
-											 SolrQueryOperator solrQueryOperator,
-											 boolean isFuzzy) {
-
-		StringBuffer queryBuffer = new StringBuffer();
-		String boolOp = "";
-		String fuzzyOp = "";
-
-		if (solrQueryOperator == SolrQueryOperator.AND_OPERATOR) {
-			boolOp = "AND";
-		}
-		else {
-			boolOp = "OR";
-		}
-
-		if (isFuzzy) {
-			fuzzyOp = "~";
-		}
-
-		Iterator<String> keyIterator = fields.keySet().iterator();
-
-		while (keyIterator.hasNext()) {
-
-			String key = keyIterator.next();
-
-			queryBuffer.append(key);
-			queryBuffer.append(":\"");
-			queryBuffer.append(fields.get(key));
-			queryBuffer.append(fuzzyOp);
-			queryBuffer.append("\"");
-
-			if (keyIterator.hasNext()) {
-				queryBuffer.append(" " + boolOp + " ");
-			}
-
-		}
-
-
-		return queryBuffer;
-	}
-
-	public enum SolrQueryOperator {
-
-		AND_OPERATOR,
-		OR_OPERATOR
-
-	}
-
 
 	public class SolrInvalidFieldException extends Exception {
 
