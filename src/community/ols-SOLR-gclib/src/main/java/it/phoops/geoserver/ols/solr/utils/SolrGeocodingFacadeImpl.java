@@ -4,7 +4,6 @@
  */
 package it.phoops.geoserver.ols.solr.utils;
 
-import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.StringTokenizer;
 

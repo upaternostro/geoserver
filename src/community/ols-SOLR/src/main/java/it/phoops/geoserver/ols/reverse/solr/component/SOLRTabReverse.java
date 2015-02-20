@@ -63,7 +63,7 @@ public class SOLRTabReverse extends AbstractTab{
     
         public void setRadiusReverse(String radiusReverse) {
             if(instancePanel != null)
-                instancePanel.setRadiusReverse(crsNameReverse);
+                instancePanel.setRadiusReverse(radiusReverse);
             this.radiusReverse = radiusReverse;
         }
     

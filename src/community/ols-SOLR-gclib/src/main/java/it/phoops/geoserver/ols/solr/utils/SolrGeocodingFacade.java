@@ -54,4 +54,4 @@ public interface SolrGeocodingFacade {
     public abstract SolrBeanResultsList geocodeAddress(String freeFormAddress, String number, String subdivision, String municipality, String countrySubdivision) throws SolrGeocodingFacadeException;
     public abstract SolrBeanResultsList geocodeAddress(String typePrefix, String streetName, String municipality, String countrySubdivision) throws SolrGeocodingFacadeException;
     public abstract SolrBeanResultsList geocodeAddress(String typePrefix, String streetName, String number, String subdivision, String municipality, String countrySubdivision) throws SolrGeocodingFacadeException;
-    }
+}
