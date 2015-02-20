@@ -1,4 +1,5 @@
-/* Copyright (c) 2001 - 2013 OpenPlans - www.openplans.org. All rights reserved.
+/* (c) 2014 Open Source Geospatial Foundation - all rights reserved
+ * (c) 2001 - 2013 OpenPlans
  * This code is licensed under the GPL 2.0 license, available at the root
  * application directory.
  */
@@ -165,8 +166,8 @@ public abstract class GeoServerLoader {
         if ( catalog.getStyleByName( StyleInfo.DEFAULT_LINE ) == null ) {
             initializeStyle( catalog, StyleInfo.DEFAULT_LINE, "default_line.sld" );
         }
-        if ( catalog.getStyleByName( StyleInfo.DEFAULT_POLYGON ) == null ) {
-            initializeStyle( catalog, StyleInfo.DEFAULT_POLYGON, "default_line.sld" );
+        if ( catalog.getStyleByName( StyleInfo.DEFAULT_POLYGON ) == null ) {    
+            initializeStyle( catalog, StyleInfo.DEFAULT_POLYGON, "default_polygon.sld" );
         }
         if ( catalog.getStyleByName( StyleInfo.DEFAULT_RASTER ) == null ) {
             initializeStyle( catalog, StyleInfo.DEFAULT_RASTER, "default_raster.sld" );
@@ -371,13 +372,12 @@ public abstract class GeoServerLoader {
                                 FeatureTypeInfo ft = null;
                                 try {
                                     ft = depersist(xp,f,FeatureTypeInfo.class);
+                                    catalog.add(ft);
                                 }
                                 catch( Exception e ) {
                                     LOGGER.log( Level.WARNING, "Failed to load feature type '" + ftd.getName() +"'", e);
                                     continue;
                                 }
-                                
-                                catalog.add( ft );
                                 
                                 LOGGER.info( "Loaded feature type '" + ds.getName() +"'");
                                 

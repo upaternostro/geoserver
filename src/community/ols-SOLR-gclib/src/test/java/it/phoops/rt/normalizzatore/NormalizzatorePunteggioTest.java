@@ -33,18 +33,18 @@ public class NormalizzatorePunteggioTest
 		List<String[]> lines = reader.readAll();
 		Assert.assertNotNull(lines);
 		
-        SolrGeocodingFacadeFactory      factory = new SolrGeocodingFacadeFactory();
-        Assert.assertNotNull(factory);
+                SolrGeocodingFacadeFactory factory = new SolrGeocodingFacadeFactory();
+                Assert.assertNotNull(factory);
         
-        SolrGeocodingFacade facade = null;
+                SolrGeocodingFacade facade = null;
         
-        try {
-            facade = factory.getSolrGeocodingFacade();
-        } catch (SolrGeocodingFacadeException e) {
-            e.printStackTrace();
-        }
+                try {
+                    facade = factory.getSolrGeocodingFacade();
+                } catch (SolrGeocodingFacadeException e) {
+                    e.printStackTrace();
+                }
         
-        Assert.assertNotNull(facade);
+                Assert.assertNotNull(facade);
         
         facade.setSolrServerURL(solrUrl);
 
@@ -67,21 +67,22 @@ public class NormalizzatorePunteggioTest
 	        	newLine[i] = line[i];
 	        }
 
-			float punteggioTotale = 0;
+		float punteggioTotale = 0;
+		
 	        if (res.getNumFound() > 0) {
 		        doc = res.get(0);
-				float score = doc.getScore();
-				float somma = 0;
-				float distanza = 0;
-				int j;
-				for (j = 0; j < res.size(); j++) {
-					float localScore = res.get(j).getScore();
-					somma = somma + localScore;
-					distanza = distanza + (score - localScore);
-				}
-				punteggioTotale = distanza/somma;
+			float score = doc.getScore();
+			float somma = 0;
+			float distanza = 0;
+			int j;
+			for (j = 0; j < res.size(); j++) {
+				float localScore = res.get(j).getScore();
+				somma = somma + localScore;
+				distanza = distanza + (score - localScore);
+			}
+			punteggioTotale = distanza/somma;
 
-				newLine[i++] = toString(doc.getStreetType());
+			newLine[i++] = toString(doc.getStreetType());
 		        newLine[i++] = toString(doc.getStreetName());
 		        newLine[i++] = toString(doc.getMunicipality());
 		        newLine[i++] = toString(doc.getCountrySubdivision());
@@ -89,8 +90,7 @@ public class NormalizzatorePunteggioTest
 		        newLine[i++] = toString(doc.getNumberExtension());
 		        newLine[i++] = toString(doc.getNumberColor());
 		        newLine[i++] = toString(score);
-				newLine[i++] = toString(punteggioTotale);
-
+			newLine[i++] = toString(punteggioTotale);
 	        } else {
 		        newLine[i++] = "";
 		        newLine[i++] = "";
@@ -102,7 +102,6 @@ public class NormalizzatorePunteggioTest
 		        newLine[i++] = "";
 		        newLine[i++] = "";
 	        }
-
 	        
 //			System.out.println(Arrays.toString(newLine));
 	        writer.writeNext(newLine);

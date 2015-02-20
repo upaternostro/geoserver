@@ -1,4 +1,5 @@
-/* Copyright (c) 2001 - 2013 OpenPlans - www.openplans.org. All rights reserved.
+/* (c) 2014 Open Source Geospatial Foundation - all rights reserved
+ * (c) 2001 - 2013 OpenPlans
  * This code is licensed under the GPL 2.0 license, available at the root
  * application directory.
  */
@@ -25,7 +26,6 @@ import net.opengis.wfs20.StoredQueryType;
 import org.geoserver.catalog.AttributeTypeInfo;
 import org.geoserver.catalog.Catalog;
 import org.geoserver.catalog.FeatureTypeInfo;
-import org.geoserver.catalog.NamespaceInfo;
 import org.geoserver.catalog.ResourcePool;
 import org.geoserver.feature.TypeNameExtractingVisitor;
 import org.geoserver.ows.Dispatcher;
@@ -193,13 +193,7 @@ public class GetFeature {
      * @return NamespaceSupport from Catalog
      */
     public NamespaceSupport getNamespaceSupport() {
-        NamespaceSupport ns = new NamespaceSupport();
-        Iterator<NamespaceInfo> it = getCatalog().getNamespaces().iterator();
-        while (it.hasNext()) {
-            NamespaceInfo ni = it.next();
-            ns.declarePrefix(ni.getPrefix(), ni.getURI());
-        }
-        return ns;
+        return new CatalogNamespaceSupport(catalog);
     }
 
     /**
@@ -293,9 +287,10 @@ public class GetFeature {
         // grab the view params is any
         List<Map<String, String>> viewParams = null;
         if(request.getViewParams() != null && request.getViewParams().size() > 0) {
-            viewParams = (List<Map<String, String>>) request.getViewParams();
+            viewParams = request.getViewParams();
         }
 
+        boolean isNumberMatchedSkipped = false;
         int count = 0; // should probably be long
         int totalCount = 0;
 
@@ -322,7 +317,7 @@ public class GetFeature {
                 if (!query.getAliases().isEmpty()) {
                     if (query.getAliases().size() != query.getTypeNames().size()) {
                         throw new WFSException(request, String.format("Query specifies %d type names and %d " +
-                            "aliases, must be equal", query.getTypeNames().size(), query.getAliases().size())); 
+                            "aliases, must be equal", query.getTypeNames().size(), query.getAliases().size()));
                     }
                 }
 
@@ -398,6 +393,9 @@ public class GetFeature {
 
                 //set up joins (if specified)
                 List<Join> joins = null;
+                String primaryAlias = null;
+                QName primaryTypeName = query.getTypeNames().get(0);
+                    FeatureTypeInfo primaryMeta = metas.get(0);
                 
                 //make sure filters are sane
                 //
@@ -419,11 +417,15 @@ public class GetFeature {
                                 throw new WFSException(request, 
                                         "Unable to preform join with specified filter: " + filter);
                             }
-                            //join, need to separate the joining filter from other filters
+                                // join, need to separate the joining filter from other filters
                             JoinExtractingVisitor extractor = 
                                     new JoinExtractingVisitor(metas, query.getAliases());
                             filter.accept(extractor, null);
 
+                            primaryAlias = extractor.getPrimaryAlias();
+                            primaryMeta = extractor.getPrimaryFeatureType();
+                            primaryTypeName = new QName(primaryMeta.getNamespace().getURI(),
+                                    primaryMeta.getNativeName());
                             joins = extractor.getJoins();
                             if (joins.size() != metas.size()-1) {
                                 throw new WFSException(request, String.format("Query specified %d types but %d " +
@@ -452,13 +454,20 @@ public class GetFeature {
                     }
                 }
                 
+                // validate sortby if present
+                List<SortBy> sortBy = query.getSortBy();
+                if (sortBy != null && !sortBy.isEmpty()
+                        && meta.getFeatureType() instanceof SimpleFeatureType) {
+                    validateSortBy(sortBy, meta, request);
+                }
+
                 // load primary feature source
                 Hints hints = null;
                 if (joins != null) {
                     hints = new Hints(ResourcePool.JOINS, joins);
                 }
                 FeatureSource<? extends FeatureType, ? extends Feature> source = 
-                    metas.get(0).getFeatureSource(null, hints);
+                    primaryMeta.getFeatureSource(null, hints);
 
                 // handle local maximum
                 int queryMaxFeatures = maxFeatures - count;
@@ -467,8 +476,9 @@ public class GetFeature {
                     queryMaxFeatures = metaMaxFeatures;
                 }
                 Map<String, String> viewParam = viewParams != null ? viewParams.get(i) : null;
-                org.geotools.data.Query gtQuery = toDataQuery(query, filter, offset, queryMaxFeatures, 
-                    source, request, allPropNames.get(0), viewParam, joins);
+                org.geotools.data.Query gtQuery = toDataQuery(query, filter, offset,
+                        queryMaxFeatures, source, request, allPropNames.get(0), viewParam,
+                            joins, primaryTypeName, primaryAlias);
 
                 LOGGER.fine("Query is " + query + "\n To gt2: " + gtQuery);
 
@@ -488,9 +498,13 @@ public class GetFeature {
                 boolean calculateSize = true;
 
                 // optimization: WFS 1.0 does not require count unless we have multiple query elements
-                // and we are asked to perform a global limit on the results returned
-                calculateSize = !(("1.0".equals(request.getVersion()) || "1.0.0".equals(request.getVersion())) && 
-                    (queries.size() == 1 || maxFeatures == Integer.MAX_VALUE));
+                // and we are asked to perform a global limit on the results returned. Also,
+                // we don't want to count the size if there is just one element and number match
+                // skipped is true
+                isNumberMatchedSkipped = meta.getSkipNumberMatched();
+                calculateSize = !(("1.0".equals(request.getVersion()) || "1.0.0".equals(request
+                            .getVersion())) && (queries.size() == 1 || maxFeatures == Integer.MAX_VALUE))
+                            && !(queries.size() == 1 && isNumberMatchedSkipped);
                 
                 if (!calculateSize) {
                     //if offset was specified and we have more queries left in this request then we 
@@ -516,8 +530,9 @@ public class GetFeature {
                     else {
                         //no features might have been because of the offset that was specified, check 
                         // the size of the same query but with no offset
-                        org.geotools.data.Query q2 = toDataQuery(query, filter, 0, queryMaxFeatures, 
-                            source, request, allPropNames.get(0), viewParam, joins);
+                            org.geotools.data.Query q2 = toDataQuery(query, filter, 0,
+                                    queryMaxFeatures, source, request, allPropNames.get(0),
+                                    viewParam, joins, primaryTypeName, primaryAlias);
                         
                         //int size2 = getFeatures(request, source, q2).size();
                         int size2 = source.getCount(q2);
@@ -531,12 +546,15 @@ public class GetFeature {
                 // collect queries required to return numberMatched/totalSize
                 // check maxFeatures and offset, if they are unset we can use the size we 
                 // calculated above
-                if (calculateSize && queryMaxFeatures == Integer.MAX_VALUE && offset == 0) {
-                    totalCountExecutors.add(new CountExecutor(size));
-                } else {
-                    org.geotools.data.Query qTotal = toDataQuery(query, filter, 0, Integer.MAX_VALUE, 
-                            source, request, allPropNames.get(0), viewParam, joins);
-                    totalCountExecutors.add(new CountExecutor(source, qTotal));
+                if (!isNumberMatchedSkipped) {
+                    if (calculateSize && queryMaxFeatures == Integer.MAX_VALUE && offset == 0) {
+                        totalCountExecutors.add(new CountExecutor(size));
+                    } else {
+                        org.geotools.data.Query qTotal = toDataQuery(query, filter, 0,
+                                Integer.MAX_VALUE, source, request, allPropNames.get(0), viewParam,
+                                joins, primaryTypeName, primaryAlias);
+                        totalCountExecutors.add(new CountExecutor(source, qTotal));
+                    }
                 }
 
                 // we may need to shave off geometries we did load only to make bounds
@@ -557,8 +575,8 @@ public class GetFeature {
 
                 //JD: TODO reoptimize
                 //                if ( i == request.getQuery().size() - 1 ) { 
-                //                	//DJB: dont calculate feature count if you dont have to. The MaxFeatureReader will take care of the last iteration
-                //                	maxFeatures -= features.getCount();
+                //                  //DJB: dont calculate feature count if you dont have to. The MaxFeatureReader will take care of the last iteration
+                //                  maxFeatures -= features.getCount();
                 //                }
 
                 //GR: I don't know if the featuresults should be added here for later
@@ -591,19 +609,24 @@ public class GetFeature {
             if (!request.getVersion().startsWith("2")) {
                 totalCount = -1;
             } else {
-                // optimization: if count < max features then total count == count
-                if(count < maxFeatures) {
-                    totalCount = count;
+                if (isNumberMatchedSkipped) {
+                    totalCount = -1;
+                    totalOffset = 0;
                 } else {
-                    // ok, in this case we're forced to run the queries to discover the actual total count
-                    for (CountExecutor q : totalCountExecutors) {
-                        int result = q.getCount();
-                        // if the count is unknown for one, we don't know the total, period 
-                        if(result == -1) {
-                            totalCount = -1;
-                            break;
-                        } else {
-                            totalCount += result;
+                    // optimization: if count < max features then total count == count
+                    if(count < maxFeatures) {
+                        totalCount = count;
+                    } else {
+                        // ok, in this case we're forced to run the queries to discover the actual total count
+                        for (CountExecutor q : totalCountExecutors) {
+                            int result = q.getCount();
+                            // if the count is unknown for one, we don't know the total, period
+                            if(result == -1) {
+                                totalCount = -1;
+                                break;
+                            } else {
+                                totalCount += result;
+                            }
                         }
                     }
                 }
@@ -898,9 +921,10 @@ public class GetFeature {
      * @return A Query for use with the FeatureSource interface
      *
      */
-    public org.geotools.data.Query toDataQuery(Query query, Filter filter, int offset, int maxFeatures,
-        FeatureSource<? extends FeatureType, ? extends Feature> source, GetFeatureRequest request, 
-        List<PropertyName> props, Map<String, String> viewParams, List<Join> joins) throws WFSException {
+    public org.geotools.data.Query toDataQuery(Query query, Filter filter, int offset,
+            int maxFeatures, FeatureSource<? extends FeatureType, ? extends Feature> source,
+            GetFeatureRequest request, List<PropertyName> props, Map<String, String> viewParams,
+            List<Join> joins, QName primaryTypeName, String primaryAlias) throws WFSException {
         
         String wfsVersion = request.getVersion();
         
@@ -929,11 +953,11 @@ public class GetFeature {
             transformedFilter = WFSReprojectionUtil.normalizeFilterCRS(filter, source.getSchema(), declaredCRS);
 
         //only handle non-joins for now
-        QName typeName = query.getTypeNames().get(0);
+        QName typeName = primaryTypeName;
         org.geotools.data.Query dataQuery = new org.geotools.data.Query(typeName.getLocalPart(), 
             transformedFilter, maxFeatures, props, query.getHandle());
-        if (!query.getAliases().isEmpty()) {
-            dataQuery.setAlias(query.getAliases().get(0)); 
+        if (primaryAlias != null) {
+            dataQuery.setAlias(primaryAlias);
         }
 
         //handle reprojection
@@ -957,7 +981,7 @@ public class GetFeature {
         //handle sorting
         List<SortBy> sortBy = query.getSortBy();
         if (sortBy != null) {
-            dataQuery.setSortBy((SortBy[]) sortBy.toArray(new SortBy[sortBy.size()]));
+            dataQuery.setSortBy(sortBy.toArray(new SortBy[sortBy.size()]));
         }
 
         //handle version, datastore may be able to use it
@@ -989,7 +1013,7 @@ public class GetFeature {
         hints.put(Hints.RESOLVE, request.getResolve());
         BigInteger resolveTimeOut = request.getResolveTimeOut();
         if (resolveTimeOut != null) {
-        	hints.put(Hints.RESOLVE_TIMEOUT, resolveTimeOut.intValue());
+            hints.put(Hints.RESOLVE_TIMEOUT, resolveTimeOut.intValue());
         }
                 
         //handle xlink properties
@@ -1121,7 +1145,20 @@ O:      for (String propName : query.getPropertyNames()) {
         return propNames;
     }
 
-    void validateFilter(Filter filter, Query query, FeatureTypeInfo meta, final GetFeatureRequest request) 
+    void validateSortBy(List<SortBy> sortBys, FeatureTypeInfo meta, final GetFeatureRequest request)
+            throws IOException {
+        FeatureType featureType = meta.getFeatureType();
+        for (SortBy sortBy : sortBys) {
+            PropertyName name = sortBy.getPropertyName();
+            if (name.evaluate(featureType) == null) {
+                throw new WFSException(request, "Illegal property name: " + name.getPropertyName()
+                        + " for feature type " + meta.prefixedName(), "InvalidParameterValue");
+            }
+        }
+    }
+
+    void validateFilter(Filter filter, Query query, final FeatureTypeInfo meta,
+            final GetFeatureRequest request)
         throws IOException {
       //1. ensure any property name refers to a property that 
         // actually exists
@@ -1131,7 +1168,8 @@ O:      for (String propName : query.getPropertyNames()) {
                     // case of multiple geometries being returned
                     if (name.evaluate(featureType) == null) {
                         throw new WFSException(request, "Illegal property name: "
-                            + name.getPropertyName(), "InvalidParameterValue");
+                            + name.getPropertyName() + " for feature type " + meta.prefixedName(),
+                            "InvalidParameterValue");
                     }
 
                     return name;
@@ -1141,7 +1179,7 @@ O:      for (String propName : query.getPropertyNames()) {
         filter.accept(new AbstractFilterVisitor(visitor), null);
         
         //2. ensure any spatial predicate is made against a property 
-        // that is actually special
+        // that is actually spatial
         AbstractFilterVisitor fvisitor = new AbstractFilterVisitor() {
           
             protected Object visit( BinarySpatialOperator filter, Object data ) {
@@ -1154,11 +1192,13 @@ O:      for (String propName : query.getPropertyNames()) {
                 }
                 
                 if ( name != null ) {
-                    //check against fetaure type to make sure its
+                    // check against feataure type to make sure its
                     // a geometric type
                     AttributeDescriptor att = (AttributeDescriptor) name.evaluate(featureType);
                     if ( !( att instanceof GeometryDescriptor ) ) {
-                        throw new WFSException(request, "Property " + name + " is not geometric", "InvalidParameterValue");
+                        throw new WFSException(request, "Property " + name
+                                + " is not geometric in feature type " + meta.prefixedName(),
+                                "InvalidParameterValue");
                     }
                 }
                 
@@ -1188,6 +1228,7 @@ O:      for (String propName : query.getPropertyNames()) {
                             CoordinateReferenceSystem crs = null;
                             try {
                                 crs = CRS.decode( filter.getSRS() );
+                                e.setCoordinateReferenceSystem(crs);
                                 e = CRS.transform(e, geo);
                             } 
                             catch( Exception ex ) {

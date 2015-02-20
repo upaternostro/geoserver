@@ -1,4 +1,5 @@
-/* Copyright (c) 2001 - 2013 OpenPlans - www.openplans.org. All rights reserved.
+/* (c) 2014 Open Source Geospatial Foundation - all rights reserved
+ * (c) 2001 - 2013 OpenPlans
  * This code is licensed under the GPL 2.0 license, available at the root
  * application directory.
  */
@@ -73,6 +74,9 @@ public class JDBCGeoServerFacade implements GeoServerFacade {
     private void reinitializeLogging() {
         try {
             LoggingInfo realLogInfo = this.getLogging();
+            if (realLogInfo == null) {
+                return;
+            }
             LoggingInfo startLogInfo = LoggingStartupContextListener.getLogging(resourceLoader);
             
             // Doing this reflectively so that if LoggingInfo gets new properties, this should still

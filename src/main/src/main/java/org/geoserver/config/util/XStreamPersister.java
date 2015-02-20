@@ -1,4 +1,5 @@
-/* Copyright (c) 2001 - 2013 OpenPlans - www.openplans.org. All rights reserved.
+/* (c) 2014 Open Source Geospatial Foundation - all rights reserved
+ * (c) 2001 - 2013 OpenPlans
  * This code is licensed under the GPL 2.0 license, available at the root
  * application directory.
  */
@@ -31,6 +32,9 @@ import org.geoserver.catalog.Catalog;
 import org.geoserver.catalog.CoverageDimensionInfo;
 import org.geoserver.catalog.CoverageInfo;
 import org.geoserver.catalog.CoverageStoreInfo;
+import org.geoserver.catalog.CoverageView;
+import org.geoserver.catalog.CoverageView.CoverageBand;
+import org.geoserver.catalog.CoverageView.InputCoverageBand;
 import org.geoserver.catalog.DataStoreInfo;
 import org.geoserver.catalog.FeatureTypeInfo;
 import org.geoserver.catalog.Keyword;
@@ -46,9 +50,6 @@ import org.geoserver.catalog.PublishedInfo;
 import org.geoserver.catalog.ResourceInfo;
 import org.geoserver.catalog.StoreInfo;
 import org.geoserver.catalog.StyleInfo;
-import org.geoserver.catalog.CoverageView;
-import org.geoserver.catalog.CoverageView.InputCoverageBand;
-import org.geoserver.catalog.CoverageView.CoverageBand;
 import org.geoserver.catalog.WMSLayerInfo;
 import org.geoserver.catalog.WMSStoreInfo;
 import org.geoserver.catalog.WorkspaceInfo;
@@ -104,12 +105,14 @@ import org.geotools.jdbc.RegexpValidator;
 import org.geotools.jdbc.VirtualTable;
 import org.geotools.jdbc.VirtualTableParameter;
 import org.geotools.jdbc.VirtualTableParameter.Validator;
+import org.geotools.measure.Measure;
 import org.geotools.referencing.CRS;
 import org.geotools.referencing.crs.DefaultGeographicCRS;
 import org.geotools.referencing.crs.DefaultProjectedCRS;
 import org.geotools.referencing.operation.transform.AffineTransform2D;
 import org.geotools.referencing.wkt.Formattable;
 import org.geotools.util.Converters;
+import org.geotools.util.MeasureConverterFactory;
 import org.geotools.util.NumberRange;
 import org.geotools.util.logging.Logging;
 import org.opengis.coverage.grid.GridGeometry;
@@ -117,6 +120,8 @@ import org.opengis.referencing.FactoryException;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
 import org.opengis.referencing.operation.MathTransform;
 
+import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.Multimap;
 import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.converters.ConversionException;
 import com.thoughtworks.xstream.converters.Converter;
@@ -124,6 +129,7 @@ import com.thoughtworks.xstream.converters.MarshallingContext;
 import com.thoughtworks.xstream.converters.SingleValueConverterWrapper;
 import com.thoughtworks.xstream.converters.UnmarshallingContext;
 import com.thoughtworks.xstream.converters.basic.AbstractSingleValueConverter;
+import com.thoughtworks.xstream.converters.collections.AbstractCollectionConverter;
 import com.thoughtworks.xstream.converters.collections.CollectionConverter;
 import com.thoughtworks.xstream.converters.collections.MapConverter;
 import com.thoughtworks.xstream.converters.reflection.FieldDictionary;
@@ -138,6 +144,7 @@ import com.thoughtworks.xstream.io.HierarchicalStreamWriter;
 import com.thoughtworks.xstream.mapper.ClassAliasingMapper;
 import com.thoughtworks.xstream.mapper.Mapper;
 import com.vividsolutions.jts.geom.Geometry;
+import org.geoserver.catalog.DataLinkInfo;
 
 /**
  * Utility class which loads and saves catalog and configuration objects to and
@@ -312,6 +319,7 @@ public class XStreamPersister {
         xs.alias( "coverageBand", CoverageBand.class);
         xs.alias( "inputCoverageBand", InputCoverageBand.class);
         xs.alias( "metadataLink", MetadataLinkInfo.class);
+        xs.alias( "dataLink", DataLinkInfo.class);
         xs.alias( "attribute", AttributeTypeInfo.class );
         xs.alias( "layer", LayerInfo.class);
         xs.alias( "layerGroup", LayerGroupInfo.class);
@@ -439,7 +447,9 @@ public class XStreamPersister {
         xs.registerConverter(new VirtualTableConverter());
         xs.registerConverter(new KeywordInfoConverter());
         xs.registerConverter(new SettingsInfoConverter());
-
+        xs.registerConverter(new MeasureConverter());
+        xs.registerConverter(new MultimapConverter(xs.getMapper()));
+        
         // register Virtual structure handling
         registerBreifMapComplexType("virtualTable", VirtualTable.class);
         registerBreifMapComplexType("coverageView", CoverageView.class);
@@ -638,6 +648,7 @@ public class XStreamPersister {
         
         //collections
         xs.addDefaultImplementation(ArrayList.class, List.class);
+        xs.addDefaultImplementation(ArrayListMultimap.class, Multimap.class);
     }
     
     protected Class impl(Class interfce) {
@@ -923,6 +934,60 @@ public class XStreamPersister {
         }
     }
     
+    /**
+     * Converter for Google {@link Multimap} objects
+     */
+    public static class MultimapConverter extends AbstractCollectionConverter {
+
+        public MultimapConverter(Mapper mapper) {
+            super(mapper);
+
+        }
+
+        public boolean canConvert(Class clazz) {
+            return Multimap.class.isAssignableFrom(clazz);
+        }
+
+        public void marshal(Object value, HierarchicalStreamWriter writer,
+                MarshallingContext context) {
+            Multimap map = (Multimap) value;
+            // similar to BreifMapConverter, but handling the multimap nature of this thing
+            for (Object key : map.keySet()) {
+                for (Object v : map.get(key)) {
+                    if (v != null) {
+                        writer.startNode("entry");
+                        writer.addAttribute("key", key.toString());
+                        writeItem(v, context, writer);
+                        writer.endNode();
+                    }
+                }
+            }
+        }
+
+        public Object unmarshal(HierarchicalStreamReader reader, UnmarshallingContext context) {
+            ArrayListMultimap<Object, Object> map = ArrayListMultimap.create();
+            while (reader.hasMoreChildren()) {
+                reader.moveDown();
+                String key = reader.getAttribute("key");
+                Object value = null;
+                // in this case we also support complex objects
+                while (reader.hasMoreChildren()) {
+                    reader.moveDown();
+                    value = readItem(reader, context, map);
+                    reader.moveUp();
+                }
+                reader.moveUp();
+
+                if (value != null) {
+                    map.put(key, value);
+                }
+            }
+
+            return map;
+        }
+
+    }
+
     /**
      * Converters which encodes an object by a reference, or its id.
      */
@@ -2060,6 +2125,37 @@ public class XStreamPersister {
             return sb.toString();
         }
     }
+    
+    static class MeasureConverter extends AbstractSingleValueConverter {
+
+    	org.geotools.util.Converter str2Measure = new MeasureConverterFactory().createConverter(String.class, Measure.class, null);
+    	org.geotools.util.Converter measure2Str = new MeasureConverterFactory().createConverter(Measure.class, String.class, null);
+
+    	
+        @Override
+        public boolean canConvert(Class type) {
+            return Measure.class.isAssignableFrom(type);
+        }
+
+        @Override
+        public Object fromString(String str) {
+        	try {
+				return str2Measure.convert(str, Measure.class);
+			} catch (Exception e) {
+				throw new IllegalArgumentException(e);
+			}
+        }
+
+        @Override
+        public String toString(Object obj) {
+        	try {
+				return measure2Str.convert(obj, String.class);
+			} catch (Exception e) {
+				throw new IllegalArgumentException(e);
+			}
+        }
+    }
+
 
     class KeywordListConverter extends LaxCollectionConverter {
 

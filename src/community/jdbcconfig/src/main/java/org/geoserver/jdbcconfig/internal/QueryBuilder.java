@@ -1,4 +1,5 @@
-/* Copyright (c) 2001 - 2013 OpenPlans - www.openplans.org. All rights reserved.
+/* (c) 2014 Open Source Geospatial Foundation - all rights reserved
+ * (c) 2001 - 2013 OpenPlans
  * This code is licensed under the GPL 2.0 license, available at the root
  * application directory.
  */
@@ -34,7 +35,8 @@ class QueryBuilder<T extends Info> {
 
     private final boolean isCountQuery;
 
-    private Dialect dialect = new Dialect();
+    // yuck
+    private final Dialect dialect;
 
     private Class<T> queryType;
 
@@ -56,21 +58,22 @@ class QueryBuilder<T extends Info> {
      * 
      * 
      */
-    private QueryBuilder(final Class<T> clazz, DbMappings dbMappings, final boolean isCountQuery) {
+    private QueryBuilder(Dialect dialect, final Class<T> clazz, DbMappings dbMappings, final boolean isCountQuery) {
+        this.dialect = dialect;
         this.queryType = clazz;
         this.dbMappings = dbMappings;
         this.isCountQuery = isCountQuery;
         this.originalFilter = this.supportedFilter = this.unsupportedFilter = Filter.INCLUDE;
     }
 
-    public static <T extends Info> QueryBuilder<T> forCount(final Class<T> clazz,
+    public static <T extends Info> QueryBuilder<T> forCount(Dialect dialect, final Class<T> clazz,
             DbMappings dbMappings) {
-        return new QueryBuilder<T>(clazz, dbMappings, true);
+        return new QueryBuilder<T>(dialect, clazz, dbMappings, true);
     }
 
-    public static <T extends Info> QueryBuilder<T> forIds(final Class<T> clazz,
+    public static <T extends Info> QueryBuilder<T> forIds(Dialect dialect, final Class<T> clazz,
             DbMappings dbMappings) {
-        return new QueryBuilder<T>(clazz, dbMappings, false);
+        return new QueryBuilder<T>(dialect, clazz, dbMappings, false);
     }
 
     public Filter getUnsupportedFilter() {
@@ -146,7 +149,7 @@ class QueryBuilder<T extends Info> {
             query.append("type_id in (:types) /* ").
             append(queryType.getCanonicalName()).append(" */\n      AND ");
         }
-        query.append(whereClause).append(") AS object");
+        query.append(whereClause).append(") object");
         
         for(SortBy order: orders) {
             final String sortProperty = order.getPropertyName().getPropertyName();
@@ -162,9 +165,9 @@ class QueryBuilder<T extends Info> {
             namedParameters.put(propertyParamName, sortPropertyTypeIds);
 
             query.append("\n  LEFT JOIN");
-            query.append("\n    (SELECT oid, value AS ").append(attributeName).
+            query.append("\n    (SELECT oid, value ").append(attributeName).
             append(" FROM \n      object_property WHERE property_type IN (:").
-            append(propertyParamName).append(")) AS ").append(subSelectName);
+            append(propertyParamName).append(")) ").append(subSelectName);
 
             query.append("  /* ").append(order.getPropertyName().getPropertyName())
                 .append(" ").append(ascDesc(order)).append(" */");

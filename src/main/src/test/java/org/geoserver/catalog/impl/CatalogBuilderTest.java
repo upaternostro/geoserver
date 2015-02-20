@@ -1,4 +1,5 @@
-/* Copyright (c) 2001 - 2013 OpenPlans - www.openplans.org. All rights reserved.
+/* (c) 2014 Open Source Geospatial Foundation - all rights reserved
+ * (c) 2001 - 2013 OpenPlans
  * This code is licensed under the GPL 2.0 license, available at the root
  * application directory.
  */
@@ -28,6 +29,7 @@ import org.geoserver.catalog.Keyword;
 import org.geoserver.catalog.LayerGroupInfo;
 import org.geoserver.catalog.LayerInfo;
 import org.geoserver.catalog.TestHttpClientProvider;
+import org.geoserver.catalog.PublishedType;
 import org.geoserver.catalog.WMSLayerInfo;
 import org.geoserver.catalog.WMSStoreInfo;
 import org.geoserver.data.test.MockData;
@@ -241,7 +243,7 @@ public class CatalogBuilderTest extends GeoServerMockTestSupport {
         layer.setResource(fti);
         layer.setName(fti.getName());
         layer.setEnabled(true);
-        layer.setType(LayerInfo.Type.VECTOR);
+        layer.setType(PublishedType.VECTOR);
         
         LayerGroupInfo group = cat.getFactory().createLayerGroup();
         group.setName("group");
@@ -269,7 +271,7 @@ public class CatalogBuilderTest extends GeoServerMockTestSupport {
         layer.setResource(fti);
         layer.setName(fti.getName());
         layer.setEnabled(true);
-        layer.setType(LayerInfo.Type.VECTOR);
+        layer.setType(PublishedType.VECTOR);
         
         LayerGroupInfo group = cat.getFactory().createLayerGroup();
         group.setName("group_EO");
@@ -301,15 +303,14 @@ public class CatalogBuilderTest extends GeoServerMockTestSupport {
         CatalogBuilder cb = new CatalogBuilder(cat);
         WMSStoreInfo wms = cb.buildWMSStore("demo");
         wms.setCapabilitiesURL(RemoteOWSTestSupport.WMS_SERVER_URL
-                + "service=WMS&request=GetCapabilities");
-        cat.save(wms);
+                + "service=WMS&request=GetCapabilities&version=1.1.0");
 
         cb.setStore(wms);
         WMSLayerInfo wmsLayer = cb.buildWMSLayer("topp:states");
         assertWMSLayer(wmsLayer);
         
         LayerInfo layer = cb.buildLayer(wmsLayer);
-        assertEquals(LayerInfo.Type.WMS, layer.getType());
+        assertEquals(PublishedType.WMS, layer.getType());
 
         wmsLayer = cat.getFactory().createWMSLayer();
         wmsLayer.setName("states");
@@ -323,7 +324,7 @@ public class CatalogBuilderTest extends GeoServerMockTestSupport {
         assertEquals("topp:states", wmsLayer.getNativeName());
         assertEquals("EPSG:4326", wmsLayer.getSRS());
         assertEquals("USA Population", wmsLayer.getTitle());
-        assertEquals("This is some census data on the states.", wmsLayer.getAbstract());
+        assertEquals("2000 census data for United States.", wmsLayer.getAbstract());
         
         assertEquals(CRS.decode("EPSG:4326"), wmsLayer.getNativeCRS());
         assertNotNull(wmsLayer.getNativeBoundingBox());

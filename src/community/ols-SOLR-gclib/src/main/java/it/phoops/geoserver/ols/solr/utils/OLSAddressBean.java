@@ -5,187 +5,214 @@ import org.apache.solr.client.solrj.beans.Field;
 /**
  * Created by davide.cesaroni on 03/12/14.
  */
-public class OLSAddressBean {
+public class OLSAddressBean
+{
+    @Field
+    private String id;
 
-	@Field
-	private String id;
-	@Field("street_type")
-	private String streetType;
-	@Field("street_name")
-	private String streetName;
-	@Field("municipality")
-	private String municipality;
-	@Field("municipality_code")
-	private String municipalityCode;
-	@Field("municipality_code2")
-	private String municipalityCode2;
-	@Field("country_subdivision")
-	private String countrySubdivision;
-	@Field("building_number")
-	private String buildingNumber;
-	@Field
-	private String number;
-	@Field("number_extension")
-	private String numberExtension;
-	@Field("number_color")
-	private String numberColor;
-	@Field
-	private String centerline;
-	@Field
-	private String centroid;
-	@Field("bounding_box")
-	private String boundingBox;
-	@Field("is_building")
-	private boolean isBuilding;
-	@Field("is_managed")
-	private boolean isManaged;
-	@Field("_version_")
-	private Long version;
-	@Field("score")
-	private Float score;
+    @Field
+    private String name;
 
+    @Field("street_type")
+    private String streetType;
 
-	public Float getScore() {
-		return score;
-	}
+    @Field("street_name")
+    private String streetName;
 
-	public void setScore(Float score) {
-		this.score = score;
-	}
+    @Field("municipality")
+    private String municipality;
 
-	public String getId() {
-		return id;
-	}
+    @Field("municipality_code")
+    private String municipalityCode;
 
-	public void setId(String id) {
-		this.id = id;
-	}
+    @Field("municipality_code2")
+    private String municipalityCode2;
 
-	public String getStreetType() {
-		return streetType;
-	}
+    @Field("country_subdivision")
+    private String countrySubdivision;
 
-	public void setStreetType(String streetType) {
-		this.streetType = streetType;
-	}
+    @Field("building_number")
+    private String buildingNumber;
 
-	public String getStreetName() {
-		return streetName;
-	}
+    @Field
+    private String number;
 
-	public void setStreetName(String streetName) {
-		this.streetName = streetName;
-	}
+    @Field("number_extension")
+    private String numberExtension;
 
-	public String getMunicipality() {
-		return municipality;
-	}
+    @Field("number_color")
+    private String numberColor;
 
-	public void setMunicipality(String municipality) {
-		this.municipality = municipality;
-	}
+    @Field
+    private String centerline;
 
-	public String getMunicipalityCode() {
-		return municipalityCode;
-	}
+    @Field
+    private String centroid;
 
-	public void setMunicipalityCode(String municipalityCode) {
-		this.municipalityCode = municipalityCode;
-	}
+    @Field("bounding_box")
+    private String boundingBox;
 
-	public String getMunicipalityCode2() {
-		return municipalityCode2;
-	}
+    @Field("is_building")
+    private boolean isBuilding;
 
-	public void setMunicipalityCode2(String municipalityCode2) {
-		this.municipalityCode2 = municipalityCode2;
-	}
+    @Field("is_managed")
+    private boolean isManaged;
 
-	public String getCountrySubdivision() {
-		return countrySubdivision;
-	}
+    @Field("_version_")
+    private Long version;
 
-	public void setCountrySubdivision(String countrySubdivision) {
-		this.countrySubdivision = countrySubdivision;
-	}
+    @Field("score")
+    private Float score;
 
-	public String getBuildingNumber() {
-		return buildingNumber;
-	}
+    public String getName() {
+        return name;
+    }
 
-	public void setBuildingNumber(String buildingNumber) {
-		this.buildingNumber = buildingNumber;
-	}
+    public void setName(String name) {
+        this.name = name;
+    }
 
-	public String getNumber() {
-		return number;
-	}
+    public Float getScore() {
+        return score;
+    }
 
-	public void setNumber(String number) {
-		this.number = number;
-	}
+    public void setScore(Float score) {
+        this.score = score;
+    }
 
-	public String getNumberExtension() {
-		return numberExtension;
-	}
+    public String getId() {
+        return id;
+    }
 
-	public void setNumberExtension(String numberExtension) {
-		this.numberExtension = numberExtension;
-	}
+    public void setId(String id) {
+        this.id = id;
+    }
 
-	public String getNumberColor() {
-		return numberColor;
-	}
+    public String getStreetType() {
+        return streetType;
+    }
 
-	public void setNumberColor(String numberColor) {
-		this.numberColor = numberColor;
-	}
+    public void setStreetType(String streetType) {
+        this.streetType = streetType;
+    }
 
-	public String getCenterline() {
-		return centerline;
-	}
+    public String getStreetName() {
+        return streetName;
+    }
 
-	public void setCenterline(String centerline) {
-		this.centerline = centerline;
-	}
+    public void setStreetName(String streetName) {
+        this.streetName = streetName;
+    }
 
-	public String getCentroid() {
-		return centroid;
-	}
+    public String getMunicipality() {
+        return municipality;
+    }
 
-	public void setCentroid(String centroid) {
-		this.centroid = centroid;
-	}
+    public void setMunicipality(String municipality) {
+        this.municipality = municipality;
+    }
 
-	public String getBoundingBox() {
-		return boundingBox;
-	}
+    public String getMunicipalityCode() {
+        return municipalityCode;
+    }
 
-	public void setBoundingBox(String boundingBox) {
-		this.boundingBox = boundingBox;
-	}
+    public void setMunicipalityCode(String municipalityCode) {
+        this.municipalityCode = municipalityCode;
+    }
 
-	public boolean isBuilding() {
-		return isBuilding;
-	}
+    public String getMunicipalityCode2() {
+        return municipalityCode2;
+    }
 
-	public void setBuilding(boolean isBuilding) {
-		this.isBuilding = isBuilding;
-	}
+    public void setMunicipalityCode2(String municipalityCode2) {
+        this.municipalityCode2 = municipalityCode2;
+    }
 
-	public boolean isManaged() {
-		return isManaged;
-	}
+    public String getCountrySubdivision() {
+        return countrySubdivision;
+    }
 
-	public void setManaged(boolean isManaged) {
-		this.isManaged = isManaged;
-	}
+    public void setCountrySubdivision(String countrySubdivision) {
+        this.countrySubdivision = countrySubdivision;
+    }
 
-	public Long getVersion() {
-		return version;
-	}
+    public String getBuildingNumber() {
+        return buildingNumber;
+    }
 
-	public void setVersion(Long version) {
-		this.version = version;
-	}
+    public void setBuildingNumber(String buildingNumber) {
+        this.buildingNumber = buildingNumber;
+    }
+
+    public String getNumber() {
+        return number;
+    }
+
+    public void setNumber(String number) {
+        this.number = number;
+    }
+
+    public String getNumberExtension() {
+        return numberExtension;
+    }
+
+    public void setNumberExtension(String numberExtension) {
+        this.numberExtension = numberExtension;
+    }
+
+    public String getNumberColor() {
+        return numberColor;
+    }
+
+    public void setNumberColor(String numberColor) {
+        this.numberColor = numberColor;
+    }
+
+    public String getCenterline() {
+        return centerline;
+    }
+
+    public void setCenterline(String centerline) {
+        this.centerline = centerline;
+    }
+
+    public String getCentroid() {
+        return centroid;
+    }
+
+    public void setCentroid(String centroid) {
+        this.centroid = centroid;
+    }
+
+    public String getBoundingBox() {
+        return boundingBox;
+    }
+
+    public void setBoundingBox(String boundingBox) {
+        this.boundingBox = boundingBox;
+    }
+
+    public boolean isBuilding() {
+        return isBuilding;
+    }
+
+    public void setBuilding(boolean isBuilding) {
+        this.isBuilding = isBuilding;
+    }
+
+    public boolean isManaged() {
+        return isManaged;
+    }
+
+    public void setManaged(boolean isManaged) {
+        this.isManaged = isManaged;
+    }
+
+    public Long getVersion() {
+        return version;
+    }
+
+    public void setVersion(Long version) {
+        this.version = version;
+    }
 }

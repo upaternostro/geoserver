@@ -1,4 +1,5 @@
-/* Copyright (c) 2001 - 2013 OpenPlans - www.openplans.org. All rights reserved.
+/* (c) 2014 Open Source Geospatial Foundation - all rights reserved
+ * (c) 2001 - 2013 OpenPlans
  * This code is licensed under the GPL 2.0 license, available at the root
  * application directory.
  */
@@ -251,8 +252,7 @@ public class DataStoreFileUploadTest extends CatalogRESTTestSupport {
         put( "/rest/workspaces/gs/datastores/store%20with%20spaces/file.shp", bytes, "application/zip");
         
         DataStoreInfo ds = cat.getDataStoreByName("gs", "store with spaces"); 
-        assertNotNull(ds);
-        assertFalse(cat.getFeatureTypesByDataStore(ds).isEmpty());
+        assertNull(ds);
     }
  
     @Test

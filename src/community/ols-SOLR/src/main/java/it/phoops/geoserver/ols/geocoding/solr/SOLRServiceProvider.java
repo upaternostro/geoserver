@@ -10,7 +10,11 @@ import it.phoops.geoserver.ols.OLSService;
 import it.phoops.geoserver.ols.geocoding.GeocodingServiceProvider;
 import it.phoops.geoserver.ols.geocoding.solr.component.SOLRTab;
 import it.phoops.geoserver.ols.geocoding.solr.component.SOLRTabFactory;
-import it.phoops.geoserver.ols.solr.utils.SolrPager;
+import it.phoops.geoserver.ols.solr.utils.OLSAddressBean;
+import it.phoops.geoserver.ols.solr.utils.SolrBeanResultsList;
+import it.phoops.geoserver.ols.solr.utils.SolrGeocodingFacade;
+import it.phoops.geoserver.ols.solr.utils.SolrGeocodingFacadeException;
+import it.phoops.geoserver.ols.solr.utils.SolrGeocodingFacadeFactory;
 import it.phoops.geoserver.ols.util.SRSTransformer;
 
 import java.io.Serializable;
@@ -39,13 +43,6 @@ import net.opengis.www.xls.StreetAddress;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.solr.client.solrj.SolrServer;
-import org.apache.solr.client.solrj.SolrServerException;
-import org.apache.solr.client.solrj.impl.HttpSolrServer;
-import org.apache.solr.client.solrj.util.ClientUtils;
-import org.apache.solr.common.SolrDocument;
-import org.apache.solr.common.SolrDocumentList;
-import org.apache.solr.common.params.ModifiableSolrParams;
 import org.apache.wicket.extensions.markup.html.tabs.ITab;
 import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.ResourceModel;
@@ -62,6 +59,8 @@ import com.vividsolutions.jts.io.WKTReader;
 
 public class SOLRServiceProvider extends OLSAbstractServiceProvider implements GeocodingServiceProvider, Serializable
 {
+    private static final double AMBIGUITY_FACTOR = 2.0;
+
     private final Log logger = LogFactory.getLog(getClass());
 
     /** serialVersionUID */
@@ -171,10 +170,7 @@ public class SOLRServiceProvider extends OLSAbstractServiceProvider implements G
         ObjectFactory                                           of = new ObjectFactory();
         GeocodeResponseType                                     output = of.createGeocodeResponseType();
         JAXBElement<GeocodeResponseType>                        retval = of.createGeocodeResponse(output);
-        String                                                  solrQuery;
-        SolrServer                                              solrServer = new HttpSolrServer(getEndpointAddress());
-        ModifiableSolrParams                                    solrParams = new ModifiableSolrParams();
-        SolrDocumentList                                        solrDocs;
+        SolrBeanResultsList                                     solrDocs;
         List<GeocodeResponseList>                               responseList = output.getGeocodeResponseLists();
         GeocodeResponseList                                     listItem;
         List<Place>                                             places;
@@ -198,6 +194,22 @@ public class SOLRServiceProvider extends OLSAbstractServiceProvider implements G
         AddressType                                             returnAddress;
         GeocodeMatchCode                                        geocodeMatchCode;
         String                                                  declaredSrs;
+        SolrGeocodingFacadeFactory                              factory = new SolrGeocodingFacadeFactory();
+        SolrGeocodingFacade                                     facade;
+        String                                                  freeFormAddress;
+        String                                                  streetName;
+        String                                                  streetType;
+        String                                                  numberSubdivision;
+        Float                                                   maxScore;
+        Float                                                   secondScore;
+        
+        try {
+            facade = factory.getSolrGeocodingFacade();
+        } catch (SolrGeocodingFacadeException e) {
+            throw new OLSException("Cannot instantiate SolrGeocodingFacade", e);
+        }
+        
+        facade.setSolrServerURL(getEndpointAddress());
         
         if (srsName != null) {
             declaredSrs = srsName;
@@ -206,6 +218,11 @@ public class SOLRServiceProvider extends OLSAbstractServiceProvider implements G
         }
         
         for (AddressType address : input.getAddresses()) {
+            freeFormAddress = null;
+            streetName = null;
+            streetType = null;
+            numberSubdivision = null;
+            
             // We manage only requests regarding Italy (moreover, Tuscany...)
             if (!COUNTRY_CODE.equalsIgnoreCase(address.getCountryCode())) {
                 throw new OLSException("Unsupported country code: " + address.getCountryCode());
@@ -215,7 +232,7 @@ public class SOLRServiceProvider extends OLSAbstractServiceProvider implements G
 
             // Pass freeform requests to SOLR
             if (address.getFreeFormAddress() != null && !address.getFreeFormAddress().equals("")) {
-                solrQuery = "name:\"" + ClientUtils.escapeQueryChars(address.getFreeFormAddress()) + "\"";
+                freeFormAddress = address.getFreeFormAddress();
             } else {
                 // check for structured address presence
                 if (streetAddress == null) {
@@ -247,10 +264,10 @@ public class SOLRServiceProvider extends OLSAbstractServiceProvider implements G
                         throw new OLSException("Street name missing in geocoding request");
                     }
                     
-                    solrQuery = "street_name:\"" + ClientUtils.escapeQueryChars(street.getOfficialName()) + "\"";
+                    streetName = street.getOfficialName();
                     
                     if (street.getTypePrefix() != null && !street.getTypePrefix().equals("")) {
-                        solrQuery += " AND street_type:\"" + ClientUtils.escapeQueryChars(street.getTypePrefix()) + "\"";
+                        streetType = street.getTypePrefix();
                     }
                 } else {
                     // Use free form data
@@ -265,7 +282,7 @@ public class SOLRServiceProvider extends OLSAbstractServiceProvider implements G
 //                        }
 //                        solrQuery = "name:\"" + ClientUtils.escapeQueryChars(stgStreet[0]) +"\"" + " AND number: \""+ ClientUtils.escapeQueryChars(stgNumeber.trim()) +"\"";
 //                    }else{
-                        solrQuery = "name:\"" + ClientUtils.escapeQueryChars(street.getValue()) + "\"";
+                        freeFormAddress = street.getValue();
 //                    }
                 }
             }
@@ -281,10 +298,8 @@ public class SOLRServiceProvider extends OLSAbstractServiceProvider implements G
 
                     if (buildingLocator.getSubdivision() != null
                             && !buildingLocator.getSubdivision().equals("")) {
-                        buildingNumber += "/" + buildingLocator.getSubdivision();
+                        numberSubdivision = buildingLocator.getSubdivision();
                     }
-                    
-                    solrQuery += " AND building_number:\"" + ClientUtils.escapeQueryChars(buildingNumber) + "\"";
                 }
             }
 
@@ -308,7 +323,6 @@ public class SOLRServiceProvider extends OLSAbstractServiceProvider implements G
                     }
 
                     municipality = pivot.getValue();
-                    solrQuery += " AND municipality:\"" + ClientUtils.escapeQueryChars(municipality) + "\"";
                     break;
                 case COUNTRY_SECONDARY_SUBDIVISION:
                     if (countrySecondarySubdivision != null
@@ -320,29 +334,48 @@ public class SOLRServiceProvider extends OLSAbstractServiceProvider implements G
                     }
 
                     countrySecondarySubdivision = pivot.getValue();
-                    solrQuery += " AND country_subdivision:\"" + ClientUtils.escapeQueryChars(countrySecondarySubdivision) + "\"";
                     break;
                 default:
                     break;
                 }
             }
             
-            solrParams.set("q", solrQuery);
-
             try {
-                // Call SOLR
-                solrDocs = SolrPager.query(solrServer, solrParams);
-                
+                if (freeFormAddress != null) {
+                    if (buildingNumber != null) {
+                        solrDocs = facade.geocodeAddress(freeFormAddress, buildingNumber, numberSubdivision, municipality, countrySecondarySubdivision);
+                    } else {
+                        solrDocs = facade.geocodeAddress(freeFormAddress, municipality, countrySecondarySubdivision);
+                    }
+                } else {
+                    if (buildingNumber != null) {
+                        solrDocs = facade.geocodeAddress(streetType, streetName, buildingNumber, numberSubdivision, municipality, countrySecondarySubdivision);
+                    } else {
+                        solrDocs = facade.geocodeAddress(streetType, streetName, municipality, countrySecondarySubdivision);
+                    }
+                }
+
                 listItem = of.createGeocodeResponseList();
                 listItem.setNumberOfGeocodedAddresses(BigInteger.valueOf(solrDocs.getNumFound()));
                 geocodedAddresses = listItem.getGeocodedAddresses();
                 
-                for (SolrDocument solrDoc : solrDocs) {
+                maxScore = null;
+                secondScore = null;
+                
+                for (OLSAddressBean solrDoc : solrDocs) {
+                    if (maxScore == null) {
+                        maxScore = solrDoc.getScore();
+                        
+                        if (solrDocs.size() > 1) {
+                            secondScore = solrDocs.get(1).getScore();
+                        }
+                    }
+                    
                     if (wktReader == null) {
                         wktReader = new WKTReader();
                     }
                     
-                    sr = new StringReader(solrDoc.getFieldValue("centroid").toString());
+                    sr = new StringReader(solrDoc.getCentroid());
                     
                     try {
                         geometry = wktReader.read(sr);
@@ -380,20 +413,20 @@ public class SOLRServiceProvider extends OLSAbstractServiceProvider implements G
                     returnAddress.setCountryCode(COUNTRY_CODE);
                     places = returnAddress.getPlaces();
                     
-                    if (solrDoc.getFieldValue("municipality") != null) {
+                    if (solrDoc.getMunicipality() != null) {
                         place = of.createPlace();
                         
                         place.setType(NamedPlaceClassification.MUNICIPALITY);
-                        place.setValue(solrDoc.getFieldValue("municipality").toString());
+                        place.setValue(solrDoc.getMunicipality());
                         
                         places.add(place);
                     }
                     
-                    if (solrDoc.getFieldValue("country_subdivision") != null) {
+                    if (solrDoc.getCountrySubdivision() != null) {
                         place = of.createPlace();
                         
                         place.setType(NamedPlaceClassification.COUNTRY_SECONDARY_SUBDIVISION);
-                        place.setValue(solrDoc.getFieldValue("country_subdivision").toString());
+                        place.setValue(solrDoc.getCountrySubdivision());
                         
                         places.add(place);
                     }
@@ -415,7 +448,7 @@ public class SOLRServiceProvider extends OLSAbstractServiceProvider implements G
 //                    if (solrDoc.getFieldValue("building_number") != null && !solrDoc.getFieldValue("building_number").equals("") && !solrDoc.getFieldValue("building_number").equals("0")) {
 //                        street.setValue(solrDoc.getFieldValue("name") + ", " + solrDoc.getFieldValue("building_number"));
 //                    } else {
-                        street.setValue(solrDoc.getFieldValue("name").toString());
+                        street.setValue(solrDoc.getName());
 //                    }
                     
                     streetAddress.getStreets().add(street);
@@ -426,14 +459,19 @@ public class SOLRServiceProvider extends OLSAbstractServiceProvider implements G
                     
                     geocodeMatchCode = of.createGeocodeMatchCode();
                     geocodeMatchCode.setMatchType("SOLR");
-                    geocodeMatchCode.setAccuracy(new Float(1));
+                    if (maxScore.equals(secondScore)) {
+                        // Ambigous address
+                        geocodeMatchCode.setAccuracy(new Float(solrDoc.getScore() / maxScore / AMBIGUITY_FACTOR));
+                    } else {
+                        geocodeMatchCode.setAccuracy(new Float(solrDoc.getScore() / maxScore));
+                    }
                     
                     geocodedAddress.setGeocodeMatchCode(geocodeMatchCode);
                     geocodedAddresses.add(geocodedAddress);
                 }
 
                 responseList.add(listItem);
-            } catch (SolrServerException e) {
+            } catch (SolrGeocodingFacadeException e) {
                 throw new OLSException("SOLR error: " + e.getLocalizedMessage(), e);
             }
         }

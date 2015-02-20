@@ -24,6 +24,7 @@ public class SolrPager {
             list = qr.getResults();
             
             retval.addAll(list);
+            retval.setNumFound(list.getNumFound());
             start = retval.size();
         } while (start < list.getNumFound());
         

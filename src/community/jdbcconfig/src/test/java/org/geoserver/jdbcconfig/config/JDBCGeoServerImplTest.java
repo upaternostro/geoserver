@@ -1,4 +1,5 @@
-/* Copyright (c) 2001 - 2013 OpenPlans - www.openplans.org. All rights reserved.
+/* (c) 2014 Open Source Geospatial Foundation - all rights reserved
+ * (c) 2001 - 2013 OpenPlans
  * This code is licensed under the GPL 2.0 license, available at the root
  * application directory.
  */
@@ -23,20 +24,32 @@ import org.geoserver.jdbcconfig.catalog.JDBCCatalogFacade;
 import org.geoserver.jdbcconfig.internal.ConfigDatabase;
 import org.junit.After;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
+@RunWith(Parameterized.class)
 public class JDBCGeoServerImplTest extends GeoServerImplTest {
 
-    private GeoServerFacade facade;
+    private JDBCGeoServerFacade facade;
 
     private JDBCConfigTestSupport testSupport;
 
+    public JDBCGeoServerImplTest(JDBCConfigTestSupport.DBConfig dbConfig) {
+        testSupport = new JDBCConfigTestSupport(dbConfig);
+    }
+
+    @Parameterized.Parameters(name = "{0}")
+    public static Iterable<Object[]> data() {
+        return JDBCConfigTestSupport.parameterizedDBConfigs();
+    }
+
     @Override
     public void setUp() throws Exception {
-        testSupport = new JDBCConfigTestSupport();
         testSupport.setUp();
 
         ConfigDatabase configDb = testSupport.getDatabase();
         facade = new JDBCGeoServerFacade(configDb);
+        facade.setResourceLoader(testSupport.getResourceLoader());
 
         super.setUp();
     }

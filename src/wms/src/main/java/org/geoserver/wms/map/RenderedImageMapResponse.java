@@ -1,4 +1,5 @@
-/* Copyright (c) 2001 - 2013 OpenPlans - www.openplans.org. All rights reserved.
+/* (c) 2014 Open Source Geospatial Foundation - all rights reserved
+ * (c) 2001 - 2013 OpenPlans
  * This code is licensed under the GPL 2.0 license, available at the root
  * application directory.
  */
@@ -154,8 +155,10 @@ public abstract class RenderedImageMapResponse extends AbstractMapResponse {
                 || !supportsTranslucency
                 || (method == null && image.getColorModel().getTransparency() != Transparency.TRANSLUCENT);
 
+
+        // format: split on ';' to handle subtypes like 'image/gif;subtype=animated'
+        final String format = request.getFormat().split(";")[0];
         // do we have to use the bitmask quantizer?
-        final String format = request.getFormat();
         IndexColorModel icm = mapContent.getPalette();
         if (useBitmaskQuantizer) {
             // user provided palette?
