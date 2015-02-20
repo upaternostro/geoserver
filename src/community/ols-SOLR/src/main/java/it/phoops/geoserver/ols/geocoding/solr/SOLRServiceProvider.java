@@ -220,6 +220,7 @@ public class SOLRServiceProvider extends OLSAbstractServiceProvider implements G
         }
         
         facade.setSolrServerURL(getEndpointAddress());
+        facade.setMaxRows(SolrGeocodingFacade.MAX_ROWS_ALL);
         
         if (srsName != null) {
             declaredSrs = srsName;
