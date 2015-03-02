@@ -137,7 +137,7 @@ public class SolrManager {
 
 	}
 
-	public ArrayList<GeocodingResult> suggest(String address)
+	public SolrBeanResultsList suggest(String address)
 			throws SolrGeocodingFacadeException, SolrServerException {
 
 		SolrGeocodingFacadeFactory factory = new SolrGeocodingFacadeFactory();
@@ -149,12 +149,8 @@ public class SolrManager {
 
 		facade.setSolrServerURL(solrURL);
 
-		ArrayList<GeocodingResult> response = new ArrayList<GeocodingResult>();
 		docsResult = facade.solrSuggestQuery(address);
-		for (OLSAddressBean addressBean: docsResult) {
-			response.add(new GeocodingResult(addressBean));
-		}
-		return response;
+		return docsResult;
 
 	}
 
