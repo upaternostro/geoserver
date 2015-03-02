@@ -308,7 +308,7 @@ public class SolrGeocodingFacadeImpl implements SolrGeocodingFacade {
         return retval;
     }
 
-    public SolrBeanResultsList solrSuggestQuery(String address) throws SolrServerException, SolrGeocodingFacadeException {
+    public SolrBeanResultsList solrSuggestQuery(String address) throws SolrGeocodingFacadeException, SolrServerException {
         address = address.replaceAll("\"", "");
         address = address.replaceAll(",", "");
         address = address.replaceAll(";", "");

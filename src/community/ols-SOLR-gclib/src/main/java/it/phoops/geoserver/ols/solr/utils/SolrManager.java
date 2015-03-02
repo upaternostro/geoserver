@@ -136,6 +136,24 @@ public class SolrManager {
 
 	}
 
+	public SolrBeanResultsList suggest(String address)
+			throws SolrGeocodingFacadeException, SolrServerException {
+
+		SolrGeocodingFacadeFactory factory = new SolrGeocodingFacadeFactory();
+		SolrGeocodingFacade facade ;
+		SolrBeanResultsList docsResult;
+
+		facade = factory.getSolrGeocodingFacade();
+		facade.setAddressTokenDelim(" \t\n\r\f-()^");
+
+		facade.setSolrServerURL(solrURL);
+
+		docsResult = facade.solrSuggestQuery(address);
+
+		return docsResult;
+
+	}
+
 	private boolean isFieldValid(String fieldValue) {
 		// TODO check field chars validity to make a solr query
 		// now is only a stub!!
