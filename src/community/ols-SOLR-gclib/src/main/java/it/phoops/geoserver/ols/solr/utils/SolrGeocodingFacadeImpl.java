@@ -6,6 +6,7 @@ package it.phoops.geoserver.ols.solr.utils;
 
 import java.net.MalformedURLException;
 import java.util.StringTokenizer;
+import java.util.regex.Pattern;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -38,6 +39,7 @@ public class SolrGeocodingFacadeImpl implements SolrGeocodingFacade {
     private float       municipalityWeigth;
     private float       countrySubdivisionWeigth;
     private int         maxRows;
+    private Pattern     specialCharactersPattern;
 
     public SolrGeocodingFacadeImpl() {
         super();
@@ -47,7 +49,7 @@ public class SolrGeocodingFacadeImpl implements SolrGeocodingFacade {
         
         numberDelimiter = ",";
         numberAfterAddress = true;
-        addressTokenDelim = null;
+        addressTokenDelim = " \t\n\r\f-()^";
         streetTypeWeigth = 3.0f;
         streetNameWeigth = 10.0f;
         numberSubdivisionSeparator = "/";
@@ -55,6 +57,8 @@ public class SolrGeocodingFacadeImpl implements SolrGeocodingFacade {
         municipalityWeigth = 3.0f;
         countrySubdivisionWeigth = 1.0f;
         maxRows = MAX_ROWS_SOLR_DEFAULT;
+        // Lucene special characters: + - && || ! ( ) { } [ ] ^ " ~ * ? : \ /
+        setSpecialCharacters("(\\+|-|&&|\\|\\||!|\\(|\\)|\\{|\\}|\\[|\\]|\\^|\"|~|\\*|\\?|:|\\\\|\\/)");
     }
     
     @Override
@@ -180,6 +184,11 @@ public class SolrGeocodingFacadeImpl implements SolrGeocodingFacade {
     }
     
     @Override
+    public void setSpecialCharacters(String specialCharacters) {
+        specialCharactersPattern = Pattern.compile(specialCharacters);
+    }
+    
+    @Override
     public SolrBeanResultsList geocodeAddress(String freeFormAddress, String municipality, String countrySubdivision) throws SolrGeocodingFacadeException {
         AddressParserFactory    apf = new AddressParserFactory();
         AddressParser           addressParser = apf.getSolrGeocodingFacade(baseUrl);
@@ -220,8 +229,12 @@ public class SolrGeocodingFacadeImpl implements SolrGeocodingFacade {
     
     @Override
     public SolrBeanResultsList geocodeAddress(String typePrefix, String streetName, String number, String subdivision, String municipality, String countrySubdivision) throws SolrGeocodingFacadeException {
-        streetName = streetName.replaceAll("\"", "");
-        municipality = municipality.replaceAll("\"", "");
+        typePrefix              = specialCharactersPattern.matcher(typePrefix.trim()).replaceAll("\\\\$1");
+        streetName              = specialCharactersPattern.matcher(streetName.trim()).replaceAll("\\\\$1");
+        number                  = specialCharactersPattern.matcher(number.trim()).replaceAll("\\\\$1");
+        subdivision             = specialCharactersPattern.matcher(subdivision.trim()).replaceAll("\\\\$1");
+        municipality            = specialCharactersPattern.matcher(municipality.trim()).replaceAll("\\\\$1");
+        countrySubdivision      = specialCharactersPattern.matcher(countrySubdivision.trim()).replaceAll("\\\\$1");
 
         StringBuffer queryBuffer = new StringBuffer("");
         if (!isStringEmpty(typePrefix)) {
