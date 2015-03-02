@@ -1,6 +1,7 @@
 package it.phoops.geoserver.ols.solr.utils;
 
 import java.io.IOException;
+import java.util.ArrayList;
 
 import org.apache.solr.client.solrj.SolrServer;
 import org.apache.solr.client.solrj.SolrServerException;
@@ -136,7 +137,7 @@ public class SolrManager {
 
 	}
 
-	public SolrBeanResultsList suggest(String address)
+	public ArrayList<GeocodingResult> suggest(String address)
 			throws SolrGeocodingFacadeException, SolrServerException {
 
 		SolrGeocodingFacadeFactory factory = new SolrGeocodingFacadeFactory();
@@ -148,9 +149,12 @@ public class SolrManager {
 
 		facade.setSolrServerURL(solrURL);
 
+		ArrayList<GeocodingResult> response = new ArrayList<GeocodingResult>();
 		docsResult = facade.solrSuggestQuery(address);
-
-		return docsResult;
+		for (OLSAddressBean addressBean: docsResult) {
+			response.add(new GeocodingResult(addressBean));
+		}
+		return response;
 
 	}
 
