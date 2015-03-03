@@ -4,10 +4,6 @@
  */
 package it.phoops.geoserver.ols.solr.utils;
 
-import java.net.MalformedURLException;
-import java.util.StringTokenizer;
-import java.util.regex.Pattern;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.http.client.HttpClient;
@@ -21,6 +17,10 @@ import org.apache.solr.client.solrj.impl.LBHttpSolrServer;
 import org.apache.solr.client.solrj.response.QueryResponse;
 import org.apache.solr.common.SolrDocumentList;
 import org.apache.solr.common.params.ModifiableSolrParams;
+
+import java.net.MalformedURLException;
+import java.util.StringTokenizer;
+import java.util.regex.Pattern;
 
 public class SolrGeocodingFacadeImpl implements SolrGeocodingFacade {
     private final Log logger = LogFactory.getLog(getClass());
@@ -229,12 +229,30 @@ public class SolrGeocodingFacadeImpl implements SolrGeocodingFacade {
     
     @Override
     public SolrBeanResultsList geocodeAddress(String typePrefix, String streetName, String number, String subdivision, String municipality, String countrySubdivision) throws SolrGeocodingFacadeException {
-        typePrefix              = specialCharactersPattern.matcher(typePrefix.trim()).replaceAll("\\\\$1");
-        streetName              = specialCharactersPattern.matcher(streetName.trim()).replaceAll("\\\\$1");
-        number                  = specialCharactersPattern.matcher(number.trim()).replaceAll("\\\\$1");
-        subdivision             = specialCharactersPattern.matcher(subdivision.trim()).replaceAll("\\\\$1");
-        municipality            = specialCharactersPattern.matcher(municipality.trim()).replaceAll("\\\\$1");
-        countrySubdivision      = specialCharactersPattern.matcher(countrySubdivision.trim()).replaceAll("\\\\$1");
+
+        if (typePrefix != null) {
+            typePrefix = specialCharactersPattern.matcher(typePrefix.trim()).replaceAll("\\\\$1");
+        }
+
+        if (streetName != null) {
+            streetName = specialCharactersPattern.matcher(streetName.trim()).replaceAll("\\\\$1");
+        }
+
+        if (number != null) {
+            number = specialCharactersPattern.matcher(number.trim()).replaceAll("\\\\$1");
+        }
+
+        if (subdivision != null) {
+            subdivision = specialCharactersPattern.matcher(subdivision.trim()).replaceAll("\\\\$1");
+        }
+
+        if (municipality != null) {
+            municipality = specialCharactersPattern.matcher(municipality.trim()).replaceAll("\\\\$1");
+        }
+
+        if (countrySubdivision != null) {
+            countrySubdivision = specialCharactersPattern.matcher(countrySubdivision.trim()).replaceAll("\\\\$1");
+        }
 
         StringBuffer queryBuffer = new StringBuffer("");
         if (!isStringEmpty(typePrefix)) {
