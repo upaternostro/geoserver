@@ -12,143 +12,137 @@ import org.apache.solr.client.solrj.response.UpdateResponse;
  */
 public class SolrManager {
 
-	private String solrURL;
+    private String solrURL;
 
+    public SolrManager(String url) {
+        solrURL = url;
+    }
 
-	public SolrManager(String url) {
-		solrURL = url;
-	}
+    public UpdateResponse add(String id, String streetType, String streetName, String number,
+            String numberExtension, String numberColor, String municipality,
+            String countrySubdivision, boolean isBuilding, String centerline, String centroid,
+            String boundingBox) throws SolrServerException, IOException {
 
+        SolrServer server = new HttpSolrServer(solrURL);
+        OLSAddressBean address = new OLSAddressBean();
+        StringBuffer sb = new StringBuffer(streetType);
+        StringBuffer sbBuildingNumber = new StringBuffer();
 
-	public UpdateResponse add(String id,
-							  String streetType,
-							  String streetName,
-							  String number,
-							  String numberExtension,
-							  String numberColor,
-							  String municipality,
-							  String countrySubdivision,
-							  boolean isBuilding,
-							  String centerline,
-							  String centroid,
-							  String boundingBox)
-			throws SolrServerException, IOException {
+        sb.append(" ").append(streetName);
 
-		SolrServer server = new HttpSolrServer(solrURL);
+        if (number != null && !"".equals(number)) {
+            sb.append(", ").append(number);
+            sbBuildingNumber.append(number);
+            
+            if (numberColor != null && !"".equals(numberColor)) {
+                sb.append(numberColor);
+                sbBuildingNumber.append(numberColor);
+            }
+            
+            if (numberExtension != null && !"".equals(numberExtension)) {
+                sb.append("/").append(numberExtension);
+                sbBuildingNumber.append("/").append(numberExtension);
+            }
+        }
 
+        address.setId(id);
+        
+        address.setBuilding(isBuilding);
+        address.setManaged(true);
+        
+        address.setName(sb.toString());
+        
+        address.setStreetType(streetType);
+        address.setStreetName(streetName);
+        
+        address.setMunicipality(municipality);
+        address.setCountrySubdivision(countrySubdivision);
+        
+        address.setBuildingNumber(sbBuildingNumber.toString());
+        address.setNumber(number);
+        address.setNumberExtension(numberExtension);
+        address.setNumberColor(numberColor);
+        
+        address.setCenterline(centerline);
+        address.setCentroid(centroid);
+        address.setBoundingBox(boundingBox);
 
-		OLSAddressBean address = new OLSAddressBean();
-		address.setId(id);
-		address.setStreetType(streetType);
-		address.setStreetName(streetName);
-		address.setNumber(number);
-		address.setNumberExtension(numberExtension);
-		address.setNumberColor(numberColor);
-		address.setMunicipality(municipality);
-		address.setCountrySubdivision(countrySubdivision);
-		address.setBuilding(isBuilding);
-		address.setManaged(true);
-		address.setCenterline(centerline);
-		address.setCentroid(centroid);
-		address.setBoundingBox(boundingBox);
+        server.addBean(address);
+        UpdateResponse ur = server.commit();
 
-		server.addBean(address);
-		UpdateResponse ur = server.commit();
+        return ur;
 
-		return ur;
+    }
 
-	}
+    public SolrBeanResultsList search(String streetType, String streetName, String number,
+            String numberExtension, String numberColor, String municipality,
+            String countrySubdivision) throws SolrInvalidFieldException,
+            SolrGeocodingFacadeException {
 
+        // TODO replicate the same check for all fields
+        if (!isFieldValid(streetType)) {
+            throw new SolrInvalidFieldException("The field streetType is not valid");
+        }
 
-	public SolrBeanResultsList search(String streetType,
-									  String streetName,
-									  String number,
-									  String numberExtension,
-									  String numberColor,
-									  String municipality,
-									  String countrySubdivision)
-			throws SolrInvalidFieldException, SolrGeocodingFacadeException {
+        String buildingNumber = number + numberExtension;
+        if ((numberColor != null) && (!numberColor.equals(""))) {
+            buildingNumber += "/" + numberColor;
+        }
 
+        String freeFormAddress = streetType + " " + streetName + ", " + buildingNumber;
 
-		// TODO replicate the same check for all fields
-		if (! isFieldValid(streetType) ){
-			throw new SolrInvalidFieldException("The field streetType is not valid");
-		}
+        return search(freeFormAddress, municipality, countrySubdivision);
 
+    }
 
+    public SolrBeanResultsList search(String freeFormAddress, String municipality,
+            String countrySubdisvision) throws SolrGeocodingFacadeException {
 
+        SolrGeocodingFacadeFactory factory = new SolrGeocodingFacadeFactory();
+        SolrGeocodingFacade facade;
+        SolrBeanResultsList docsResult;
 
-		String buildingNumber = number + numberExtension;
-		if ( ( numberColor != null ) && ( ! numberColor.equals("")) ){
-			buildingNumber += "/" + numberColor;
-		}
+        facade = factory.getSolrGeocodingFacade();
+        facade.setAddressTokenDelim(" \t\n\r\f-()^");
 
-		String freeFormAddress = streetType + " "
-				+ streetName + ", "
-				+ buildingNumber;
+        facade.setSolrServerURL(solrURL);
 
-		return search(freeFormAddress, municipality, countrySubdivision);
+        docsResult = facade.geocodeAddress(freeFormAddress, municipality, countrySubdisvision);
 
-	}
+        return docsResult;
 
+    }
 
-	public SolrBeanResultsList search(String freeFormAddress,
-									  String municipality,
-									  String countrySubdisvision)
-			throws SolrGeocodingFacadeException{
+    public SolrBeanResultsList search(String dug, String address, String municipality,
+            String countrySubdisvision) throws SolrGeocodingFacadeException {
 
-		SolrGeocodingFacadeFactory factory = new SolrGeocodingFacadeFactory();
-		SolrGeocodingFacade facade ;
-		SolrBeanResultsList docsResult;
+        SolrGeocodingFacadeFactory factory = new SolrGeocodingFacadeFactory();
+        SolrGeocodingFacade facade;
+        SolrBeanResultsList docsResult;
 
-		facade = factory.getSolrGeocodingFacade();
-		facade.setAddressTokenDelim(" \t\n\r\f-()^");
+        facade = factory.getSolrGeocodingFacade();
+        facade.setAddressTokenDelim(" \t\n\r\f-()^");
 
-		facade.setSolrServerURL(solrURL);
+        facade.setSolrServerURL(solrURL);
 
+        docsResult = facade.geocodeAddress(dug, address, municipality, countrySubdisvision);
 
-		docsResult = facade.geocodeAddress(freeFormAddress, municipality,
-				countrySubdisvision);
+        return docsResult;
 
-		return docsResult;
+    }
 
-	}
+    private boolean isFieldValid(String fieldValue) {
+        // TODO check field chars validity to make a solr query
+        // now is only a stub!!
+        return true;
+    }
 
+    public class SolrInvalidFieldException extends Exception {
 
-	public SolrBeanResultsList search(String dug,
-									  String address,
-									  String municipality,
-									  String countrySubdisvision)
-			throws SolrGeocodingFacadeException {
+        public SolrInvalidFieldException(String msg) {
+            super(msg);
+        }
 
-		SolrGeocodingFacadeFactory factory = new SolrGeocodingFacadeFactory();
-		SolrGeocodingFacade facade ;
-		SolrBeanResultsList docsResult;
-
-		facade = factory.getSolrGeocodingFacade();
-		facade.setAddressTokenDelim(" \t\n\r\f-()^");
-
-		facade.setSolrServerURL(solrURL);
-
-		docsResult = facade.geocodeAddress(dug, address, municipality, countrySubdisvision);
-
-		return docsResult;
-
-	}
-
-	private boolean isFieldValid(String fieldValue) {
-		// TODO check field chars validity to make a solr query
-		// now is only a stub!!
-		return true;
-	}
-
-	public class SolrInvalidFieldException extends Exception {
-
-		public SolrInvalidFieldException(String msg) {
-			super(msg);
-		}
-
-	}
-
+    }
 
 }
