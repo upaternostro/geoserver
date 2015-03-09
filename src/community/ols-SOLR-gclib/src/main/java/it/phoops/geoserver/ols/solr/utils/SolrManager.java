@@ -1,6 +1,7 @@
 package it.phoops.geoserver.ols.solr.utils;
 
 import java.io.IOException;
+import java.util.ArrayList;
 
 import org.apache.solr.client.solrj.SolrServer;
 import org.apache.solr.client.solrj.SolrServerException;
@@ -136,6 +137,23 @@ public class SolrManager {
         // now is only a stub!!
         return true;
     }
+
+	public SolrBeanResultsList suggest(String address)
+			throws SolrGeocodingFacadeException, SolrServerException {
+
+		SolrGeocodingFacadeFactory factory = new SolrGeocodingFacadeFactory();
+		SolrGeocodingFacade facade ;
+		SolrBeanResultsList docsResult;
+
+		facade = factory.getSolrGeocodingFacade();
+		facade.setAddressTokenDelim(" \t\n\r\f-()^");
+
+		facade.setSolrServerURL(solrURL);
+
+		docsResult = facade.solrSuggestQuery(address);
+		return docsResult;
+
+	}
 
     public class SolrInvalidFieldException extends Exception {
 

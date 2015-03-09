@@ -339,6 +339,61 @@ public class SolrGeocodingFacadeImpl implements SolrGeocodingFacade {
         return retval;
     }
 
+    public SolrBeanResultsList solrSuggestQuery(String address) throws SolrGeocodingFacadeException, SolrServerException {
+        address = address.replaceAll("\"", "");
+        address = address.replaceAll(",", "");
+        address = address.replaceAll(";", "");
+
+        StringBuffer queryBuffer = new StringBuffer("");
+        StringTokenizer stringTokenizer = new StringTokenizer(address, " \t\n\r\f-()^");
+        String          token;
+        int count = 0;
+        while (stringTokenizer.hasMoreTokens()) {
+            token = stringTokenizer.nextToken();
+            if (count==0) {
+                queryBuffer.append("name_suggest:").append(token);
+            }
+            else {
+                queryBuffer.append(" AND name_suggest:").append(token);
+            }
+            count = count+1;
+        }
+
+        System.out.println(queryBuffer.toString());
+        if (solrServer == null) {
+            throw new SolrGeocodingFacadeException("SolrServer not initialized");
+        }
+
+        ModifiableSolrParams    solrParams = new ModifiableSolrParams();
+
+        solrParams.set("q", queryBuffer.toString());
+        solrParams.set("fl", "*,score");
+
+        SolrBeanResultsList     retval = new SolrBeanResultsList();
+        int                     start = 0;
+        QueryResponse           qr;
+        SolrDocumentList        list;
+
+        if (maxRows > 0) {
+            solrParams.set("rows", maxRows > MAX_DOCS_PER_REQUEST ? MAX_DOCS_PER_REQUEST : maxRows);
+        }
+
+        do {
+            solrParams.set("start", start);
+
+            qr = solrServer.query(solrParams);
+            list = qr.getResults();
+
+            retval.addAll(qr.getBeans(OLSAddressBean.class));
+            retval.setNumFound(list.getNumFound());
+
+
+            start = retval.size();
+        } while (start < list.getNumFound() && maxRows != SolrGeocodingFacade.MAX_ROWS_SOLR_DEFAULT && (maxRows == SolrGeocodingFacade.MAX_ROWS_ALL || start < maxRows));
+
+        return retval;
+    }
+
     private boolean isStringEmpty(String string)
     {
         return string == null || "".equals(string);
