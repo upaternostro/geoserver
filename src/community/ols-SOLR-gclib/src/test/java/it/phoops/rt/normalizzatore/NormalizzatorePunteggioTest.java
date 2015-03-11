@@ -22,7 +22,7 @@ public class NormalizzatorePunteggioTest
 	}
 
 	@Test
-	public void normalizerTest() throws IOException, SolrGeocodingFacadeException, SolrManager.SolrInvalidFieldException, SolrServerException
+	public void normalizerTest() throws IOException, SolrGeocodingFacadeException, SolrServerException
 	{
 		InputStream csvStream = getClass().getClassLoader().getResourceAsStream("indirizzixgeoref.csv");
 		Assert.assertNotNull(csvStream);

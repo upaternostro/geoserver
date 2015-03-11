@@ -7,7 +7,6 @@ import it.phoops.geoserver.ols.solr.utils.SolrBeanResultsList;
 import it.phoops.geoserver.ols.solr.utils.SolrGeocodingFacade;
 import it.phoops.geoserver.ols.solr.utils.SolrGeocodingFacadeException;
 import it.phoops.geoserver.ols.solr.utils.SolrGeocodingFacadeFactory;
-import it.phoops.geoserver.ols.solr.utils.SolrManager;
 import junit.framework.Assert;
 
 import org.apache.solr.client.solrj.SolrServerException;
@@ -28,7 +27,7 @@ public class SolrResponseTest {
 
 	@Test
 	public void testGetResults()
-			throws SolrGeocodingFacadeException, SolrManager.SolrInvalidFieldException, SolrServerException {
+			throws SolrGeocodingFacadeException, SolrServerException {
 
 	        AddressParserFactory    apf = new AddressParserFactory();
 	        AddressParser           addressParser = apf.getSolrGeocodingFacade(solrUrl);

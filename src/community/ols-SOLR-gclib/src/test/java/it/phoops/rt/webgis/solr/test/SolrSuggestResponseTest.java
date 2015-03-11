@@ -12,16 +12,14 @@ import org.junit.Test;
 public class SolrSuggestResponseTest {
 
 	private String solrUrl;
-	private SolrManager solrManager;
 
 	@Before
 	public void init(){
 		solrUrl = "http://localhost:8080/solr/suggest";
-		solrManager = new SolrManager(solrUrl);
 	}
 
 	@Test
-	public void testGetResults() throws SolrGeocodingFacadeException, SolrManager.SolrInvalidFieldException, SolrServerException {
+	public void testGetResults() throws SolrGeocodingFacadeException, SolrServerException {
 		SolrGeocodingFacadeFactory factory = new SolrGeocodingFacadeFactory();
 		SolrGeocodingFacade facade = factory.getSolrGeocodingFacade();
 		facade.setSolrServerURL("http://localhost:8080/solr/suggest");

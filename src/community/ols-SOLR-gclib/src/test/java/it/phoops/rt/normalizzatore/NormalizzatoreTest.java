@@ -7,7 +7,6 @@ import it.phoops.geoserver.ols.solr.utils.SolrBeanResultsList;
 import it.phoops.geoserver.ols.solr.utils.SolrGeocodingFacade;
 import it.phoops.geoserver.ols.solr.utils.SolrGeocodingFacadeException;
 import it.phoops.geoserver.ols.solr.utils.SolrGeocodingFacadeFactory;
-import it.phoops.geoserver.ols.solr.utils.SolrManager;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -33,8 +32,7 @@ public class NormalizzatoreTest {
     }
 
     @Test
-    public void normalizerTest() throws IOException, SolrGeocodingFacadeException,
-            SolrManager.SolrInvalidFieldException, SolrServerException {
+    public void normalizerTest() throws IOException, SolrGeocodingFacadeException, SolrServerException {
         InputStream csvStream = getClass().getClassLoader().getResourceAsStream(
                 "indirizzixgeoref.csv");
         Assert.assertNotNull(csvStream);
