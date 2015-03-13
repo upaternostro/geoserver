@@ -7,8 +7,6 @@ package org.geoserver.importer;
 
 import java.io.File;
 import java.io.IOException;
-import java.sql.Connection;
-import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -506,8 +504,10 @@ public class Importer implements DisposableBean, ApplicationListener {
             // from the input data
             for (ImportTask t : format.list(data, catalog, context.progress())) {
                 //initialize transform chain based on vector vs raster
-                t.setTransform(format instanceof VectorFormat 
-                        ? new VectorTransformChain() : new RasterTransformChain());
+                if (t.getTransform() == null) {
+                    t.setTransform(format instanceof VectorFormat ? new VectorTransformChain()
+                            : new RasterTransformChain());
+                }
                 t.setDirect(direct);
                 t.setStore(targetStore);
 
@@ -1327,19 +1327,9 @@ public class Importer implements DisposableBean, ApplicationListener {
         // @todo this needs implementation in geotools
         SimpleFeatureType schema = ds.getSchema(featureTypeName);
         if (schema != null) {
-            if (ds instanceof JDBCDataStore) {
-                JDBCDataStore dataStore = (JDBCDataStore) ds;
-                Connection conn = dataStore.getConnection(Transaction.AUTO_COMMIT);
-                Statement st = null;
-                try {
-                    st = conn.createStatement();
-                    st.execute("drop table " + featureTypeName);
-                    LOGGER.fine("dropSchema " + featureTypeName + " successful");
-                } finally {
-                    dataStore.closeSafe(conn);
-                    dataStore.closeSafe(st);
-                }
-            } else {
+            try {
+                ds.removeSchema(featureTypeName);
+            } catch(Exception e) {
                 LOGGER.warning("Unable to dropSchema " + featureTypeName + " from datastore " + ds.getClass());
             }
         } else {
