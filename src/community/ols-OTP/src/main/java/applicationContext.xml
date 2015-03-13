@@ -7,11 +7,23 @@
 <!DOCTYPE beans PUBLIC "-//SPRING//DTD BEAN//EN" "http://www.springframework.org/dtd/spring-beans.dtd">
 
 <beans>
-	<!-- Service Provider OTP -->
-	<bean id="otpServiceProvider" class="it.phoops.geoserver.ols.routing.otp.OTPServiceProvider">
+	<!-- Service Provider OTP v0.10.0 and below-->
+	<bean id="otp0.10.0ServiceProvider" class="it.phoops.geoserver.ols.routing.otp.OTPServiceProvider">
 	   <property name="active" value="false" />
 	   <property name="descriptionKey" value="OLS.serviceProvider.geocoding.otp.description" />
        <property name="endpointAddress" value="http://localhost/opentripplanner-api-webapp" />
+       <property name="navigationInfo" value="Procedi in direzione {0} per {1} km su {2}" />
+       <property name="navigationInfoShort" value="Procedi in direzione {0} per {1} km" />
+       <property name="navigationInfoRel" value="{0} su {1} per {2} km" />
+       <property name="language" value="1" />
+    </bean>
+    
+    <!-- Service Provider OTP v0.11.0 and above-->
+    <bean id="otp0.11.0ServiceProvider" class="it.phoops.geoserver.ols.routing.otp.OTP0110ServiceProvider">
+       <property name="active" value="false" />
+       <property name="descriptionKey" value="OLS.serviceProvider.geocoding.otp0110.description" />
+       <property name="endpointAddress" value="http://localhost/otp-rest-servlet/" />
+       <property name="routerId" value="default" />
        <property name="navigationInfo" value="Procedi in direzione {0} per {1} km su {2}" />
        <property name="navigationInfoShort" value="Procedi in direzione {0} per {1} km" />
        <property name="navigationInfoRel" value="{0} su {1} per {2} km" />

@@ -28,15 +28,15 @@ import org.apache.wicket.model.PropertyModel;
 import org.geoserver.config.GeoServer;
 
 public class OTPTab extends AbstractTab implements ValidateCheckboxTab{
-    private String                              urlOTP;
-    private String                              activeOTP;
-    private String                              navigationInfoOTP;
-    private String                              navigationInfoShortOTP;
-    private String                              navigationInfoRelOTP;
-    private List<LanguageType>                  languageList = null;
-    private LanguageType                        selectedLanguage;
-    private OTPPanel                            instancePanel;
-    private int                                 codeLanguageSelected;
+    private String              urlOTP;
+    private String              activeOTP;
+    private String              navigationInfoOTP;
+    private String              navigationInfoShortOTP;
+    private String              navigationInfoRelOTP;
+    private List<LanguageType>  languageList = null;
+    private LanguageType        selectedLanguage;
+    protected OTPPanel          instancePanel;
+    private int                 codeLanguageSelected;
 
     public String getUrlOTP() {
         if(instancePanel != null)
@@ -154,6 +154,14 @@ public class OTPTab extends AbstractTab implements ValidateCheckboxTab{
     public Panel getPanel(String panelId) {
 //        if(instancePanel == null)
             instancePanel = new OTPPanel(panelId);
+        
+        setupPanel();
+        
+        return instancePanel;
+    }
+    
+    protected void setupPanel()
+    {
         instancePanel.setActiveOTP(activeOTP);
         instancePanel.getCheckboxOTP().setModelObject(Boolean.parseBoolean(activeOTP));
         instancePanel.setUrlOTP(urlOTP);
@@ -162,11 +170,9 @@ public class OTPTab extends AbstractTab implements ValidateCheckboxTab{
         instancePanel.setNavigationInfoRelOTP(navigationInfoRelOTP);
         instancePanel.add(new LanguageDropDownChoice("language", new PropertyModel<LanguageType>(this, "selectedLanguage"), languageList));
         instancePanel.setSelectedLanguage(this.languageList.get(getCodeLanguageSelected()-1));
-        
-        return instancePanel;
     }
     
-    private static class OTPPanel extends Panel{
+    protected static class OTPPanel extends Panel{
         private String                  urlOTP;
         private String                  activeOTP;
         private String                  navigationInfoOTP;
@@ -201,7 +207,7 @@ public class OTPTab extends AbstractTab implements ValidateCheckboxTab{
                       
                       for (OLSServiceProvider provider : serviceProvider) {
                           if(provider.getServiceType() == OLSService.ROUTING_NAVIGATION
-                                  && !(provider instanceof OTPServiceProvider)
+                                  && !isMyClass(provider)
                                   && value){
                               
                               OLSServiceProviderGUI providerGUI = (OLSServiceProviderGUI)provider;
@@ -218,6 +224,11 @@ public class OTPTab extends AbstractTab implements ValidateCheckboxTab{
             add(new TextField("navigationInfoOTP",new PropertyModel(this,"navigationInfoOTP")));
             add(new TextField("navigationInfoShortOTP",new PropertyModel(this,"navigationInfoShortOTP")));
             add(new TextField("navigationInfoRelOTP",new PropertyModel(this,"navigationInfoRelOTP")));
+        }
+        
+        protected boolean isMyClass(OLSServiceProvider provider)
+        {
+            return provider != null && provider.getClass().equals(OTPServiceProvider.class);
         }
 
         public String getUrlOTP() {

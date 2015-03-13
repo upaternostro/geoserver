@@ -63,8 +63,6 @@ import net.opengis.www.xls.RouteSummaryType;
 import net.opengis.www.xls.WayPointList;
 import net.opengis.www.xls.WayPointType;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.wicket.extensions.markup.html.tabs.ITab;
 import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.ResourceModel;
@@ -84,8 +82,6 @@ import com.vividsolutions.jts.geom.GeometryFactory;
 
 public class OTPServiceProvider extends OLSAbstractServiceProvider implements RoutingServiceProvider, Serializable {
 
-    private final Log logger = LogFactory.getLog(getClass());
-    
     public static final double EPSILON = 1.0;
     
     /** serialVersionUID */
@@ -197,7 +193,7 @@ public class OTPServiceProvider extends OLSAbstractServiceProvider implements Ro
 
     @Override
     public ITab getTab() {
-        IModel<String> title = new ResourceModel("OTP ", "OTP");
+        IModel<String> title = new ResourceModel("OTP v0.10.0", "OTP v0.10.0");
         return OTPTabFactory.getOTPTabFactory().getOTPTab(title);
     }
 
@@ -383,7 +379,7 @@ public class OTPServiceProvider extends OLSAbstractServiceProvider implements Ro
         }
         
         ResourceBundle  messages = ResourceBundle.getBundle("GeoServerApplication", locale);
-        WebResource     resource = client.resource(getEndpointAddress()).path("ws/plan");
+        WebResource     resource = getWebResource(client);
         Response        response = resource.queryParams(queryParams).accept(MediaType.TEXT_XML).get(Response.class);
 
         // Parse OTP Response
@@ -652,6 +648,11 @@ public class OTPServiceProvider extends OLSAbstractServiceProvider implements Ro
         retval = of.createDetermineRouteResponse(determineRouteResponse);
         
         return retval;
+    }
+    
+    protected WebResource getWebResource(Client client)
+    {
+        return client.resource(getEndpointAddress()).path("ws/plan");
     }
     
     private String formatPosition(PositionType position) throws OLSException

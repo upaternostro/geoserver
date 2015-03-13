@@ -10,6 +10,7 @@ public class OTPTabFactory {
     private static OTPTabFactory factory = null;
     
     private OTPTab instance = null;
+    private OTP0110Tab instance0110 = null;
     
     public static OTPTabFactory getOTPTabFactory() {
         if (factory == null) {
@@ -25,5 +26,13 @@ public class OTPTabFactory {
         }
     
         return instance;
+    }
+    
+    public OTPTab getOTP0110Tab(IModel<String> title) {
+        if (instance0110 == null) {
+            instance0110 = new OTP0110Tab(title);
+        }
+    
+        return instance0110;
     }
 }
