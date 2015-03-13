@@ -132,13 +132,6 @@ public class OLSDispatcher extends AbstractController
                         
                         OLSServiceProvider sProvidereToSet = OLS.get().getServiceProvider(handler.getService());
                         
-                        for (OLSServiceProvider sProvider : olsInfo.getServiceProvider()) {
-                            if (sProvider.getServiceType() == handler.getService()) {
-                                sProvidereToSet = sProvider;
-                                break;
-                            }
-                        }
-                        
                         handler.setActiveServiceProvider(sProvidereToSet);
                         
                         JAXBContext                     jaxbContext = null;

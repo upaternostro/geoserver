@@ -21,6 +21,10 @@ public class GeocodingHandler implements OLSHandler {
     @Override
     public JAXBElement<? extends AbstractResponseParametersType> processRequest(RequestType request, String lang, String srsName) throws OLSException
     {
+        if (provider == null) {
+            throw new OLSException("No geocoding provider activated, please configure GeoServer correctly!");
+        }
+        
         return provider.geocode((GeocodeRequestType)request.getRequestParameters().getValue(), lang, srsName);
     }
 
@@ -36,8 +40,9 @@ public class GeocodingHandler implements OLSHandler {
 
     @Override
     public void setActiveServiceProvider(OLSServiceProvider provider) {
-        if(provider.isServiceActive())
+        if (provider != null && provider.isServiceActive()) {
             this.provider = (GeocodingServiceProvider)provider;
+        }
     }
     
     

@@ -21,6 +21,10 @@ public class RoutingHandler implements OLSHandler {
     @Override
     public JAXBElement<? extends AbstractResponseParametersType> processRequest(RequestType request, String lang, String srsName) throws OLSException
     {
+        if (provider == null) {
+            throw new OLSException("No routing provider activated, please configure GeoServer correctly!");
+        }
+        
         return provider.route((DetermineRouteRequestType)request.getRequestParameters().getValue(), lang, srsName);
     }
 
@@ -36,7 +40,8 @@ public class RoutingHandler implements OLSHandler {
     
     @Override
     public void setActiveServiceProvider(OLSServiceProvider provider) {
-        if(provider.isServiceActive())
+        if (provider != null && provider.isServiceActive()) {
             this.provider = (RoutingServiceProvider)provider;
+        }
     }
 }
