@@ -4,18 +4,18 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<parent>
-		<groupId>org.geoserver</groupId>
-		<artifactId>community</artifactId>
+		<groupId>org.geoserver.community</groupId>
+		<artifactId>gs-ols</artifactId>
 		<version>2.8-SNAPSHOT</version>
 	</parent>
 
 	<groupId>org.geoserver</groupId>
-	<artifactId>gs-ols-SOLR-gclib</artifactId>
+	<artifactId>gs-ols-pgRouting</artifactId>
 	<packaging>jar</packaging>
-	<name>Open Location Services SOLR geocoding library</name>
+	<name>Open Location Services pgRouting service provider</name>
 
-	<description>Library that implements address parsing for SOLR geocoding</description>
-	<inceptionYear>2014</inceptionYear>
+	<description>GeoServer module that implements pgRouting provider for OGC OLS services</description>
+	<inceptionYear>2012</inceptionYear>
 	<developers>
 		<developer>
 			<id>phoops</id>
@@ -28,9 +28,18 @@
 
 	<dependencies>
 		<dependency>
-			<groupId>org.apache.solr</groupId>
-			<artifactId>solr-solrj</artifactId>
-			<version>4.0.0</version>
+			<groupId>org.geoserver</groupId>
+			<artifactId>gs-ols</artifactId>
+			<version>${project.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.geoserver.web</groupId>
+			<artifactId>gs-web-ols</artifactId>
+			<version>${project.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.geotools.jdbc</groupId>
+			<artifactId>gt-jdbc-postgis</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>org.geoserver</groupId>
@@ -59,12 +68,6 @@
 			<artifactId>xmlunit</artifactId>
 			<scope>test</scope>
 		</dependency>
-		<dependency>
-			<groupId>net.sf.opencsv</groupId>
-			<artifactId>opencsv</artifactId>
-			<version>1.8</version>
-			<scope>test</scope>
-		</dependency>
 	</dependencies>
 
 	<build>
@@ -89,4 +92,5 @@
 			</plugin>
 		</plugins>
 	</build>
+
 </project>

@@ -4,17 +4,17 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<parent>
-		<groupId>org.geoserver</groupId>
-		<artifactId>community</artifactId>
+		<groupId>org.geoserver.community</groupId>
+		<artifactId>gs-ols</artifactId>
 		<version>2.8-SNAPSHOT</version>
 	</parent>
 
 	<groupId>org.geoserver</groupId>
-	<artifactId>gs-ols-RFC59</artifactId>
+	<artifactId>gs-ols-SOLR</artifactId>
 	<packaging>jar</packaging>
-	<name>Open Location Services RFC59 service provider</name>
+	<name>Open Location Services SOLR service provider</name>
 
-	<description>GeoServer module that implements RFC59 provider for OGC OLS services</description>
+	<description>GeoServer module that implements SOLR provider for OGC OLS services</description>
 	<inceptionYear>2012</inceptionYear>
 	<developers>
 		<developer>
@@ -32,15 +32,20 @@
 			<artifactId>gs-ols</artifactId>
 			<version>${project.version}</version>
 		</dependency>
+        <dependency>
+            <groupId>org.geoserver</groupId>
+            <artifactId>gs-ols-SOLR-gclib</artifactId>
+            <version>${project.version}</version>
+        </dependency>
 		<dependency>
 			<groupId>org.geoserver.web</groupId>
 			<artifactId>gs-web-ols</artifactId>
 			<version>${project.version}</version>
 		</dependency>
 		<dependency>
-			<groupId>axis</groupId>
-			<artifactId>axis</artifactId>
-			<version>1.4</version>
+			<groupId>org.apache.solr</groupId>
+			<artifactId>solr-solrj</artifactId>
+			<version>4.0.0</version>
 		</dependency>
 		<dependency>
 			<groupId>org.geoserver</groupId>
@@ -78,28 +83,6 @@
 			</testResource>
 		</testResources>
 		<plugins>
-			<plugin>
-				<groupId>org.codehaus.mojo</groupId>
-				<artifactId>axistools-maven-plugin</artifactId>
-				<version>1.4</version>
-				<configuration>
-					<wsdlFiles>
-						<wsdlFile>normaws1.wsdl</wsdlFile>
-					</wsdlFiles>
-					<packageSpace>it.toscana.regione.normaws</packageSpace>
-					<testCases>false</testCases>
-					<serverSide>false</serverSide>
-					<subPackageByFileName>false</subPackageByFileName>
-				</configuration>
-				<executions>
-					<execution>
-						<goals>
-							<goal>wsdl2java</goal>
-						</goals>
-					</execution>
-				</executions>
-			</plugin>
-
 			<plugin>
 				<groupId>org.codehaus.mojo</groupId>
 				<artifactId>cobertura-maven-plugin</artifactId>

@@ -4,17 +4,17 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<parent>
-		<groupId>org.geoserver</groupId>
-		<artifactId>community</artifactId>
+		<groupId>org.geoserver.community</groupId>
+		<artifactId>gs-ols</artifactId>
 		<version>2.8-SNAPSHOT</version>
 	</parent>
 
 	<groupId>org.geoserver</groupId>
-	<artifactId>gs-ols-OTP</artifactId>
+	<artifactId>gs-ols</artifactId>
 	<packaging>jar</packaging>
-	<name>Open Location Services Open Trip Planner service provider</name>
+	<name>Open Location Services Service Module</name>
 
-	<description>GeoServer module that implements Open Trip Planner provider for OGC OLS services</description>
+	<description>GeoServer module to add OGC OLS services</description>
 	<inceptionYear>2012</inceptionYear>
 	<developers>
 		<developer>
@@ -26,31 +26,45 @@
 		</developer>
 	</developers>
 
+	<repositories>
+		<repository>
+			<id>jboss</id>
+			<name>JBoss Repository</name>
+			<url>http://repository.jboss.org/nexus/content/groups/public/</url>
+			<snapshots>
+				<enabled>false</enabled>
+			</snapshots>
+		</repository>
+	</repositories>
+
 	<dependencies>
 		<dependency>
 			<groupId>org.geoserver</groupId>
-			<artifactId>gs-ols</artifactId>
-			<version>${project.version}</version>
+			<artifactId>gs-main</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>org.geoserver.web</groupId>
-			<artifactId>gs-web-ols</artifactId>
+			<artifactId>gs-web-sec-core</artifactId>
 			<version>${project.version}</version>
+    	</dependency>
+		<dependency>
+			<groupId>org.apache.wicket</groupId>
+			<artifactId>wicket-extensions</artifactId>
 		</dependency>
 		<dependency>
-			<groupId>org.jvnet.ws.wadl</groupId>
-			<artifactId>wadl-core</artifactId>
-			<version>1.1.2</version>
+			<groupId>javax.xml.bind</groupId>
+			<artifactId>jaxb-api</artifactId>
+			<version>2.1</version>
 		</dependency>
-<!--         <dependency> -->
-<!--             <groupId>org.opentripplanner</groupId> -->
-<!--             <artifactId>opentripplanner-utils</artifactId> -->
-<!--             <version>0.9.2-SNAPSHOT</version> -->
-<!--         </dependency> -->
-        <dependency>
-		  <groupId>org.opentripplanner</groupId>
-		  <artifactId>opentripplanner-utils</artifactId>
-		  <version>0.9.1</version>
+		<dependency>
+			<groupId>xml-resolver</groupId>
+			<artifactId>xml-resolver</artifactId>
+			<version>1.2</version>
+		</dependency>
+		<dependency>
+			<groupId>apache-xerces</groupId>
+			<artifactId>xercesImpl</artifactId>
+			<version>2.7.1</version>
 		</dependency>
 		<dependency>
 			<groupId>org.geoserver</groupId>
@@ -87,29 +101,35 @@
 				<directory>src/test/resources</directory>
 			</testResource>
 		</testResources>
+		<pluginManagement>
+			<plugins>
+				<!-- Need Java 5, which is the default since v2.3 of the maven-compiler-plugin. -->
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-compiler-plugin</artifactId>
+					<version>2.5.1</version>
+				</plugin>
+			</plugins>
+		</pluginManagement>
 		<plugins>
 			<plugin>
-				<groupId>org.jvnet.ws.wadl</groupId>
-				<artifactId>wadl-client-plugin</artifactId>
-				<version>1.1.2</version>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>jaxb2-maven-plugin</artifactId>
+				<version>1.5</version>
 				<executions>
 					<execution>
+						<id>xjc</id>
 						<goals>
-							<goal>generate</goal>
+							<goal>xjc</goal>
 						</goals>
 					</execution>
 				</executions>
 				<configuration>
-                    <packageName>it.phoops.geoserver.ols.routing.otp.client</packageName>
-                    <customizations>
-                        <customization>${basedir}/src/main/wadl/binding.xjb</customization>
-                    </customizations>
-                    <customClassNames>
-                        <property>
-                            <name>http://localhost:8080/opentripplanner-api-webapp</name>
-                            <value>OpentripplannerApiWebapp</value>
-                        </property>
-                    </customClassNames>
+					<packageName>net.opengis.www.xls</packageName>
+					<schemaDirectory>${project.basedir}/src/main/resources/xsd/OLS</schemaDirectory>
+					<catalog>${project.basedir}/src/main/resources/xsd/catalog.xml</catalog>
+					<extension>true</extension>
+					<arguments>${project.basedir}/src/main/schemalet/simpleBinding.schemalet</arguments>
 				</configuration>
 			</plugin>
 			<plugin>
@@ -129,3 +149,4 @@
 	</build>
 
 </project>
+

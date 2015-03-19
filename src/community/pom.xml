@@ -186,12 +186,6 @@
         <module>geofence</module>
         <module>sldService</module>
         <module>ols</module>
-        <module>ols-RFC59</module>
-        <module>ols-SOLR-gclib</module>
-        <module>ols-SOLR</module>
-        <module>ols-pgRouting</module>
-        <module>ols-OTP</module>
-        <module>ols_web</module>
       </modules>
     </profile>
     <profile>
@@ -309,12 +303,6 @@
       </activation> 
       <modules>
         <module>ols</module>
-        <module>ols-RFC59</module>
-        <module>ols-SOLR-gclib</module>
-        <module>ols-SOLR</module>
-        <module>ols-pgRouting</module>
-        <module>ols-OTP</module>
-        <module>ols_web</module>
       </modules>
     </profile>
     <profile>
