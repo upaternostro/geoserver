@@ -53,6 +53,9 @@ public class OLSAddressBean
     @Field
     private String centroid;
 
+    @Field("centroid_geo")
+    private String centroidWGS84;
+
     @Field("bounding_box")
     private String boundingBox;
 
@@ -186,6 +189,14 @@ public class OLSAddressBean
 
     public void setCentroid(String centroid) {
         this.centroid = centroid;
+    }
+
+    public String getCentroidWGS84() {
+        return centroidWGS84;
+    }
+
+    public void setCentroidWGS84(String centroidWGS84) {
+        this.centroidWGS84 = centroidWGS84;
     }
 
     public String getBoundingBox() {
