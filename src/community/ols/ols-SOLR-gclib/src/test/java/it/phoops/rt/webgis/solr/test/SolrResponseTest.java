@@ -36,10 +36,10 @@ public class SolrResponseTest {
 	        AddressParserFactory    apf = new AddressParserFactory();
 	        AddressParser           addressParser = apf.getSolrGeocodingFacade(solrUrl);
 	        
-                addressParser.setAddress("via paqsuale pocianti, 16");
+                addressParser.setAddress("via garibaldi");
 
-		String municipality = "scadnicci";
-		String subdivision = "fi";
+		String municipality = "prato";
+		String subdivision = "po";
 
 		SolrBeanResultsList res = new SolrBeanResultsList();
 

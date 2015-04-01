@@ -19,6 +19,8 @@ import org.apache.solr.common.SolrDocumentList;
 import org.apache.solr.common.params.ModifiableSolrParams;
 
 import java.net.MalformedURLException;
+import java.text.NumberFormat;
+import java.text.ParsePosition;
 import java.util.StringTokenizer;
 import java.util.regex.Pattern;
 
@@ -49,7 +51,7 @@ public class SolrGeocodingFacadeImpl implements SolrGeocodingFacade {
         
         numberDelimiter = ",";
         numberAfterAddress = true;
-        addressTokenDelim = " \t\n\r\f-()^";
+        addressTokenDelim = " \t\n\r\f-()^.";
         streetTypeWeigth = 3.0f;
         streetNameWeigth = 10.0f;
         numberSubdivisionSeparator = "/";
@@ -265,13 +267,22 @@ public class SolrGeocodingFacadeImpl implements SolrGeocodingFacade {
 
         queryBuffer.append("(street_name:\"").append(streetName.trim()).append("\"").append("^").append(streetNameWeigth);
         StringTokenizer stringTokenizer = new StringTokenizer(streetName, addressTokenDelim);
-        String          token;
+
+        String token;
+        String stringNumber = null;
         while (stringTokenizer.hasMoreTokens()) {
             token = stringTokenizer.nextToken();
             String weight = String.valueOf(token.length());
             queryBuffer.append(" OR street_name:").append(token).append("^").append(weight)
                     .append(" OR street_name:").append(token).append("^").append(weight).append("~1")
                     .append(" OR street_name:").append(token).append("^").append(weight).append("~2");
+            if (isNumeric(token)) {
+                String romanNumber = integerToRoman(Integer.parseInt(token));
+                queryBuffer.append(" OR street_name:").append(romanNumber).append("^").append(weight)
+                        .append(" OR street_name:").append(romanNumber).append("^").append(weight).append("~1")
+                        .append(" OR street_name:").append(romanNumber).append("^").append(weight).append("~2");
+                stringNumber = token;
+            }
         }
         queryBuffer.append(")");
 
@@ -279,16 +290,22 @@ public class SolrGeocodingFacadeImpl implements SolrGeocodingFacade {
             if (!isStringEmpty(subdivision)) {
                 number = number.trim() + numberSubdivisionSeparator + subdivision.trim();
             }
-            
             queryBuffer.append(" AND (building_number:\"").append(number.trim()).append("\"")
                     .append(" OR building_number:\"").append(number.trim()).append("\"").append("~2")
                     .append(" OR (-building_number:[* TO *] AND *:*) OR building_number:*")
                     .append(")").append("^").append(numberWeigth);
+        } else if (stringNumber != null) {
+            queryBuffer.append(" AND (building_number:\"").append(stringNumber.trim()).append("\"")
+                    .append(" OR building_number:\"").append(stringNumber.trim()).append("\"").append("~2")
+                    .append(" OR (-building_number:[* TO *] AND *:*) OR building_number:*")
+                    .append(")").append("^").append(numberWeigth);
+        } else {
+            queryBuffer.append(" OR is_building:FALSE");
         }
 
         queryBuffer.append(" AND (municipality:\"").append(municipality).append("\"").append("^").append(municipalityWeigth);
         StringTokenizer municipalityTokenizer = new StringTokenizer(municipality, addressTokenDelim);
-        String          municipalityToken;
+        String municipalityToken;
         while (municipalityTokenizer.hasMoreTokens()) {
             municipalityToken = municipalityTokenizer.nextToken();
             queryBuffer.append(" OR municipality:").append(municipalityToken).append("^").append(municipalityWeigth).append(" OR municipality:").append(municipalityToken).append("^").append(municipalityWeigth).append("~1").append(" OR municipality:").append(municipalityToken).append("^").append(municipalityWeigth).append("~2");
@@ -300,20 +317,21 @@ public class SolrGeocodingFacadeImpl implements SolrGeocodingFacade {
         }
 
         logger.debug("SOLR query: " + queryBuffer.toString());
+        System.out.println("SOLR query: " + queryBuffer.toString());
 
         if (solrServer == null) {
             throw new SolrGeocodingFacadeException("SolrServer not initialized");
         }
 
-        ModifiableSolrParams    solrParams = new ModifiableSolrParams();
+        ModifiableSolrParams solrParams = new ModifiableSolrParams();
 
         solrParams.set("q", queryBuffer.toString());
         solrParams.set("fl", "*,score");
 
-        SolrBeanResultsList     retval = new SolrBeanResultsList();
-        int                     start = 0;
-        QueryResponse           qr;
-        SolrDocumentList        list;
+        SolrBeanResultsList retval = new SolrBeanResultsList();
+        int start = 0;
+        QueryResponse qr;
+        SolrDocumentList list;
 
         if (maxRows > 0) {
             solrParams.set("rows", maxRows > MAX_DOCS_PER_REQUEST ? MAX_DOCS_PER_REQUEST : maxRows);
@@ -322,16 +340,16 @@ public class SolrGeocodingFacadeImpl implements SolrGeocodingFacade {
         try {
             do {
                 solrParams.set("start", start);
-    
+
                 qr = solrServer.query(solrParams);
                 list = qr.getResults();
-    
+
                 retval.addAll(qr.getBeans(OLSAddressBean.class));
                 retval.setNumFound(list.getNumFound());
-    
-    
+
                 start = retval.size();
-            } while (start < list.getNumFound() && maxRows != SolrGeocodingFacade.MAX_ROWS_SOLR_DEFAULT && (maxRows == SolrGeocodingFacade.MAX_ROWS_ALL || start < maxRows));
+            }
+            while (start < list.getNumFound() && maxRows != SolrGeocodingFacade.MAX_ROWS_SOLR_DEFAULT && (maxRows == SolrGeocodingFacade.MAX_ROWS_ALL || start < maxRows));
         } catch (SolrServerException e) {
             throw new SolrGeocodingFacadeException("Cannot call Solr", e);
         }
@@ -345,6 +363,7 @@ public class SolrGeocodingFacadeImpl implements SolrGeocodingFacade {
         address = address.replaceAll(";", "");
 
         StringBuffer queryBuffer = new StringBuffer("");
+
         StringTokenizer stringTokenizer = new StringTokenizer(address, " \t\n\r\f-()^");
         String          token;
         int count = 0;
@@ -397,5 +416,96 @@ public class SolrGeocodingFacadeImpl implements SolrGeocodingFacade {
     private boolean isStringEmpty(String string)
     {
         return string == null || "".equals(string);
+    }
+
+    public static boolean isNumeric(String str)
+    {
+        NumberFormat formatter = NumberFormat.getInstance();
+        ParsePosition pos = new ParsePosition(0);
+        formatter.parse(str, pos);
+        return str.length() == pos.getIndex();
+    }
+
+    public static String integerToRoman(int n){
+        String roman="";
+        int repeat;
+
+        repeat=n/1000;
+        for(int i=1; i<=repeat;i++){
+            roman=roman+"M";
+        }
+        n=n%1000;
+
+        repeat=n/900;
+        for(int i=1; i<=repeat;i++){
+            roman=roman+"CM";
+        }
+        n=n%900;
+
+        repeat=n/500;
+        for(int i=1; i<=repeat;i++){
+            roman=roman+"D";
+        }
+        n=n%500;
+
+        repeat=n/400;
+        for(int i=1; i<=repeat;i++){
+            roman=roman+"CD";
+        }
+        n=n%400;
+
+        repeat=n/100;
+        for(int i=1; i<=repeat;i++){
+            roman=roman+"C";
+        }
+        n=n%100;
+
+        repeat=n/90;
+        for(int i=1; i<=repeat;i++){
+            roman=roman+"XC";
+        }
+        n=n%90;
+
+        repeat=n/50;
+        for(int i=1; i<=repeat;i++){
+            roman=roman+"L";
+        }
+        n=n%50;
+
+        repeat=n/40;
+        for(int i=1; i<=repeat;i++){
+            roman=roman+"XL";
+        }
+        n=n%40;
+
+        repeat=n/10;
+        for(int i=1; i<=repeat;i++){
+            roman=roman+"X";
+        }
+        n=n%10;
+
+        repeat=n/9;
+        for(int i=1; i<=repeat;i++){
+            roman=roman+"IX";
+        }
+        n=n%9;
+
+        repeat=n/5;
+        for(int i=1; i<=repeat;i++){
+            roman=roman+"V";
+        }
+        n=n%5;
+
+        repeat=n/4;
+        for(int i=1; i<=repeat;i++){
+            roman=roman+"IV";
+        }
+        n=n%4;
+
+        repeat=n/1;
+        for(int i=1; i<=repeat;i++){
+            roman=roman+"I";
+        }
+        return roman;
     }
 }
