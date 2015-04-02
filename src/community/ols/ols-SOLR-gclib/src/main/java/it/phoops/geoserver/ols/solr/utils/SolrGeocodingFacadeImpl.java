@@ -21,6 +21,7 @@ import org.apache.solr.common.params.ModifiableSolrParams;
 import java.net.MalformedURLException;
 import java.text.NumberFormat;
 import java.text.ParsePosition;
+import java.util.ArrayList;
 import java.util.StringTokenizer;
 import java.util.regex.Pattern;
 
@@ -269,7 +270,7 @@ public class SolrGeocodingFacadeImpl implements SolrGeocodingFacade {
         StringTokenizer stringTokenizer = new StringTokenizer(streetName, addressTokenDelim);
 
         String token;
-        String stringNumber = null;
+        ArrayList<String> stringNumbers = new ArrayList<>();
         while (stringTokenizer.hasMoreTokens()) {
             token = stringTokenizer.nextToken();
             String weight = String.valueOf(token.length());
@@ -281,11 +282,17 @@ public class SolrGeocodingFacadeImpl implements SolrGeocodingFacade {
                 queryBuffer.append(" OR street_name:").append(romanNumber).append("^").append(weight)
                         .append(" OR street_name:").append(romanNumber).append("^").append(weight).append("~1")
                         .append(" OR street_name:").append(romanNumber).append("^").append(weight).append("~2");
-                stringNumber = token;
+                stringNumbers.add(token);
             }
         }
         queryBuffer.append(")");
 
+        String stringNumber = null;
+        if (stringNumbers.size()>0 && numberAfterAddress) {
+            stringNumber = stringNumbers.get(stringNumbers.size()-1);
+        } else if (stringNumbers.size()>0) {
+            stringNumber = stringNumbers.get(0);
+        }
         if (!isStringEmpty(number)) {
             if (!isStringEmpty(subdivision)) {
                 number = number.trim() + numberSubdivisionSeparator + subdivision.trim();
@@ -300,7 +307,7 @@ public class SolrGeocodingFacadeImpl implements SolrGeocodingFacade {
                     .append(" OR (-building_number:[* TO *] AND *:*) OR building_number:*")
                     .append(")").append("^").append(numberWeigth);
         } else {
-            queryBuffer.append(" OR is_building:FALSE");
+            queryBuffer.append(" AND (is_building:FALSE^2.0 OR is_building:TRUE)");
         }
 
         queryBuffer.append(" AND (municipality:\"").append(municipality).append("\"").append("^").append(municipalityWeigth);
