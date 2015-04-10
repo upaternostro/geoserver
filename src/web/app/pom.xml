@@ -1199,12 +1199,12 @@
 	<id>jms-cluster</id>
 	<dependencies>
 		<dependency>
-			<groupId>org.geoserver</groupId>
+			<groupId>org.geoserver.community</groupId>
 			<artifactId>gs-jms-commons</artifactId>
 			<version>${project.version}</version>
 		</dependency>
 		<dependency>
-			<groupId>org.geoserver</groupId>
+			<groupId>org.geoserver.community</groupId>
 			<artifactId>gs-jms-geoserver</artifactId>
 			<version>${project.version}</version>
 		</dependency>
@@ -1236,6 +1236,16 @@
         <dependency>
           <groupId>org.geoserver.community</groupId>
           <artifactId>gs-rest-upload</artifactId>
+          <version>${project.version}</version>
+        </dependency>
+      </dependencies>
+   </profile>
+    <profile>
+      <id>geomesa</id>
+      <dependencies>
+        <dependency>
+          <groupId>org.geoserver.community</groupId>
+          <artifactId>gs-web-geomesa</artifactId>
           <version>${project.version}</version>
         </dependency>
       </dependencies>
